@@ -7,7 +7,7 @@ This fork keeps the mgu-store infrastructure and publishes only the custom `fx_d
 BMW SDK и интернет для статической проверки не нужны:
 
 ```bash
-node tools/preview_fx_drive.js
+node scripts/preview_fx_drive.js
 ```
 
 Проверяются manifest, package metadata, RHMI ID7/ID8, иконка, наличие source modules и синтаксис JavaScript. Это не заменяет установку на физический HU.
