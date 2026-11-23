@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.4.11",
+  "version": "1.4.12",
   "screens": [
     {
       "name": "MAIN",
@@ -70,7 +70,7 @@
       "key": "difficulty",
       "label": "Difficulty (0 Easy, 1 Normal, 2 Hard, 3 Extreme)",
       "type": "number",
-      "default": 1,
+      "default": 0,
       "hidden": true
     },
     {
@@ -82,7 +82,7 @@
       "options": [
         [
           "auto",
-          "Auto"
+          "Авто (BMW)"
         ],
         [
           "ru",
@@ -91,8 +91,55 @@
         [
           "en",
           "English"
+        ],
+        [
+          "de",
+          "Deutsch"
+        ],
+        [
+          "es",
+          "Español"
+        ],
+        [
+          "fr",
+          "Français"
+        ],
+        [
+          "it",
+          "Italiano"
+        ],
+        [
+          "pt",
+          "Português"
+        ],
+        [
+          "nl",
+          "Nederlands"
+        ],
+        [
+          "pl",
+          "Polski"
+        ],
+        [
+          "uk",
+          "Українська"
+        ],
+        [
+          "zh",
+          "中文"
+        ],
+        [
+          "ja",
+          "日本語"
         ]
       ]
+    },
+    {
+      "key": "difficultySchema",
+      "label": "Difficulty schema",
+      "type": "number",
+      "default": 0,
+      "hidden": true
     }
   ],
   "config": null,

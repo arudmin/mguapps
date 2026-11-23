@@ -2,16 +2,15 @@
 // Gameplay inspired by Chromium T-Rex Runner: clustered cactus obstacles, birds and distance-based spacing.
 // Positions/speeds are in the logical 720-high world, not physical screen pixels.
 const MODES = [
- {name:'EASY',start:370,acceleration:5,max:660,gapMin:1.40,gapMax:2.75,postJumpBuffer:1.18,clusterChance:0.10,birdAfter:24},
  {name:'NORMAL',start:430,acceleration:6,max:740,gapMin:1.12,gapMax:2.25,postJumpBuffer:1.02,clusterChance:0.38,birdAfter:16},
  {name:'HARD',start:575,acceleration:10,max:930,gapMin:0.94,gapMax:1.90,postJumpBuffer:0.96,clusterChance:0.72,birdAfter:11},
- {name:'EXTREME',start:665,acceleration:12,max:1060,gapMin:0.84,gapMax:1.58,postJumpBuffer:0.94,clusterChance:0.88,birdAfter:8}
+ {name:'EXTREME',start:665,acceleration:12,max:1060,gapMin:0.72,gapMax:1.34,postJumpBuffer:0.90,clusterChance:0.88,birdAfter:8}
 ];
 const GRAVITY=2500, JUMP_VELOCITY=-940, JUMP_TIME=2*940/2500;
 function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
 function rectsOverlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 class Game {
- constructor(options){this.random=options&&options.random||Math.random;this.width=1920;this.height=720;this.difficulty=1;this.reset();}
+ constructor(options){this.random=options&&options.random||Math.random;this.width=1920;this.height=720;this.difficulty=0;this.reset();}
  resize(aspect){if(!Number.isFinite(aspect)||aspect<=0)return;this.width=720*aspect;this.x=Math.min(260,this.width*0.18);}
  mode(){return MODES[this.difficulty];}
  setDifficulty(index){this.difficulty=((index%MODES.length)+MODES.length)%MODES.length;this.reset();}
@@ -20,14 +19,14 @@ class Game {
  action(){if(this.state==='over'){this.reset();this.state='playing';this.vy=JUMP_VELOCITY;return;}if(this.state==='ready'){this.state='playing';this.vy=JUMP_VELOCITY;return;}if(this.state==='playing'&&this.y>=this.floor-.1)this.vy=JUMP_VELOCITY;}
  // Width and height in logical game pixels. A group is one obstacle object but each cactus collides separately.
  buildObstacle(){const mode=this.mode(),r=this.random();
-  if(this.elapsed>mode.birdAfter&&r<(this.difficulty===3?.15:.12)){
+  if(this.elapsed>mode.birdAfter&&r<(this.difficulty===2?.15:.12)){
     const low=this.random()<.77;return {type:'bird',x:this.width+70,y:this.floor-(low?88:128),w:66,h:36,parts:[],scored:false};
   }
   let count=1;
-  if(this.random()<mode.clusterChance){count=this.random()<(this.difficulty>=2?.62:.72)?2:3;}
+  if(this.random()<mode.clusterChance){count=this.random()<(this.difficulty>=1?.62:.72)?2:3;}
   const parts=[];let offset=0;
   for(let k=0;k<count;k++){
-   const large=this.random()<(this.difficulty>=2?.58:.38);
+   const large=this.random()<(this.difficulty>=1?.58:.38);
    const height=large?84:60, width=large?36:27;
    parts.push({x:offset,w:width,h:height,large:large});
    offset+=width+(k+1<count?5+Math.floor(this.random()*8):0);
@@ -40,7 +39,7 @@ class Game {
   const m=this.mode();
   // Variable distances between obstacle groups; caller adds group width / speed.
   let delay=m.gapMin+(m.gapMax-m.gapMin)*Math.pow(this.random(),0.78);
-  if(this.random()<0.17) delay+=0.35+this.random()*0.80;
+  if(this.random()<(this.difficulty===2?0.05:0.17)) delay+=0.35+this.random()*(this.difficulty===2?0.30:0.80);
   delay=Math.max(delay,m.postJumpBuffer,JUMP_TIME+0.18);
   if(obstacle.type==='bird')delay=Math.max(delay,JUMP_TIME+0.32);
   this.spawnIn=delay;

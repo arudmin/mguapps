@@ -6,7 +6,7 @@ function draw(cv,game,w,h,best,words){
  words=words||require('./i18n').words('en');
  const sx=w/game.width,sy=h/720,ink='#535353';
  function rect(x,y,a,b,c){cv.fillRect(x*sx,y*sy,a*sx,b*sy,c);}
- function text(t,x,y,size,c,align){cv.text(t,x*sx,y*sy,size*sy,c,{align:align||'left',font:'bold'});}
+ function text(t,x,y,size,c,align){cv.text(t,x*sx,y*sy,size*sy,c,{align:align||'left',font:'bold',literal:true});}
  function pixel(x,y,pts,unit,color){for(const p of pts)rect(x+p[0]*unit,y+p[1]*unit,p[2]*unit,p[3]*unit,color);}
  // Chrome's small cactus and big cactus styles: slender jagged columns and angular arms.
  function cactus(x,floor,large){
