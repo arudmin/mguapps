@@ -37,6 +37,13 @@ const release = json('apps/fx_drive/release.json');
 assert(repo && repo.schema === 1, 'mgu-repo.json must have schema 1');
 const component = repo && repo.components && repo.components.filter((x) => x.id === 'fx_drive')[0];
 assert(component && component.kind === 'app' && component.path === 'apps/fx_drive' && component.build === 'unit', 'mgu-repo.json must catalog fx_drive as a unit app');
+(repo && Array.isArray(repo.components) ? repo.components : []).forEach((item) => {
+  assert(/^[A-Za-z][A-Za-z0-9_]*$/.test(item.id || ''), 'component id is invalid: ' + item.id);
+  assert(item.kind === 'app' && item.build === 'unit', 'component must be a unit app: ' + item.id);
+  const dir = path.join(root, item.path || '');
+  assert(fs.existsSync(path.join(dir, 'mgu-app.json')), 'component has no mgu-app.json: ' + item.id);
+  assert(fs.existsSync(path.join(dir, 'package', 'package.json')), 'component has no package/package.json: ' + item.id);
+});
 assert(manifest && manifest.id === 'fx_drive' && manifest.tree === 'package' && manifest.internet === true, 'mgu-app.json must enable unit build and internet');
 assert(pkg && pkg.name === 'fx_drive' && pkg.version === '0.1.0', 'package/package.json must name fx_drive@0.1.0');
 assert(pkg && pkg.mguInternet === true && pkg.mguLocalOnly === true, 'package/package.json must declare mguInternet and mguLocalOnly');
