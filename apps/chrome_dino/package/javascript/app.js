@@ -251,7 +251,7 @@ mgu.run({
             const full = pl && pl.full && pl.w > 0 && pl.h > 0;
             const w = full ? pl.w : W, h = full ? pl.h : H;
             game.resize(WORLD_ASPECT); // Fixed collision/spawn world for both styles and screen sizes.
-            if (last !== null) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.1));
+            if (last !== null) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
             last = now;
             while (accumulator >= STEP) {
                 if (game.state === 'playing') game.step(STEP);
