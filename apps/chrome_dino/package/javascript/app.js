@@ -6,6 +6,7 @@ const Parked = require('./kit/parked');
 const { Game } = require('./src/game');
 const { draw } = require('./src/render');
 const { Controls } = require('./src/input');
+const APP_VERSION = require('./kit/app-spec.json').version;
 
 const W = 1600, H = 520, STEP = 1 / 120, SPEED_TTL = 5000;
 
@@ -54,7 +55,7 @@ mgu.run({
         function menu() {
             const reason = !safe() ? 'Parked only: waiting for fresh, valid zero speed.' :
                 'Press Play, then press the controller to start / jump. BACK returns here.';
-            ui.text('MENU_INFO', reason + ' Best: ' + best);
+            ui.text('MENU_INFO', 'Chrome Dino v' + APP_VERSION + ' | Best: ' + best + ' | ' + reason);
             ui.text('BTN_PLAY', game.state === 'playing' ? 'Continue' : 'Play');
             ui.text('BTN_DIFFICULTY', 'Difficulty: ' + game.mode().name + '  (change)');
         }

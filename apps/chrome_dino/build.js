@@ -7,11 +7,21 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const crypto = require('crypto');
+// Diagnostics for offline build and MGU Store unit build. No SDK or network required.
+let buildStage = 'startup';
+function buildLog(msg) { console.error('[Chrome Dino build] ' + msg); }
+process.on('uncaughtException', function (err) {
+    buildLog('FAILED at stage: ' + buildStage);
+    buildLog('node=' + process.version + ' platform=' + process.platform + ' cwd=' + process.cwd());
+    buildLog(err && err.stack ? err.stack : String(err));
+    process.exitCode = 1;
+});
 const args = process.argv.slice(2);
 const preview = args.indexOf('--preview-only') >= 0;
 const values = args.filter(function (a) { return a !== '--preview-only'; });
 const appDir = values[2] ? path.resolve(values[2]) : __dirname;
 const tree = path.join(appDir, 'package');
+buildStage = 'read package metadata';
 const pkg = JSON.parse(fs.readFileSync(path.join(tree, 'package.json'), 'utf8'));
 const spec = JSON.parse(fs.readFileSync(path.join(appDir, 'app.json'), 'utf8'));
 const id = values[0] || spec.id;
@@ -61,7 +71,9 @@ function walk(dir, prefix) {
         entries.push({name: outputName, data: data});
     });
 }
+buildStage = 'collect package files from ' + tree;
 walk(tree, '');
+buildStage = 'validate required package files';
 const byName = Object.create(null);
 entries.forEach(function (e) { if (byName[e.name]) throw new Error('Duplicate file: ' + e.name); byName[e.name] = e; });
 ['package.json', 'manifest.json', 'permissions.json', 'javascript/app.js',
@@ -71,6 +83,7 @@ entries.forEach(function (e) { if (byName[e.name]) throw new Error('Duplicate fi
  'LICENSE', 'NOTICE', 'third-party/idrive7-apps-LICENSE'].forEach(function (name) {
     if (!byName[name]) throw new Error('Missing required file: ' + name);
 });
+buildStage = 'resolve local JavaScript dependencies';
 // Resolve all literal local requires without running the SDK-dependent application.
 entries.forEach(function (e) {
     if (!/\.js$/.test(e.name)) return;
@@ -82,6 +95,7 @@ entries.forEach(function (e) {
         if (!byName[target] && !byName[target + '.js'] && !byName[target + '.json']) throw new Error('Missing local require: ' + e.name + ' -> ' + match[1]);
     }
 });
+buildStage = preview ? 'preview verification' : 'write tarball';
 if (preview) {
     console.log('OFFLINE CHECK OK: ' + id + '@' + version + ', ' + entries.length + ' files, ID7 + ID8, no BMW SDK; no archive written');
 } else {
@@ -108,5 +122,6 @@ if (preview) {
     mkdir(outDir);
     const out = path.join(outDir, id + '@' + version + '.tgz');
     fs.writeFileSync(out, result);
+    buildStage = 'complete';
     console.log('Built ' + out + ' (' + entries.length + ' files, SDK supplied by Store on the head unit)');
 }

@@ -1,35 +1,46 @@
-name: Finalize standalone Chrome Dino
+name: Chrome Dino CI
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'apps/chrome_dino/vendor_once.js'
-      - 'apps/chrome_dino/package/javascript/src/**'
-      - 'apps/chrome_dino/package/javascript/app.js'
+      - 'apps/chrome_dino/**'
+      - '.github/workflows/chrome-dino-vendor.yml'
+  pull_request:
+    paths:
+      - 'apps/chrome_dino/**'
+      - '.github/workflows/chrome-dino-vendor.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
-  vendor:
+  build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Vendor OAP and RHMI assets once
-        run: node apps/chrome_dino/vendor_once.js
-      - name: Verify independent build
+      - name: Check syntax
         run: |
-          node apps/chrome_dino/build.js --preview-only
-          node apps/chrome_dino/build.js
-          node apps/chrome_dino/tests/test_game.js
-      - name: Commit fully standalone source
+          node --check apps/chrome_dino/build.js
+          node --check apps/chrome_dino/package/javascript/app.js
+      - name: Test and verify OAP package
+        shell: bash
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -f apps/chrome_dino/package/javascript
-          git add apps/chrome_dino/package
-          if ! git diff --cached --quiet; then
-            git commit -m 'Vendor Chrome Dino standalone OAP package'
-            git push
-          fi
+          set -o pipefail
+          mkdir -p ci-logs
+          {
+            node apps/chrome_dino/tests/test_game.js
+            node apps/chrome_dino/tests/test_package.js
+            node apps/chrome_dino/tests/test_version.js
+            node apps/chrome_dino/build.js --preview-only
+            node apps/chrome_dino/build.js
+            tar -tzf apps/chrome_dino/dist/chrome_dino@1.4.7.tgz | head -30
+          } 2>&1 | tee ci-logs/chrome-dino-build.log
+      - name: Save build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-dino-diagnostics
+          path: ci-logs/
+          if-no-files-found: warn
