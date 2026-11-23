@@ -44,9 +44,12 @@ class FxDrive extends OnlineApp {
     this._source = 'Frankfurter / ECB';
     this._updated = '';
     this.on('initialized', () => this._onInitialized().catch((e) => log.error('init: ' + e.message)));
+    this.on('error', (e) => log.warn('OnlineApp: ' + (e && e.message)));
     this.on('entryPointExecute', (uuid) => {
-      if (this.rhmiApplication && this._entry && uuid === this._entry.uuid) {
-        Promise.resolve(this.rhmiApplication.openEntryState(uuid)).catch((e) => log.warn('open: ' + e.message));
+      if (this.rhmiApplication && uuid) {
+        Promise.resolve().then(() => this.registerActive())
+          .then(() => this.rhmiApplication.openEntryState(uuid))
+          .catch((e) => log.warn('open: ' + e.message));
       }
     });
     this.on('shutdown', () => { if (this._timer) clearInterval(this._timer); });
@@ -72,8 +75,15 @@ class FxDrive extends OnlineApp {
     await rhmi.mapEntryState(description.uuid, root);
     await entry.setAvailability('ENABLED');
     this._entry = description;
-    this._render();
+    const visibility = this.getVisibilityData && this.getVisibilityData();
+    const reason = (visibility && visibility.reason) || this.startReason;
+    const foreground = ['ENTRY_POINT', 'LUM', 'BOOKMARK', 'START_WIDGET', 'TRIGGER_HMI', 'SPEECH_COMMAND'].indexOf(reason) >= 0;
+    if (foreground) await this.registerActive();
     const ready = this.initialized();
+    this._render();
+    if (foreground) {
+      await rhmi.openEntryState(description.uuid);
+    }
     this.refresh().catch((e) => log.warn('refresh: ' + e.message));
     this._timer = setInterval(() => this.refresh(), 15 * 60 * 1000);
     return ready;

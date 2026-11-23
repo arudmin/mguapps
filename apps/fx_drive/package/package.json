@@ -1,6 +1,6 @@
 {
   "name": "fx_drive",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Glanceable currency and crypto dashboard for BMW iDrive",
   "private": false,
   "main": "javascript/runner.js",

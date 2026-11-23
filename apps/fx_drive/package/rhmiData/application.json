@@ -5,13 +5,13 @@
     "type": "OnlineApp",
     "name": "fx_drive",
     "vendor": "custom",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "defaultLanguage": "en_GB",
     "uiDescriptions": [
       {"applicationFilePath":"./uiDescriptions/ID7/application.xml","uiDescriptionFilePath":"./uiDescriptions/ID7/uiDescription.json","hmi":["ID7"]},
       {"applicationFilePath":"./uiDescriptions/ID8/application.xml","uiDescriptionFilePath":"./uiDescriptions/ID8/uiDescription.json","hmi":["ID8"]}
     ],
-    "stringBundleUuid": "bc42c0a7-159d-4367-a9e3-7e00f6e3df9",
+    "stringBundleUuid": "bc42c0a7-159d-4367-a9e3-07e00f6e3df9",
     "resourceBundleUuid": "463ba548-4f9c-4a7c-b9cc-c0d92ec8ddf0",
     "variantGroups": [
       {"stringsPath":"./variantGroups/Common/texts","resourcesPath":"./variantGroups/Common/images","hmi":["ID7","ID8"],"brands":["BMW"]}
