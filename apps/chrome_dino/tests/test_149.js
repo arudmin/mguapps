@@ -24,5 +24,5 @@ assert.strictEqual(en.SID_CHROME_DINO_TITLE,'Chrome Dino Game');
 const src=fs.readFileSync(path.join(root,'package/javascript/app.js'),'utf8');
 assert(src.includes("ui.text('MENU_BMW'"));
 assert(src.includes('headLanguageRaw=raw'));
-assert(src.includes("draw(screenRecorder, game, w, h, best, t())"));
+assert(src.includes("draw(screenRecorder, game, w, h, best, t(), updateState)"));
 console.log('1.4.9 BMW language enums, manifest, catalog locales, RHMI title and game text OK');
