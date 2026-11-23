@@ -1,7 +1,7 @@
 {
   "name": "chrome_dino",
   "version": "1.2.0",
-  "description": "Offline dinosaur runner. Parked only. Central iDrive controller click = jump.",
+  "description": "Offline pixel dinosaur runner controlled by the central iDrive knob. Requires a fresh, valid zero vehicle-speed signal.",
   "main": "javascript/app.js",
   "private": false,
   "author": "arudmin",

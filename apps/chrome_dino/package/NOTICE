@@ -1,0 +1,22 @@
+Flappy MGU 1.0.0
+
+Original game simulation and vector artwork, inspired by the Flappy Bird mechanic.
+No original Flappy Bird sprites, audio or source code are redistributed.
+The repository aaarafat/JS-Flappy-Bird was studied as a gameplay reference only
+(commit 1c704918d55383066b6f40f2689efcce3e1d5a69; no license present at review).
+
+The CommonJS kit runtime, permissions and generated RHMI resources are based on
+https://github.com/cauliflowermossgrape/idrive7-apps
+commit e2716cdd8d779141262a078fe192cade6cf26f4b, MIT.
+See third-party/idrive7-apps-LICENSE and javascript/kit/fonts/OFL-NotoSansSC.txt.
+Only the game's transitive runtime modules are included; diagnostic modules,
+build tools and unused localization catalogs are omitted. Runtime source is
+unmodified. The game UI is English. No SDK-dependent browserify bundle is included.
+
+https://github.com/robertnisipeanu/mgu-store
+commit d878bed5ce5848d0c1ce852be23fac539e434a0b was studied for installation
+and repository formats. No Store code is redistributed.
+
+BMW, iDrive and Flappy Bird names belong to their respective owners.
+This is an independent, unofficial project. No BMW SDK, firmware, keys,
+vehicle identifiers or OEM images are included.

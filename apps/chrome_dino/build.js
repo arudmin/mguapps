@@ -50,7 +50,10 @@ function walk(dir,prefix) {
 walk(tree,'');
 const found=new Set(entries.map(x=>x.name));
 for (const e of entries) if (e.name.endsWith('.js')) {
-  const code=e.data.toString('utf8');
+  // Ignore documentation examples: they are not executable require() calls.
+  const code=e.data.toString('utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
   const rx=/require\(['"](\.[^'"]+)['"]\)/g;
   let m;while((m=rx.exec(code))){
     const target=path.posix.normalize(path.posix.join(path.posix.dirname(e.name),m[1]));

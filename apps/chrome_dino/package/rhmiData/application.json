@@ -1,18 +1,18 @@
 {
   "schemaVersion": "1.3.0",
   "application": {
-    "uuid": "27b773f6-083c-5e46-a105-7c3d2a0ec680",
+    "uuid": "adb06be7-adbe-5443-83bb-aa5b4e815070",
     "type": "OnlineApp",
     "name": "chrome_dino",
     "vendor": "arudmin",
     "version": "1.2.0",
     "defaultLanguage": "en_GB",
-    "stringBundleUuid": "899aa276-675d-5ef6-af86-68feda6eb558",
-    "resourceBundleUuid": "3d01c4f0-ba55-5693-8585-6fceabfe29ab",
+    "stringBundleUuid": "67a43f18-e920-563c-9696-452b1c356c90",
+    "resourceBundleUuid": "2fb12989-26ea-5062-9ce7-b18f5bc3b6ef",
     "entryPoints": [
       {
         "name": "CHROME_DINO_ENTRY",
-        "uuid": "27d8ade3-375e-5172-ba29-c1b7fe61e451",
+        "uuid": "cb26c004-468e-5d91-a23d-8d22dfbac679",
         "textId": "SID_CHROME_DINO_TITLE",
         "icon": "chrome_dino_icon.png",
         "insertionStateId": 20974,
