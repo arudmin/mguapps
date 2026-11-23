@@ -1,0 +1,62 @@
+{
+ "id": "flappy_bird",
+ "title": "Flappy Bird",
+ "version": "1.0.0",
+ "screens": [
+  {
+   "name": "MAIN",
+   "kind": "menu",
+   "title": "Flappy MGU",
+   "items": [
+    [
+     "button",
+     "BTN_PLAY",
+     "Play / Continue"
+    ],
+    [
+     "button",
+     "BTN_RESTART",
+     "Restart"
+    ],
+    [
+     "text",
+     "MENU_INFO",
+     ""
+    ],
+    [
+     "text",
+     "MENU_HELP",
+     "Press the controller to start and flap. BACK: menu. Parked only."
+    ]
+   ]
+  },
+  {
+   "name": "GAME",
+   "kind": "canvas",
+   "title": "Flappy MGU",
+   "chrome": false,
+   "buttons": [
+    [
+     "BTN_FLAP",
+     "Flap / Start"
+    ]
+   ]
+  }
+ ],
+ "settings": [
+  {
+   "key": "best",
+   "label": "Best score",
+   "type": "number",
+   "default": 0,
+   "hidden": true
+  }
+ ],
+ "config": null,
+ "startWidget": null,
+ "stateIds": {
+  "MAIN": 1,
+  "GAME": 9,
+  "SETTINGS": 16
+ }
+}

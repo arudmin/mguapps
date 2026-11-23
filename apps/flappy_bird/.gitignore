@@ -1,0 +1,7 @@
+# This game ships plain CommonJS sources, not an SDK-containing generated bundle.
+# Override the repository-wide apps/*/package/javascript/ exclusion for this app only.
+!package/javascript/
+!package/javascript/**
+# Local build outputs remain untracked.
+dist/
+node_modules/
