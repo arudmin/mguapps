@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "components": [
+    {
+      "id": "flappy_bird",
+      "kind": "app",
+      "path": "apps/flappy_bird",
+      "title": "Flappy Bird",
+      "description": "Full-viewport controller game. Stationary use only.",
+      "mguHmi": [
+        "ID7",
+        "ID8"
+      ],
+      "uninstallable": true,
+      "requires": {
+        "idrive7-renderd": "2.1.18",
+        "mgu-inputgate": "1.1.0"
+      },
+      "build": {
+        "node": "apps/flappy_bird/build.js",
+        "args": [
+          "{id}",
+          "{version}",
+          "{dir}"
+        ],
+        "shared": []
+      }
+    }
+  ]
+}
