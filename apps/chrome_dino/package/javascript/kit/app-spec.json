@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.4.12",
+  "version": "1.4.13",
   "screens": [
     {
       "name": "MAIN",
@@ -42,11 +42,6 @@
           "text",
           "MENU_HELP",
           "Press Play, then controller to jump. BACK: menu. Parked only."
-        ],
-        [
-          "text",
-          "MENU_VIN",
-          "VIN: checking..."
         ]
       ]
     },
@@ -73,7 +68,7 @@
     },
     {
       "key": "difficulty",
-      "label": "Difficulty (0 Easy, 1 Normal, 2 Hard, 3 Extreme)",
+      "label": "Difficulty (0 Normal, 1 Hard, 2 Extreme)",
       "type": "number",
       "default": 0,
       "hidden": true

@@ -1,0 +1,15 @@
+'use strict';
+const assert=require('assert'),fs=require('fs'),path=require('path');
+const {compare}=require('../package/javascript/src/update');
+assert(compare('1.4.14','1.4.13')>0);
+assert(compare('1.4.13','1.4.13')===0);
+assert(compare('1.4.12','1.4.13')<0);
+const app=require('../app.json');
+assert.strictEqual(app.version,'1.4.13');
+assert(!/Four difficulty/i.test(app.description));
+assert(app.description.includes('\\n'));
+const source=fs.readFileSync(path.join(__dirname,'../package/javascript/app.js'),'utf8');
+assert(source.includes("+' (VIN: '+vinState+')"));
+assert(source.includes('checkUpdate(APP_VERSION'));
+assert(source.includes('updateState'));
+console.log('1.4.13 update-check, VIN inline and descriptions OK');

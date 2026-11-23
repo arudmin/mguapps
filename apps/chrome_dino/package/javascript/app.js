@@ -10,6 +10,7 @@ const APP_VERSION = require('./kit/app-spec.json').version;
 const i18n = require('./src/i18n');
 const { Diag } = require('./kit/diag');
 const { findVin } = require('./src/vin');
+const { checkUpdate } = require('./src/update');
 
 const W = 1600, H = 520, STEP = 1 / 120, SPEED_TTL = 5000;
 
@@ -26,7 +27,8 @@ mgu.run({
         let headLanguageRaw='';
         let headLanguageState='waiting';
         let headLanguageSource='not yet received';
-        let vinState='checking...';
+        let vinState='проверка...';
+        let updateState={available:false,latest:null,checked:false};
         function language(){return languageChoice==='auto'?systemLanguage:languageChoice;}
         function t(){return i18n.words(language());}
         let speedAt = -Infinity, speedValid = false;
@@ -86,13 +88,13 @@ mgu.run({
                 if(diff)Promise.resolve(diff.setValue(0,'SelectedItem',game.difficulty,'UInt')).catch(e=>log.warn('difficulty selected: '+e));
                 if(lng)Promise.resolve(lng.setValue(0,'SelectedItem',Math.max(0,['auto','ru','en'].indexOf(languageChoice)),'UInt')).catch(e=>log.warn('language selected: '+e));
             }
-            ui.text('MENU_INFO',w.version+' '+APP_VERSION);
-            ui.text('MENU_BEST',w.best+': '+best);
+            ui.text('MENU_INFO',w.version+' '+APP_VERSION+' (VIN: '+vinState+')');
+            ui.text('MENU_BEST',w.best+': '+best+(updateState.available?' | '+(language()==='ru'?'Обновите игру до ':'Update to ')+updateState.latest:''));
             ui.text('MENU_HELP',safe()?w.help:w.parked);
             const detected=headLanguageRaw||headLanguageState;
             const current=language();
             ui.text('MENU_BMW','BMW HMI: '+detected+'  ->  '+systemLanguage+'  |  UI: '+current);
-            ui.text('MENU_VIN','VIN: '+vinState);
+            // VIN is intentionally embedded in MENU_INFO: ID7 did not render a separate label.
         }
         function sync() {
             const go = !closed && shown() && !!safe();
@@ -142,17 +144,22 @@ mgu.run({
         (async function probeVin() {
             try {
                 const diag = await new Diag(ctx.signals, log).init();
-                if (!diag.p) { vinState='diagnostics unavailable'; menu(); return; }
+                if (!diag.p) { vinState='недоступен'; menu(); return; }
                 const replies = await diag.functional(0x22,[0xF1,0x90],{idleMs:1800,maxMs:9000});
                 const found=findVin(replies);
-                vinState=found || 'not available (F190)';
+                vinState=found || 'недоступен';
                 log.info('VIN read-only probe: '+(found?'available':'not available'));
             } catch(e) {
-                vinState='read failed';
+                vinState='ошибка чтения';
                 log.warn('VIN read-only probe failed (no vehicle identifiers logged): '+String(e).slice(0,90));
             }
             menu();
         })();
+        checkUpdate(APP_VERSION, function(result) {
+            updateState=result;
+            log.info('version check: '+(result.checked?(result.available?'update available':'current'):'offline'));
+            menu();
+        });
         log.info('initial UI language='+systemLanguage+' selected='+languageChoice);
         parked = Parked.watch(safetyCtx, log);
         ui.onClick('BTN_PLAY', () => {
@@ -161,7 +168,7 @@ mgu.run({
             return ui.open('GAME');
         });
         function chooseDifficulty(index) {
-            if (!Number.isInteger(index)||index<0||index>3)return;
+            if (!Number.isInteger(index)||index<0||index>2)return;
             if (!safe()) { menu(); return; }
             saveBest();
             game.setDifficulty(index);
@@ -179,7 +186,7 @@ mgu.run({
         if(ui.id8){
             ui.onClick('BTN_DIFFICULTY',()=>ui.open('SELECT_DIFFICULTY'));
             ui.onClick('BTN_LANGUAGE',()=>ui.open('SELECT_LANGUAGE'));
-            for(let i=0;i<4;i++)ui.onClick('DIF_'+i,()=>{chooseDifficulty(i);return ui.open('MAIN');});
+            for(let i=0;i<3;i++)ui.onClick('DIF_'+i,()=>{chooseDifficulty(i);return ui.open('MAIN');});
             for(let i=0;i<3;i++)ui.onClick('LANG_'+i,()=>{chooseLanguage(i);return ui.open('MAIN');});
         } else {
             ui.onClick('BTN_DIFFICULTY',ev=>chooseDifficulty(Number(ev.row)));
@@ -230,9 +237,9 @@ mgu.run({
             if (full) {
                 if (!screenRecorder || screenRecorder.w !== w || screenRecorder.h !== h) screenRecorder = new Recorder(w, h);
                 screenRecorder.reset();
-                draw(screenRecorder, game, w, h, best, t());
+                draw(screenRecorder, game, w, h, best, t(), updateState);
                 cv.xf(1, 0, 0).append(screenRecorder).xf();
-            } else draw(cv, game, w, h, best, t());
+            } else draw(cv, game, w, h, best, t(), updateState);
             return ui.image('GAME_GFX', cv);
         });
         menu();

@@ -49,3 +49,6 @@ node apps/chrome_dino/build.js
 
 ## VIN probe (1.4.12, experimental)
 One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90 + 17 ASCII VIN characters from an ECU. The bottom menu line displays the full VIN when available or an explicit diagnostic status. VIN is never logged, sent to a server, or saved. On unsupported vehicles, the game continues normally. **VIN is not a cryptographic identity or proof of ownership; do not use it as the sole authentication mechanism for a leaderboard.** Do not publish screenshots with an exposed VIN.
+
+## 1.4.13
+VIN status is shown inline beside the app version on ID7/ID8. The optional online version check fetches public app.json over HTTPS and displays an update notice in the menu and game if a newer version exists; no VIN is transmitted. Descriptions have explicit line breaks, subject to MGU Store UI support. Offline play remains available.
