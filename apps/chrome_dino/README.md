@@ -1,14 +1,34 @@
-# Chrome Dino Game v1.3.0 for BMW MGU Store
+# Chrome Dino 1.4.0 для BMW MGU Store
 
-Self-contained source tree derived from the working Flappy Bird OAP shell, with separate identifiers, RHMI files, app entry, physics and artwork.
+Самостоятельное приложение для BMW MGU, iDrive 7/8. Игра запускается только при остановленном автомобиле.
 
-No vendor_once, GitHub Actions, internet, or installed Flappy Bird required to BUILD. BMW head unit still supplies platform services.
+## Что нового в версии 1.4.0
 
-From repository root:
-```
+- Увеличенный пиксельный T-Rex, лучше различимый на экране iDrive.
+- Выбор из четырёх сложностей **Easy**, **Normal**, **Hard**, **Extreme** в главном меню.
+- Повышенная скорость, ускорение и частота препятствий на высоких сложностях.
+- Обновлённая слегка полупрозрачная иконка.
+
+## Управление
+
+- Нажать контроллер iDrive — начать игру / прыжок.
+- `BACK` — вернуться в меню.
+- `Difficulty` — переключать сложности.
+- `Restart` — начать заново.
+
+## Установка
+
+Поместите **эту папку** как `apps/chrome_dino/` в ваш GitHub-репозиторий, подключённый к MGU Store. Обновите каталог в MGU Store и выберите Chrome Dino. Не требуется предварительно устанавливать Flappy Bird.
+
+## Сборка и проверка
+
+Из корня GitHub-репозитория:
+
+```bash
 node apps/chrome_dino/build.js --preview-only
 node apps/chrome_dino/build.js
 ```
-Only while parked with fresh 0 km/h signal. Push iDrive knob to start/jump; BACK for menu.
 
-Do not include dist/ in the GitHub repository.
+В этой папке также содержится полный собранный пакет `dist/chrome_dino@1.4.0.tgz`. Для публикации исходников в GitHub `dist/` можно исключить. BMW SDK отдельно устанавливать не нужно: необходимые сервисы предоставляет MGU Store/головное устройство.
+
+Офлайн-проверка выполнена; установка на реальном автомобиле не проверялась.

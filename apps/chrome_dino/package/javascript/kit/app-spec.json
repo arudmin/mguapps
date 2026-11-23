@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "screens": [
     {
       "name": "MAIN",
@@ -19,6 +19,11 @@
           "Restart"
         ],
         [
+          "button",
+          "BTN_DIFFICULTY",
+          "Difficulty: NORMAL"
+        ],
+        [
           "text",
           "MENU_INFO",
           ""
@@ -26,7 +31,7 @@
         [
           "text",
           "MENU_HELP",
-          "Press central controller to jump. BACK: menu. Parked only."
+          "Choose difficulty here. Press controller to jump. BACK: menu. Parked only."
         ]
       ]
     },
@@ -49,6 +54,13 @@
       "label": "Best score",
       "type": "number",
       "default": 0,
+      "hidden": true
+    },
+    {
+      "key": "difficulty",
+      "label": "Difficulty (0 Easy, 1 Normal, 2 Hard, 3 Extreme)",
+      "type": "number",
+      "default": 1,
       "hidden": true
     }
   ],

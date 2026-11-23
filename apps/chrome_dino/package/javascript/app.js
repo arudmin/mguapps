@@ -13,6 +13,8 @@ mgu.run({
     start(ctx) {
         const { ui, log, settings } = ctx;
         const game = new Game();
+        const savedDifficulty = Number(settings.get('difficulty'));
+        game.setDifficulty(Number.isFinite(savedDifficulty) ? savedDifficulty : 1);
         let best = Math.max(0, Number(settings.get('best')) || 0);
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
@@ -54,6 +56,7 @@ mgu.run({
                 'Press Play, then press the controller to start / jump. BACK returns here.';
             ui.text('MENU_INFO', reason + ' Best: ' + best);
             ui.text('BTN_PLAY', game.state === 'playing' ? 'Continue' : 'Play');
+            ui.text('BTN_DIFFICULTY', 'Difficulty: ' + game.mode().name + '  (change)');
         }
         function sync() {
             const go = !closed && shown() && !!safe();
@@ -71,6 +74,13 @@ mgu.run({
             if (!safe()) { menu(); return; }
             if (game.state === 'over') game.reset();
             return ui.open('GAME');
+        });
+        ui.onClick('BTN_DIFFICULTY', () => {
+            if (!safe()) { menu(); return; }
+            saveBest();
+            game.nextDifficulty();
+            settings.set('difficulty', game.difficulty);
+            menu();
         });
         ui.onClick('BTN_RESTART', () => {
             if (!safe()) { menu(); return; }
