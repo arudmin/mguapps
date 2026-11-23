@@ -68,4 +68,48 @@
             <component id="18" type="title"/>
         </layoutGroup>
     </container>
+    <container id="30" type="state" widget="LT_State_Wide_List">
+        <layoutGroup id="31" name="List">
+            <property id="3" value="1"/>
+            <component id="31" type="button" widget="LT_Button_MediaEntry_1Row">
+                <property id="2" value="1"/>
+                <property id="3" value="3"/>
+            </component>
+            <component id="32" type="button" widget="LT_Button_MediaEntry_1Row">
+                <property id="2" value="1"/>
+                <property id="3" value="3"/>
+            </component>
+            <component id="33" type="button" widget="LT_Button_MediaEntry_1Row">
+                <property id="2" value="1"/>
+                <property id="3" value="3"/>
+            </component>
+            <component id="34" type="button" widget="LT_Button_MediaEntry_1Row">
+                <property id="2" value="1"/>
+                <property id="3" value="3"/>
+            </component>
+        </layoutGroup>
+        <layoutGroup id="32" name="Titlebar">
+            <component id="35" type="title"/>
+        </layoutGroup>
+    </container>
+    <container id="40" type="state" widget="LT_State_Wide_List">
+        <layoutGroup id="41" name="List">
+            <property id="3" value="1"/>
+            <component id="41" type="button" widget="LT_Button_MediaEntry_1Row">
+                <property id="2" value="1"/>
+                <property id="3" value="3"/>
+            </component>
+            <component id="42" type="button" widget="LT_Button_MediaEntry_1Row">
+                <property id="2" value="1"/>
+                <property id="3" value="3"/>
+            </component>
+            <component id="43" type="button" widget="LT_Button_MediaEntry_1Row">
+                <property id="2" value="1"/>
+                <property id="3" value="3"/>
+            </component>
+        </layoutGroup>
+        <layoutGroup id="42" name="Titlebar">
+            <component id="44" type="title"/>
+        </layoutGroup>
+    </container>
 </application>

@@ -7,13 +7,13 @@
                 <property id="2" value="1"/>
                 <property id="3" value="2"/>
             </component>
-            <component id="21" type="button" widget="LT_Button_1Row">
+            <component id="21" type="dropDownMenu" widget="LT_DropDownMenu_1Row_2Col3070">
                 <property id="2" value="1"/>
-                <property id="3" value="2"/>
+                <property id="3" value="3"/>
             </component>
-            <component id="22" type="button" widget="LT_Button_1Row">
+            <component id="22" type="dropDownMenu" widget="LT_DropDownMenu_1Row_2Col3070">
                 <property id="2" value="1"/>
-                <property id="3" value="2"/>
+                <property id="3" value="3"/>
             </component>
             <component id="4" type="label" widget="LT_Label_1Row">
                 <property id="2" value="1"/>

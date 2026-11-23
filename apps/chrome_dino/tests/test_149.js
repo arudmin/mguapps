@@ -6,7 +6,7 @@ const app=require('../app.json');
 const manifest=require('../package/manifest.json');
 const catalog=require('../../../mgu-repo.json');
 const entry=catalog.components.find(x=>x.id==='chrome_dino');
-assert.strictEqual(app.version,'1.4.9');
+assert(/^1\.4\.\d+$/.test(app.version));
 for(const [raw,lang] of [['RUSSISCH','ru'],['ENGLISCH__UK','en'],['ENGLISCH__US','en'],['DEUTSCH','de'],['FRANZOESISCH','fr'],['SPANISCH','es'],['ITALIENISCH','it'],['ru_RU','ru']]){
  assert.strictEqual(i18n.langOf(raw),lang,raw);
 }

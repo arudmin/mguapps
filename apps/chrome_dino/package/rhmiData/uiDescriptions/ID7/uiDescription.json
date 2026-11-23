@@ -84,7 +84,7 @@
           ]
         },
         "21": {
-          "type": "button",
+          "type": "dropDownMenu",
           "name": "BTN_DIFFICULTY",
           "properties": {
             "Visible": {
@@ -92,21 +92,49 @@
               "type": "UInt"
             },
             "Focusable": {
-              "value": 2,
+              "value": 3,
+              "type": "UInt"
+            }
+          },
+          "cells": {
+            "HeaderText": {
+              "value": "Difficulty",
+              "type": "Text"
+            },
+            "SelectedItem": {
+              "value": 1,
               "type": "UInt"
             }
           },
           "rows": [
             {
-              "Text": {
-                "value": "SID_CHROME_DINO_BTN_DIFFICULTY",
-                "type": "StringId"
+              "ItemText": {
+                "value": "Easy",
+                "type": "Text"
+              }
+            },
+            {
+              "ItemText": {
+                "value": "Normal",
+                "type": "Text"
+              }
+            },
+            {
+              "ItemText": {
+                "value": "Hard",
+                "type": "Text"
+              }
+            },
+            {
+              "ItemText": {
+                "value": "Extreme",
+                "type": "Text"
               }
             }
           ]
         },
         "22": {
-          "type": "button",
+          "type": "dropDownMenu",
           "name": "BTN_LANGUAGE",
           "properties": {
             "Visible": {
@@ -114,14 +142,36 @@
               "type": "UInt"
             },
             "Focusable": {
-              "value": 2,
+              "value": 3,
+              "type": "UInt"
+            }
+          },
+          "cells": {
+            "HeaderText": {
+              "value": "Language",
+              "type": "Text"
+            },
+            "SelectedItem": {
+              "value": 0,
               "type": "UInt"
             }
           },
           "rows": [
             {
-              "Text": {
-                "value": "Language: Auto",
+              "ItemText": {
+                "value": "Auto (BMW)",
+                "type": "Text"
+              }
+            },
+            {
+              "ItemText": {
+                "value": "Русский",
+                "type": "Text"
+              }
+            },
+            {
+              "ItemText": {
+                "value": "English",
                 "type": "Text"
               }
             }

@@ -64,8 +64,25 @@ mgu.run({
         function menu() {
             const w=t();
             ui.text('BTN_PLAY', game.state==='playing'?w.continue_:w.play);
-            ui.text('BTN_DIFFICULTY',w.difficulty+': '+w.levels[game.difficulty]+' ('+w.change+')');
-            ui.text('BTN_LANGUAGE',w.language+': '+(languageChoice==='auto'?w.auto:i18n.languageNames[languageChoice])+' ('+w.change+')');
+            if (ui.id8) {
+                ui.text('BTN_DIFFICULTY',w.difficulty+': '+w.levels[game.difficulty]+' ('+w.change+')');
+                ui.text('BTN_LANGUAGE',w.language+': '+(languageChoice==='auto'?w.auto:i18n.languageNames[languageChoice])+' ('+w.change+')');
+                // ID8 has no RHMI drop-down widget; its buttons open dedicated option lists.
+                w.levels.forEach((label,idx)=>ui.text('DIF_'+idx,(idx===game.difficulty?'✓ ':'')+label));
+                ['auto','ru','en'].forEach((code,idx)=>{
+                    const value=idx===0?w.auto:i18n.languageNames[code];
+                    ui.text('LANG_'+idx,(code===languageChoice?'✓ ':'')+value);
+                });
+            } else {
+                // ID7 native BMW dropDownMenu. ItemText/SelectedItem are real RHMI cells.
+                ui.cells('BTN_DIFFICULTY',0,{HeaderText:w.difficulty});
+                w.levels.forEach((label,idx)=>ui.cells('BTN_DIFFICULTY',idx,{ItemText:label}));
+                ui.cells('BTN_LANGUAGE',0,{HeaderText:w.language});
+                [w.auto,i18n.languageNames.ru,i18n.languageNames.en].forEach((label,idx)=>ui.cells('BTN_LANGUAGE',idx,{ItemText:label}));
+                const diff=ui.comp('BTN_DIFFICULTY'),lng=ui.comp('BTN_LANGUAGE');
+                if(diff)Promise.resolve(diff.setValue(0,'SelectedItem',game.difficulty,'UInt')).catch(e=>log.warn('difficulty selected: '+e));
+                if(lng)Promise.resolve(lng.setValue(0,'SelectedItem',Math.max(0,['auto','ru','en'].indexOf(languageChoice)),'UInt')).catch(e=>log.warn('language selected: '+e));
+            }
             ui.text('MENU_INFO',w.version+' '+APP_VERSION);
             ui.text('MENU_BEST',w.best+': '+best);
             ui.text('MENU_HELP',safe()?w.help:w.parked);
@@ -123,20 +140,31 @@ mgu.run({
             if (game.state === 'over') game.reset();
             return ui.open('GAME');
         });
-        ui.onClick('BTN_DIFFICULTY', () => {
+        function chooseDifficulty(index) {
+            if (!Number.isInteger(index)||index<0||index>3)return;
             if (!safe()) { menu(); return; }
             saveBest();
-            game.nextDifficulty();
-            settings.set('difficulty', game.difficulty);
+            game.setDifficulty(index);
+            settings.set('difficulty',game.difficulty);
             menu();
-        });
-        ui.onClick('BTN_LANGUAGE', () => {
+        }
+        function chooseLanguage(index) {
             const choices=['auto','ru','en'];
-            languageChoice=choices[(choices.indexOf(languageChoice)+1)%choices.length];
+            if (!Number.isInteger(index)||index<0||index>=choices.length)return;
+            languageChoice=choices[index];
             settings.set('language',languageChoice);
-            log.info('language manually set to '+languageChoice);
+            log.info('language selected: '+languageChoice);
             menu();
-        });
+        }
+        if(ui.id8){
+            ui.onClick('BTN_DIFFICULTY',()=>ui.open('SELECT_DIFFICULTY'));
+            ui.onClick('BTN_LANGUAGE',()=>ui.open('SELECT_LANGUAGE'));
+            for(let i=0;i<4;i++)ui.onClick('DIF_'+i,()=>{chooseDifficulty(i);return ui.open('MAIN');});
+            for(let i=0;i<3;i++)ui.onClick('LANG_'+i,()=>{chooseLanguage(i);return ui.open('MAIN');});
+        } else {
+            ui.onClick('BTN_DIFFICULTY',ev=>chooseDifficulty(Number(ev.row)));
+            ui.onClick('BTN_LANGUAGE',ev=>chooseLanguage(Number(ev.row)));
+        }
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
         if (ctx.controller && ctx.controller.onInput) {
             ctx.controller.onInput((value) => { sync(); ctl.raw(value, 'renderer'); });

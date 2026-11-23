@@ -38,6 +38,7 @@ jobs:
             node apps/chrome_dino/tests/test_version.js
             node apps/chrome_dino/tests/test_148.js
             node apps/chrome_dino/tests/test_149.js
+            node apps/chrome_dino/tests/test_1410.js
             node apps/chrome_dino/build.js --preview-only
             node apps/chrome_dino/build.js
             VERSION="$(node -p "require('./apps/chrome_dino/app.json').version")"
