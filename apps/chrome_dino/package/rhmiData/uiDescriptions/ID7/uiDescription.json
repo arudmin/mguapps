@@ -104,28 +104,6 @@
               }
             }
           ]
-        },
-        "22": {
-          "type": "button",
-          "name": "BTN_LANGUAGE",
-          "properties": {
-            "Visible": {
-              "value": 1,
-              "type": "UInt"
-            },
-            "Focusable": {
-              "value": 2,
-              "type": "UInt"
-            }
-          },
-          "rows": [
-            {
-              "Text": {
-                "value": "SID_CHROME_DINO_BTN_LANGUAGE",
-                "type": "StringId"
-              }
-            }
-          ]
         }
       }
     },

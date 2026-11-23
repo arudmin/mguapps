@@ -6,7 +6,6 @@ const Parked = require('./kit/parked');
 const { Game } = require('./src/game');
 const { draw } = require('./src/render');
 const { Controls } = require('./src/input');
-const { langOf, tr, languageChoices, languageNames } = require('./src/i18n');
 
 const W = 1600, H = 520, STEP = 1 / 120, SPEED_TTL = 5000;
 
@@ -17,11 +16,6 @@ mgu.run({
         const savedDifficulty = Number(settings.get('difficulty'));
         game.setDifficulty(Number.isFinite(savedDifficulty) ? savedDifficulty : 1);
         let best = Math.max(0, Number(settings.get('best')) || 0);
-        let systemLanguage = 'en';
-        const savedLanguage = settings.get('language');
-        let languageChoice = languageChoices.indexOf(savedLanguage) >= 0 ? savedLanguage : 'auto';
-        const currentLanguage = () => languageChoice === 'auto' ? systemLanguage : languageChoice;
-        const phrases = () => tr(currentLanguage());
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
@@ -58,13 +52,11 @@ mgu.run({
             if (game.score > best) { best = game.score; settings.set('best', best); }
         }
         function menu() {
-            const t = phrases();
-            const reason = !safe() ? t.parked : t.ready;
-            ui.text('MENU_INFO', reason + '  ' + t.best + ': ' + best);
-            ui.text('BTN_PLAY', game.state === 'playing' ? t.continue_ : t.play);
-            ui.text('BTN_DIFFICULTY', t.difficulty + ': ' + t.levels[game.difficulty] + ' (' + t.change + ')');
-            ui.text('BTN_LANGUAGE', t.language + ': ' + (languageChoice === 'auto' ? t.auto : languageNames[languageChoice]) + ' (' + t.change + ')');
-            ui.text('MENU_HELP', t.help);
+            const reason = !safe() ? 'Parked only: waiting for fresh, valid zero speed.' :
+                'Press Play, then press the controller to start / jump. BACK returns here.';
+            ui.text('MENU_INFO', reason + ' Best: ' + best);
+            ui.text('BTN_PLAY', game.state === 'playing' ? 'Continue' : 'Play');
+            ui.text('BTN_DIFFICULTY', 'Difficulty: ' + game.mode().name + '  (change)');
         }
         function sync() {
             const go = !closed && shown() && !!safe();
@@ -77,13 +69,6 @@ mgu.run({
             }
             if (!closed && shown() && !safe()) ui.open('MAIN');
         }
-        // Do not add HMIContext/HMIContext2 proxies to the installation manifest:
-        // on some ID7 firmwares their generation fails and blocks installation.
-        // Auto is a best-effort locale fallback; manual language always works.
-        try {
-            const envLocale = String(process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || 'en');
-            systemLanguage = langOf(envLocale.split('.')[0]);
-        } catch (_) { systemLanguage = 'en'; }
         parked = Parked.watch(safetyCtx, log);
         ui.onClick('BTN_PLAY', () => {
             if (!safe()) { menu(); return; }
@@ -95,12 +80,6 @@ mgu.run({
             saveBest();
             game.nextDifficulty();
             settings.set('difficulty', game.difficulty);
-            menu();
-        });
-        ui.onClick('BTN_LANGUAGE', () => {
-            const index = languageChoices.indexOf(languageChoice);
-            languageChoice = languageChoices[(index + 1) % languageChoices.length];
-            settings.set('language', languageChoice);
             menu();
         });
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });

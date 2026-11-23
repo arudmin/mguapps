@@ -2,7 +2,7 @@
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
   "description": "Offline dinosaur runner for stationary BMW MGU. Press central iDrive controller to jump. BACK returns to menu.",
-  "version": "1.4.5",
+  "version": "1.4.2",
   "vendor": "arudmin",
   "loggingId": "CDG1",
   "maxDiskUsage": 10485760,
@@ -38,11 +38,6 @@
           "button",
           "BTN_DIFFICULTY",
           "Difficulty: NORMAL"
-        ],
-        [
-          "button",
-          "BTN_LANGUAGE",
-          "Language: Auto (BMW)"
         ],
         [
           "text",
@@ -82,13 +77,6 @@
       "label": "Difficulty (0 Easy, 1 Normal, 2 Hard, 3 Extreme)",
       "type": "number",
       "default": 1,
-      "hidden": true
-    },
-    {
-      "key": "language",
-      "label": "Language (auto or code)",
-      "type": "string",
-      "default": "auto",
       "hidden": true
     }
   ]

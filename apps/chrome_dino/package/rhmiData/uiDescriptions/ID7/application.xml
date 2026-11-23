@@ -11,10 +11,6 @@
                 <property id="2" value="1"/>
                 <property id="3" value="2"/>
             </component>
-            <component id="22" type="button" widget="LT_Button_1Row">
-                <property id="2" value="1"/>
-                <property id="3" value="2"/>
-            </component>
             <component id="4" type="label" widget="LT_Label_1Row">
                 <property id="2" value="1"/>
                 <property id="3" value="0"/>
