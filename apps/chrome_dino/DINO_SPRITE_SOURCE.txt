@@ -1,0 +1,1 @@
+Sprite traced as a pixel-grid from user-supplied photo of original Google Chrome Dino. No Chrome sprite assets bundled.

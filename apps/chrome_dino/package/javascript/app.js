@@ -82,11 +82,6 @@ mgu.run({
             settings.set('difficulty', game.difficulty);
             menu();
         });
-        ui.onClick('BTN_RESTART', () => {
-            if (!safe()) { menu(); return; }
-            saveBest(); game.reset();
-            return ui.open('GAME');
-        });
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
         if (ctx.controller && ctx.controller.onInput) {
             ctx.controller.onInput((value) => { sync(); ctl.raw(value, 'renderer'); });

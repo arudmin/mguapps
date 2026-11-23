@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "screens": [
     {
       "name": "MAIN",
@@ -12,11 +12,6 @@
           "button",
           "BTN_PLAY",
           "Play / Continue"
-        ],
-        [
-          "button",
-          "BTN_RESTART",
-          "Restart"
         ],
         [
           "button",

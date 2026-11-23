@@ -47,48 +47,6 @@
             }
           ]
         },
-        "3": {
-          "type": "button",
-          "name": "BTN_RESTART",
-          "properties": {
-            "Visible": {
-              "value": 1,
-              "type": "UInt"
-            },
-            "Focusable": {
-              "value": 3,
-              "type": "UInt"
-            }
-          },
-          "rows": [
-            {
-              "PrimaryText": {
-                "value": "SID_CHROME_DINO_BTN_RESTART",
-                "type": "StringId"
-              },
-              "FrequencyText": {
-                "value": "",
-                "type": "Text"
-              },
-              "FrequencyVisible": {
-                "value": false,
-                "type": "Bool"
-              },
-              "IconVisible": {
-                "value": false,
-                "type": "Bool"
-              },
-              "ProgressVisible": {
-                "value": false,
-                "type": "Bool"
-              },
-              "IsPlaying": {
-                "value": false,
-                "type": "Bool"
-              }
-            }
-          ]
-        },
         "4": {
           "type": "label",
           "name": "MENU_INFO",
