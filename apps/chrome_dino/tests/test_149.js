@@ -6,7 +6,7 @@ const app=require('../app.json');
 const manifest=require('../package/manifest.json');
 const catalog=require('../../../mgu-repo.json');
 const entry=catalog.components.find(x=>x.id==='chrome_dino');
-assert(/^1\.4\.\d+$/.test(app.version));
+assert(/^1\.5\.\d+$/.test(app.version));
 for(const [raw,lang] of [['RUSSISCH','ru'],['ENGLISCH__UK','en'],['ENGLISCH__US','en'],['DEUTSCH','de'],['FRANZOESISCH','fr'],['SPANISCH','es'],['ITALIENISCH','it'],['ru_RU','ru']]){
  assert.strictEqual(i18n.langOf(raw),lang,raw);
 }
@@ -24,5 +24,5 @@ assert.strictEqual(en.SID_CHROME_DINO_TITLE,'Chrome Dino Game');
 const src=fs.readFileSync(path.join(root,'package/javascript/app.js'),'utf8');
 assert(src.includes("ui.text('MENU_BMW'"));
 assert(src.includes('headLanguageRaw=raw'));
-assert(src.includes("draw(screenRecorder, game, w, h, best, t(), updateState)"));
+assert(src.includes('drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options)'));
 console.log('1.4.9 BMW language enums, manifest, catalog locales, RHMI title and game text OK');

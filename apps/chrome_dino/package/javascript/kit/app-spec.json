@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.4.14",
+  "version": "1.5.4",
   "screens": [
     {
       "name": "MAIN",
@@ -73,9 +73,9 @@
     },
     {
       "key": "difficulty",
-      "label": "Difficulty (0 Normal, 1 Hard, 2 Extreme)",
+      "label": "Difficulty (0 Easy, 1 Normal, 2 Hard, 3 Extreme)",
       "type": "number",
-      "default": 0,
+      "default": 1,
       "hidden": true
     },
     {
@@ -141,7 +141,7 @@
     },
     {
       "key": "difficultySchema",
-      "label": "Difficulty schema",
+      "label": "Four-mode difficulty migration schema",
       "type": "number",
       "default": 0,
       "hidden": true
@@ -162,6 +162,13 @@
           "Classic"
         ]
       ]
+    },
+    {
+      "key": "best_easy",
+      "label": "Easy personal best",
+      "type": "number",
+      "default": 0,
+      "hidden": true
     },
     {
       "key": "best_normal",

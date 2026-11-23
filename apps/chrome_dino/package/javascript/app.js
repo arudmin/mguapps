@@ -4,7 +4,7 @@ const mgu = require('./kit/mgu');
 const { Recorder } = require('./kit/record');
 const Parked = require('./kit/parked');
 const { Game } = require('./src/game');
-const { draw } = require('./src/render');
+const { migrateDifficulty } = require('./src/difficulty');
 const { drawDashboard, WORLD_ASPECT } = require('./src/dashboard');
 const { Controls } = require('./src/input');
 const APP_VERSION = require('./kit/app-spec.json').version;
@@ -19,22 +19,14 @@ mgu.run({
     start(ctx) {
         const { ui, log, settings } = ctx;
         const game = new Game();
-        const savedDifficulty = Number(settings.get('difficulty'));
-        game.setDifficulty(Number.isFinite(savedDifficulty) ? savedDifficulty : 1);
-        // Track local bests independently for Normal, Hard and Extreme.
-        // The former single record is assigned once to the last selected mode.
-        const bestKeys=['best_normal','best_hard','best_extreme'];
-        const bestModes=bestKeys.map(key=>Math.max(0,Number(settings.get(key))||0));
-        if(Number(settings.get('bestSchema'))!==1){
-            bestModes[game.difficulty]=Math.max(bestModes[game.difficulty],Math.max(0,Number(settings.get('best'))||0));
-            settings.set(bestKeys[game.difficulty],bestModes[game.difficulty]);
-            settings.set('bestSchema',1);
-        }
+        const migrated=migrateDifficulty(settings);
+        game.setDifficulty(migrated.index);
+        const bestKeys=migrated.bestKeys,bestModes=migrated.bestModes;
         let best=bestModes[game.difficulty];
-        let visualTheme=settings.get('visualTheme')==='classic'?'classic':'dashboard';
         game.resize(WORLD_ASPECT);
         let languageChoice=settings.get('language')||'auto';
-        if (['auto','ru','en'].indexOf(languageChoice)<0) languageChoice='auto';
+        const languageChoices=['auto','ru','en','de','fr','es','it','pt','nl','pl','uk','zh','ja'];
+        if (languageChoices.indexOf(languageChoice)<0) languageChoice='auto';
         let systemLanguage=i18n.detect(ctx);
         let headLanguageRaw='';
         let headLanguageState='waiting';
@@ -46,6 +38,9 @@ mgu.run({
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
+        let selectedControl='play';
+        let rotaryPosition=null,rendererRotaryAt=-Infinity;
+        let fpsAt=0,fpsFrames=0,actualFPS=0;
 
         // Parked.watch exposes speed(), but treats unknown as parked and permits <=3 km/h.
         // Observe its real polling callback to reject invalid, unknown and stale data too.
@@ -69,7 +64,10 @@ mgu.run({
         let parked = null;
         const ctl = new Controls(() => {
             sync();
-            if (going) game.action();
+            if(!going)return;
+            if(game.state==='playing'||selectedControl==='play')game.action();
+            else if(selectedControl==='mode')chooseDifficulty((game.difficulty+1)%4);
+            else if(selectedControl==='language')chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);
         });
         function safe() {
             return parked && speedValid && Date.now() - speedAt <= SPEED_TTL && parked.speed() === 0;
@@ -121,9 +119,9 @@ mgu.run({
                 last = null; accumulator = 0; frameAt = -Infinity;
                 ctl.enable(go);
                 if (ctx.controller && ctx.controller.grab) ctx.controller.grab(go);
-                if (!go) { saveBest(); menu(); }
+                if (!go) { saveBest(); game.reset(); menu(); }
             }
-            if (!closed && shown() && !safe()) ui.open('MAIN');
+            // On unsafe/unknown speed the dashboard remains visible with a warning; gameplay is disabled.
         }
         // Exact BMW CommonTypes.Language via HMI_CID; signal read and subscription.
         // Manifest includes HMIContext so the unit generates its SOME/IP definition.
@@ -186,7 +184,7 @@ mgu.run({
             return ui.open('GAME');
         });
         function chooseDifficulty(index) {
-            if (!Number.isInteger(index)||index<0||index>2)return;
+            if (!Number.isInteger(index)||index<0||index>=4)return;
             if (!safe()) { menu(); return; }
             saveBest();
             game.setDifficulty(index);
@@ -195,9 +193,8 @@ mgu.run({
             menu();
         }
         function chooseLanguage(index) {
-            const choices=['auto','ru','en'];
-            if (!Number.isInteger(index)||index<0||index>=choices.length)return;
-            languageChoice=choices[index];
+            if (!Number.isInteger(index)||index<0||index>=languageChoices.length)return;
+            languageChoice=languageChoices[index];
             settings.set('language',languageChoice);
             log.info('language selected: '+languageChoice);
             menu();
@@ -205,29 +202,46 @@ mgu.run({
         if(ui.id8){
             ui.onClick('BTN_DIFFICULTY',()=>ui.open('SELECT_DIFFICULTY'));
             ui.onClick('BTN_LANGUAGE',()=>ui.open('SELECT_LANGUAGE'));
-            for(let i=0;i<3;i++)ui.onClick('DIF_'+i,()=>{chooseDifficulty(i);return ui.open('MAIN');});
+            for(let i=0;i<4;i++)ui.onClick('DIF_'+i,()=>{chooseDifficulty(i);return ui.open('MAIN');});
             for(let i=0;i<3;i++)ui.onClick('LANG_'+i,()=>{chooseLanguage(i);return ui.open('MAIN');});
         } else {
             ui.onClick('BTN_DIFFICULTY',ev=>chooseDifficulty(Number(ev.row)));
             ui.onClick('BTN_LANGUAGE',ev=>chooseLanguage(Number(ev.row)));
         }
-        ui.onClick('BTN_THEME',()=>{
-            if(!safe()){menu();return;}
-            saveBest();
-            visualTheme=visualTheme==='dashboard'?'classic':'dashboard';
-            settings.set('visualTheme',visualTheme);
-            game.reset(); // Make layout changes only between runs.
-            menu();
+        // Compatibility-only RHMI button; not exposed by the dashboard.
+        ui.onClick('BTN_THEME',()=>{ if(safe())return ui.open('GAME'); });
+        function rotary(value,source){
+            const raw=value&&value.frontRotaryEncoderOperation;
+            const nRaw=typeof raw==='number'?raw:(typeof raw==='string'&&raw.trim()?Number(raw):NaN);
+            if(!Number.isFinite(nRaw))return;
+            const n=(Math.floor(nRaw)%65536+65536)%65536,now=Date.now();
+            if(source==='renderer')rendererRotaryAt=now;
+            const prev=rotaryPosition;rotaryPosition=n;
+            if(source==='signals'&&now-rendererRotaryAt<700)return;
+            if(prev===null||!going||game.state==='playing')return;
+            const diff=((n-prev+32768)%65536)-32768;
+            if(!diff||Math.abs(diff)>16)return;
+            const items=['play','mode','language'];
+            selectedControl=items[(items.indexOf(selectedControl)+(diff>0?1:2))%3];
+        }
+        // Touch areas use the 1600x520 dashboard coordinates.
+        if(ctx.onTap)ctx.onTap((x,y)=>{
+            if(!safe())return;
+            if(x>=1180&&x<=1580&&game.state!=='playing'){
+                if(y>=227&&y<=305){selectedControl='mode';chooseDifficulty((game.difficulty+1)%4);}
+                else if(y>=336&&y<=410){selectedControl='language';chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);}
+            }else if(x>=0&&x<1155){selectedControl='play';game.action();}
         });
+        if(ctx.hideButton)ctx.hideButton('BTN_JUMP');
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
         if (ctx.controller && ctx.controller.onInput) {
-            ctx.controller.onInput((value) => { sync(); ctl.raw(value, 'renderer'); });
+            ctx.controller.onInput((value) => { sync(); rotary(value,'renderer'); ctl.raw(value,'renderer'); });
         }
         ctx.signals.watch('de.bmw.infotainment.controlelements.FrontCCU', '1', {
-            statusRotaryEncoderState(value) { sync(); ctl.raw(value, 'signals'); },
+            statusRotaryEncoderState(value) { sync(); rotary(value,'signals'); ctl.raw(value,'signals'); },
         }, log).then((s) => { if (s.error) log.warn('controller: ' + s.error); });
         if (ui.onFocus) ui.onFocus(sync);
-        if (ui.onVisible) ui.onVisible(() => { sync(); if (ui.isVisible('MAIN')) menu(); });
+        if (ui.onVisible) ui.onVisible(() => { sync(); if (ui.isVisible('MAIN')) setTimeout(()=>{if(!closed)Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e));},50); });
         const safetyTimer = setInterval(sync, 100);
         function stop() {
             if (closed) return;
@@ -244,34 +258,35 @@ mgu.run({
 
         ctx.loop('GAME', 8, () => {
             sync();
-            if (!going) return;
+            if (!shown()) return;
             const now = Date.now();
             const cv = ctx.canvas(W, H).clear('#000000');
             const pl = cv.place;
             const full = pl && pl.full && pl.w > 0 && pl.h > 0;
             const w = full ? pl.w : W, h = full ? pl.h : H;
             game.resize(WORLD_ASPECT); // Fixed collision/spawn world for both styles and screen sizes.
-            if (last !== null) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
+            if (last !== null && going) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
             last = now;
             while (accumulator >= STEP) {
                 if (game.state === 'playing') game.step(STEP);
                 accumulator -= STEP;
             }
             saveBest();
+            if(!fpsAt)fpsAt=now;
+            if(now-fpsAt>=1000){actualFPS=Math.round(fpsFrames*1000/(now-fpsAt));fpsFrames=0;fpsAt=now;}
             // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
             if (now - frameAt + 2 < 1000 / 60) return; // Allow 16 ms tick rounding on 60 Hz displays.
-            frameAt = now;
-            if (full) {
-                if (!screenRecorder || screenRecorder.w !== w || screenRecorder.h !== h) screenRecorder = new Recorder(w, h);
-                screenRecorder.reset();
-                if(visualTheme==='dashboard')drawDashboard(screenRecorder, game, w, h, best, t(), updateState);
-                else draw(screenRecorder, game, w, h, best, t(), updateState);
-                cv.xf(1, 0, 0).append(screenRecorder).xf();
-            } else if(visualTheme==='dashboard')drawDashboard(cv,game,w,h,best,t(),updateState);
-            else draw(cv, game, w, h, best, t(), updateState);
+            frameAt = now;fpsFrames++;
+            const options={selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
+            if(full){
+                if(!screenRecorder||screenRecorder.w!==w||screenRecorder.h!==h)screenRecorder=new Recorder(w,h);
+                screenRecorder.reset();drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options);
+                cv.xf(1,0,0).append(screenRecorder).xf();
+            }else drawDashboard(cv,game,w,h,best,t(),updateState,options);
             return ui.image('GAME_GFX', cv);
         });
         menu();
-        log.info('Chrome Dino Game: strict stationary gate; 120 Hz physics, GPU up to 60 fps, software 8 fps; dashboard/classic');
+        setTimeout(()=>{if(!closed)Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e));},150);
+        log.info('Chrome Dino 1.5.4 Dashboard-only, right-side controls, strict zero speed; GPU 60 Hz target, PNG fallback 8 Hz');
     },
 });

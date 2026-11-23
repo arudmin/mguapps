@@ -7,7 +7,7 @@ const {drawDashboard,WORLD_ASPECT}=require('../package/javascript/src/dashboard'
 const {draw}=require('../package/javascript/src/render');
 const i18n=require('../package/javascript/src/i18n');
 assert.strictEqual(WORLD_ASPECT,1920/720);
-const game=new Game({random:()=>.5});game.resize(WORLD_ASPECT);game.setDifficulty(2);
+const game=new Game({random:()=>.5});game.resize(WORLD_ASPECT);game.setDifficulty(3);
 const origWidth=game.width,origScore=game.score;
 const rec=new Recorder(1600,520);
 assert.strictEqual(drawDashboard(rec,game,1600,520,12,i18n.words('en'),{}),rec);
@@ -22,17 +22,19 @@ for(const lang of ['ru','en','de','fr','es','it','pt','nl','pl','uk','zh','ja'])
  for(const k of ['style','styleDashboard','styleClassic','online','onlineInactive','hudJump','hudParked'])assert(w[k],lang+' '+k);
 }
 const app=require('../app.json');
-assert.strictEqual(app.version,'1.4.14');
+assert.strictEqual(app.version,'1.5.4');
 assert(app.screens.find(x=>x.name==='MAIN').items.some(x=>x[1]==='BTN_THEME'));
 const src=fs.readFileSync(path.join(__dirname,'../package/javascript/app.js'),'utf8');
 assert(src.includes("ctx.loop('GAME', 8"));
 assert(src.includes('1000 / 60'));
 assert(src.includes('game.resize(WORLD_ASPECT)'));
-assert(src.includes("visualTheme==='dashboard'"));
+assert(src.includes('selectedControl'));
+assert(src.includes('frontRotaryEncoderOperation'));
+assert(src.includes("ui.open('GAME')"));
 for(const hmi of ['ID7','ID8']){
  const ui=require('../package/rhmiData/uiDescriptions/'+hmi+'/uiDescription.json');
  assert.strictEqual(ui.containers['1'].components['26'].name,'BTN_THEME');
  const xml=fs.readFileSync(path.join(__dirname,'../package/rhmiData/uiDescriptions/'+hmi+'/application.xml'),'utf8');
  assert(xml.includes('<component id="26" type="button"'));
 }
-console.log('1.4.14: dashboard render, classic fallback, 12 languages, native theme button, fixed physics and GPU pacing OK');
+console.log('1.5.4: dashboard render, classic fallback, 12 languages, native theme button, fixed physics and GPU pacing OK');

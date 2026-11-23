@@ -52,3 +52,11 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ## 1.4.13
 VIN status is shown inline beside the app version on ID7/ID8. The optional online version check fetches public app.json over HTTPS and displays an update notice in the menu and game if a newer version exists; no VIN is transmitted. Descriptions have explicit line breaks, subject to MGU Store UI support. Offline play remains available.
+
+## 1.5.4 (top-chart) — single Dashboard UI
+- No legacy menu for user interaction: the GAME dashboard opens automatically. Right sidebar holds four difficulty modes, a 13-choice language selector (Auto BMW plus 12 locales), current score, personal best and measured FPS.
+- BMW controller rotation changes highlighted control before play; press activates it. Touch the right rows to change mode or language. Touch the playfield or press with PLAY highlighted to start, then press to jump.
+- **Easy** retains 1.4.14 Normal physics. **Normal** has a 20% higher jump and 20% longer gaps compared with the prior approved simulator. Hard is 20% below Extreme. Extreme keeps 0.30–0.80 s variable spacing.
+- Existing saved Normal record migrates to Easy; Hard and Extreme records stay with their modes. BMW zero-speed gate remains strict; game freezes and resets when speed becomes unknown or nonzero.
+- GPU renderer is paced up to 60 Hz and shows the measured FPS in the sidebar. Software PNG fallback runs at 8 Hz; 60 FPS on actual BMW hardware is a target, not a guarantee.
+- The Classic file and native RHMI menu definitions remain packaged for compatibility, but the game uses the Dashboard renderer only.

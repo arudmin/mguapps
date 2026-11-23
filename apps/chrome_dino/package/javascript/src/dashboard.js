@@ -8,7 +8,8 @@ const CACTUS=[[5,1,4,1],[4,2,6,1],[4,3,6,20],[5,23,4,3],[2,11,2,1],[1,10,2,1],[1
 const A=[[10,34,5,1],[10,35,3,3],[9,38,3,2],[8,40,5,2],[17,34,4,1],[18,35,3,3],[19,38,3,2],[18,40,5,2]];
 const B=[[10,34,5,1],[11,35,3,3],[12,38,3,2],[12,40,5,2],[17,34,4,1],[17,35,3,3],[16,38,3,2],[15,40,5,2]];
 const AIR=[[10,34,5,1],[11,35,5,2],[11,37,6,2],[17,34,4,1],[17,35,4,2],[18,37,5,2]];
-function drawDashboard(cv,game,w,h,best,words,update){
+function drawDashboard(cv,game,w,h,best,words,update,options){
+ const opts=options||{};
  words=words||require('./i18n').words('en');
  const kx=w/1600,ky=h/520;
  const rect=(x,y,rw,rh,c)=>cv.fillRect(x*kx,y*ky,rw*kx,rh*ky,c);
@@ -50,18 +51,24 @@ function drawDashboard(cv,game,w,h,best,words,update){
  const running=game.state==='playing'&&game.y>=game.floor-.1;
  pixel(dx,dy,running?(Math.floor(game.distance/27)%2?B:A):AIR,u,'#eaf5fc');
  cv.noclip();
- // Floating score readout in the panel, not over the dinosaur's course.
- text(words.score||'SCORE',1192,106,22,'#bdc7d5');
- text(String(game.score),1192,178,67,'#87c3ff','left','num');
- text(words.best||'BEST',1194,215,19,'#8d99aa');
- text(String(best),1194,251,34,'#f2f5fa','left','num');
- text(words.difficulty||'MODE',1391,215,19,'#8d99aa');
- text(words.levels[game.difficulty],1391,249,23,'#f2f5fa');
- rect(1193,273,359,1,'#344455');
- text(words.online||'ONLINE TOP 10',1194,310,20,'#ffbf5e');
- round(1191,327,363,78,8,'#1e2a36');border(1191,327,363,78,8,'#456f93');
- text(words.onlineInactive||'NOT CONNECTED',1214,357,21,'#83c5ff');
- text(words.offlineNotice||'RANKING NOT ACTIVE',1214,386,17,'#a2b0c1');
+
+ // All user settings are in this GPU dashboard, no legacy MAIN menu needed.
+ text(words.score||'SCORE',1195,108,22,'#bdc7d5');
+ text(String(game.score),1194,168,59,'#87c3ff','left','num');
+ text(words.best||'BEST',1382,108,19,'#8d99aa');
+ text(String(best),1382,158,37,'#f2f5fa','left','num');
+ rect(1193,186,359,1,'#344455');
+ text(words.difficulty||'MODE',1194,217,19,'#9eadbf');
+ const focus=opts.selectedControl||'play';
+ round(1191,229,363,69,8,focus==='mode'?'#244768':'#1a2939');
+ border(1191,229,363,69,8,focus==='mode'?'#88caff':'#45617b');
+ text('‹   '+words.levels[game.difficulty]+'   ›',1210,274,24,'#f0f7ff');
+ text(words.language||'LANGUAGE',1194,327,19,'#9eadbf');
+ round(1191,338,363,69,8,focus==='language'?'#244768':'#1a2939');
+ border(1191,338,363,69,8,focus==='language'?'#88caff':'#45617b');
+ text('‹  '+String(opts.languageLabel||'Auto (BMW)')+'  ›',1207,380,21,'#f0f7ff');
+ text('FPS '+String(opts.fps===undefined?'—':opts.fps)+' / 60',1194,441,18,'#92ceff');
+ text(focus==='play'?'● PLAY':focus==='mode'?'● MODE':'● LANGUAGE',1550,441,16,'#9fb4c7','right');
  // Versioned in-game update notices remain independent of network leaderboard.
  if(update&&update.available&&update.latest)text((words.updateNotice||'UPDATE AVAILABLE')+' '+update.latest,1100,72,18,'#e9ad6f','right');
  // Overlay in the playfield while ready/over; preserves the controller-to-start UX.
@@ -69,14 +76,14 @@ function drawDashboard(cv,game,w,h,best,words,update){
    round(222,176,733,171,11,'#19212c');border(222,176,733,171,11,'#5b87ae');
    text(game.state==='over'?words.over:words.title,585,237,36,'#f4f6f8','center');
    text(game.state==='over'?(words.score+' '+game.score+'  '+words.best+' '+best):words.start,585,282,24,'#9dc9ed','center');
-   text(words.hudParked||'PARKED ONLY',585,322,17,'#9aabbf','center');
+   text(opts.parked===false?(words.parkedOnly||'PARKED ONLY'):(words.hudJump||'CONTROLLER: JUMP'),585,322,17,opts.parked===false?'#ffc17c':'#9aabbf','center');
  }
  rect(22,459,1132,3,'#526a83');
  for(let i=0;i<18;i++){rect(23+i*63,465,45,7,i%4===2?'#e91d3e':i%4===1?'#14518a':'#75bdf5')}
  rect(0,489,1600,31,'#0a0c12');
  text(words.hudJump||'CONTROLLER: JUMP',38,509,18,'#8fa0b5');
  text(words.hudBack||'BACK: MENU',944,509,18,'#8fa0b5');
- text('v1.4.14',1548,509,16,'#70859a','right');
+ text('v1.5.4',1548,509,16,'#70859a','right');
  return cv;
 }
 module.exports={drawDashboard,WORLD_ASPECT};

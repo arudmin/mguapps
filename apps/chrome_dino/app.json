@@ -1,8 +1,8 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "description": "Pixel dinosaur runner for BMW iDrive 7/8.\nThree difficulties: Normal, Hard, Extreme.\nNew dashboard UI or classic layout, GPU animation and multilingual menus.\nBMW language detection. Play only while parked.",
-  "version": "1.4.14",
+  "description": "Pixel dinosaur runner for BMW iDrive 7/8.\nFour difficulties: Easy, Normal, Hard, Extreme.\nDashboard only; difficulty and language on the right, GPU animation and multilingual menus.\nBMW language detection. Play only while parked.",
+  "version": "1.5.4",
   "vendor": "arudmin",
   "loggingId": "CDG1",
   "maxDiskUsage": 10485760,
@@ -109,9 +109,9 @@
     },
     {
       "key": "difficulty",
-      "label": "Difficulty (0 Normal, 1 Hard, 2 Extreme)",
+      "label": "Difficulty (0 Easy, 1 Normal, 2 Hard, 3 Extreme)",
       "type": "number",
-      "default": 0,
+      "default": 1,
       "hidden": true
     },
     {
@@ -177,7 +177,7 @@
     },
     {
       "key": "difficultySchema",
-      "label": "Difficulty schema",
+      "label": "Four-mode difficulty migration schema",
       "type": "number",
       "default": 0,
       "hidden": true
@@ -198,6 +198,13 @@
           "Classic"
         ]
       ]
+    },
+    {
+      "key": "best_easy",
+      "label": "Easy personal best",
+      "type": "number",
+      "default": 0,
+      "hidden": true
     },
     {
       "key": "best_normal",
@@ -229,17 +236,17 @@
     }
   ],
   "descriptionLocalized": {
-    "en": "Pixel dinosaur runner for BMW iDrive 7/8.\nThree difficulties: Normal, Hard, Extreme.\nNew dashboard UI or classic layout, GPU animation and multilingual menus.\nBMW language detection. Play only while parked.",
-    "ru": "Пиксельная игра с динозавром для BMW iDrive 7/8.\nТри сложности: Норма, Хард, Экстрим.\nРекорды, анимация бега и перевод меню.\nАвтовыбор языка BMW. Играть только на стоянке.",
-    "de": "Pixel-Dinosaurierspiel für BMW iDrive 7/8.\nDrei Stufen: Normal, Schwer, Extrem.\nRekorde, Laufanimation und mehrsprachige Menüs.\nBMW-Spracherkennung. Nur im Stand spielen.",
-    "es": "Juego del dinosaurio para BMW iDrive 7/8.\nTres niveles: Normal, Difícil, Extremo.\nRécords, animación y menús multilingües.\nIdioma automático BMW. Solo con el coche parado.",
-    "fr": "Jeu de dinosaure pour BMW iDrive 7/8.\nTrois niveaux : Normal, Difficile, Extrême.\nRecords, animation et menus multilingues.\nLangue BMW automatique. Uniquement à l'arrêt.",
-    "it": "Gioco del dinosauro per BMW iDrive 7/8.\nTre livelli: Normale, Difficile, Estremo.\nRecord, animazione e menu multilingue.\nLingua BMW automatica. Solo da fermi.",
-    "pt": "Jogo do dinossauro para BMW iDrive 7/8.\nTrês níveis: Normal, Difícil, Extremo.\nRecordes, animação e menus em vários idiomas.\nIdioma BMW automático. Apenas estacionado.",
-    "nl": "Dinosaurusspel voor BMW iDrive 7/8.\nDrie niveaus: Normaal, Moeilijk, Extreem.\nRecords, animatie en meertalige menu's.\nAutomatische BMW-taal. Alleen geparkeerd.",
-    "pl": "Gra z dinozaurem dla BMW iDrive 7/8.\nTrzy poziomy: Normalny, Trudny, Ekstremalny.\nRekordy, animacja i wielojęzyczne menu.\nAutomatyczny język BMW. Tylko na postoju.",
-    "uk": "Гра з динозавром для BMW iDrive 7/8.\nТри рівні: Норма, Складно, Екстрим.\nРекорди, анімація та багатомовне меню.\nАвтоматична мова BMW. Лише на стоянці.",
-    "zh": "适用于 BMW iDrive 7/8 的恐龙游戏。\n三个难度：普通、困难、极限。\n记录、奔跑动画和多语言菜单。\n自动识别 BMW 语言。仅限停车时游玩。",
-    "ja": "BMW iDrive 7/8 用の恐竜ゲーム。\n難易度はノーマル、ハード、エクストリーム。\n記録、走行アニメ、多言語メニュー。\nBMW 言語自動検出。停車中のみプレイ。"
+    "en": "Pixel dinosaur runner for BMW iDrive 7/8.\nFour difficulties: Easy, Normal, Hard, Extreme.\nNew dashboard UI or classic layout, GPU animation and multilingual menus.\nBMW language detection. Play only while parked.",
+    "ru": "Пиксельная игра с динозавром для BMW iDrive 7/8.\nЧетыре сложности: Легко, Норма, Хард, Экстрим.\nРекорды, анимация бега и перевод меню.\nАвтовыбор языка BMW. Играть только на стоянке.",
+    "de": "Pixel-Dinosaurierspiel für BMW iDrive 7/8.\nVier Stufen: Leicht, Normal, Schwer, Extrem.\nRekorde, Laufanimation und mehrsprachige Menüs.\nBMW-Spracherkennung. Nur im Stand spielen.",
+    "es": "Juego del dinosaurio para BMW iDrive 7/8.\nCuatro niveles: Fácil, Normal, Difícil, Extremo.\nRécords, animación y menús multilingües.\nIdioma automático BMW. Solo con el coche parado.",
+    "fr": "Jeu de dinosaure pour BMW iDrive 7/8.\nQuatre niveaux : Facile, Normal, Difficile, Extrême.\nRecords, animation et menus multilingues.\nLangue BMW automatique. Uniquement à l'arrêt.",
+    "it": "Gioco del dinosauro per BMW iDrive 7/8.\nQuattro livelli: Facile, Normale, Difficile, Estremo.\nRecord, animazione e menu multilingue.\nLingua BMW automatica. Solo da fermi.",
+    "pt": "Jogo do dinossauro para BMW iDrive 7/8.\nQuatro níveis: Fácil, Normal, Difícil, Extremo.\nRecordes, animação e menus em vários idiomas.\nIdioma BMW automático. Apenas estacionado.",
+    "nl": "Dinosaurusspel voor BMW iDrive 7/8.\nVier niveaus: Makkelijk, Normaal, Moeilijk, Extreem.\nRecords, animatie en meertalige menu's.\nAutomatische BMW-taal. Alleen geparkeerd.",
+    "pl": "Gra z dinozaurem dla BMW iDrive 7/8.\nCztery poziomy: Łatwy, Normalny, Trudny, Ekstremalny.\nRekordy, animacja i wielojęzyczne menu.\nAutomatyczny język BMW. Tylko na postoju.",
+    "uk": "Гра з динозавром для BMW iDrive 7/8.\nЧотири рівні: Легко, Норма, Складно, Екстрим.\nРекорди, анімація та багатомовне меню.\nАвтоматична мова BMW. Лише на стоянці.",
+    "zh": "适用于 BMW iDrive 7/8 的恐龙游戏。\n四种难度：简单、普通、困难、极限。\n记录、奔跑动画和多语言菜单。\n自动识别 BMW 语言。仅限停车时游玩。",
+    "ja": "BMW iDrive 7/8 用の恐竜ゲーム。\n4つの難易度：イージー、ノーマル、ハード、エクストリーム。\n記録、走行アニメ、多言語メニュー。\nBMW 言語自動検出。停車中のみプレイ。"
   }
 }
