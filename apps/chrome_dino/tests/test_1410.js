@@ -20,6 +20,9 @@ for(const [id,num] of [['30',4],['40',3]]){
  assert.strictEqual(buttons.length,num);
  assert(xml8.includes('<container id="'+id+'" type="state"'));
  assert.strictEqual(page.properties.ParentState.value,1);
+ const layoutIds=[...xml8.matchAll(/<layoutGroup id="(\\d+)"/g)].map(v=>v[1]);
+ const componentIds=[...xml8.matchAll(/<component id="(\\d+)"/g)].map(v=>v[1]);
+ assert(!layoutIds.some(x=>componentIds.includes(x)), 'ID8 layout group and component IDs must not overlap');
 }
 const app=read('package/javascript/app.js');
 assert(app.includes("ui.cells('BTN_DIFFICULTY'"));
