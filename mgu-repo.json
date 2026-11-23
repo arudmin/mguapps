@@ -31,7 +31,7 @@
       "kind": "app",
       "path": "apps/chrome_dino",
       "title": "Chrome Dino Game",
-      "description": "Offline dinosaur runner. Central iDrive controller to jump. Parked only.",
+      "description": "Пиксельная игра Chrome Dino для BMW iDrive 7/8. Четыре уровня сложности, кактусы и птицы, анимация бега, рекорды, русский и английский языки. Прыжок нажатием контроллера iDrive. Только на стоящем автомобиле.",
       "mguHmi": [
         "ID7",
         "ID8"

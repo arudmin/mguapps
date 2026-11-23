@@ -1,7 +1,7 @@
 {
   "name": "chrome_dino",
-  "version": "1.4.7",
-  "description": "Offline dinosaur runner for stationary BMW MGU. Press central iDrive controller to jump. BACK returns to menu.",
+  "version": "1.4.8",
+  "description": "Пиксельная игра Chrome Dino для BMW iDrive 7/8. Четыре уровня сложности, кактусы и птицы, анимация бега, рекорды, русский и английский языки. Прыжок нажатием контроллера iDrive. Только на стоящем автомобиле.",
   "main": "javascript/app.js",
   "private": false,
   "author": "arudmin",

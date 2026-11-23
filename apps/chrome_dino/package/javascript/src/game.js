@@ -2,10 +2,10 @@
 // Gameplay inspired by Chromium T-Rex Runner: clustered cactus obstacles, birds and distance-based spacing.
 // Positions/speeds are in the logical 720-high world, not physical screen pixels.
 const MODES = [
- {name:'EASY',start:370,acceleration:5,max:660,gapMin:0.98,gapMax:1.18,postJumpBuffer:0.80,clusterChance:0.10,birdAfter:24},
- {name:'NORMAL',start:430,acceleration:6,max:740,gapMin:0.78,gapMax:0.97,postJumpBuffer:0.70,clusterChance:0.38,birdAfter:16},
- {name:'HARD',start:485,acceleration:7,max:820,gapMin:0.65,gapMax:0.79,postJumpBuffer:0.58,clusterChance:0.76,birdAfter:11},
- {name:'EXTREME',start:520,acceleration:8,max:880,gapMin:0.55,gapMax:0.68,postJumpBuffer:0.48,clusterChance:0.94,birdAfter:8}
+ {name:'EASY',start:370,acceleration:5,max:660,gapMin:1.40,gapMax:2.75,postJumpBuffer:1.18,clusterChance:0.10,birdAfter:24},
+ {name:'NORMAL',start:430,acceleration:6,max:740,gapMin:1.12,gapMax:2.25,postJumpBuffer:1.02,clusterChance:0.38,birdAfter:16},
+ {name:'HARD',start:575,acceleration:10,max:930,gapMin:0.94,gapMax:1.90,postJumpBuffer:0.96,clusterChance:0.72,birdAfter:11},
+ {name:'EXTREME',start:665,acceleration:12,max:1060,gapMin:0.84,gapMax:1.58,postJumpBuffer:0.94,clusterChance:0.88,birdAfter:8}
 ];
 const GRAVITY=2500, JUMP_VELOCITY=-940, JUMP_TIME=2*940/2500;
 function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
@@ -36,11 +36,14 @@ class Game {
  }
  // Minimum gap is measured from the last cactus to the start of the next group, not between spawn starts.
  // Every mode gets a minimum time to land and jump again; random additional spacing sets real difficulty.
- scheduleNext(obstacle){const m=this.mode();let delay=m.gapMin+this.random()*(m.gapMax-m.gapMin);
-  // Long/wide groups need a little more room, and birds need a recovery interval.
-  const clearance=Math.max(m.postJumpBuffer,obstacle.w/this.speed*.43);
-  if(obstacle.type==='bird')delay=Math.max(delay,JUMP_TIME+.08);
-  this.spawnIn=Math.max(delay,clearance);
+ scheduleNext(obstacle){
+  const m=this.mode();
+  // Variable distances between obstacle groups; caller adds group width / speed.
+  let delay=m.gapMin+(m.gapMax-m.gapMin)*Math.pow(this.random(),0.78);
+  if(this.random()<0.17) delay+=0.35+this.random()*0.80;
+  delay=Math.max(delay,m.postJumpBuffer,JUMP_TIME+0.18);
+  if(obstacle.type==='bird')delay=Math.max(delay,JUMP_TIME+0.32);
+  this.spawnIn=delay;
  }
  step(seconds){if(this.state!=='playing'||!Number.isFinite(seconds)||seconds<=0)return;
   this.accumulator+=Math.min(.1,seconds);

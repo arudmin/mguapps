@@ -34,7 +34,14 @@ function draw(cv,game,w,h,best){
  });
  // 40-wide x 42-high pixel silhouette: slightly larger than original 1.3.0, but original in form.
  const unit=2.6, x=game.x-60, y=game.y-42*unit;
- pixel(x,y,DINO_ROWS,unit,ink);
+ // Preserve the T-Rex body, animate the two leg poses at running speed.
+ pixel(x,y,DINO_ROWS.filter(p=>p[1]<34),unit,ink);
+ const running=game.state==='playing' && game.y>=game.floor-.1;
+ const phase=Math.floor(game.distance/27)%2;
+ const legsA=[[10,34,5,1],[10,35,3,3],[9,38,3,2],[8,40,5,2],[17,34,4,1],[18,35,3,3],[19,38,3,2],[19,40,5,2]];
+ const legsB=[[10,34,5,1],[11,35,3,3],[12,38,3,2],[12,40,5,2],[17,34,4,1],[17,35,3,3],[16,38,3,2],[15,40,5,2]];
+ const airborne=[[10,34,5,1],[11,35,5,2],[11,37,6,2],[17,34,4,1],[17,35,4,2],[18,37,5,2]];
+ pixel(x,y,running?(phase?legsB:legsA):airborne,unit,ink);
  text('CHROME DINO GAME',28,42,24,ink);
  text(game.mode().name,game.width/2,42,22,'#858585','center');
  text(String(game.score).padStart(5,'0'),game.width-28,42,30,ink,'right');
