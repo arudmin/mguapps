@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS players(id TEXT PRIMARY KEY,identity_hash TEXT NOT NULL UNIQUE,nickname TEXT NOT NULL,token_hash TEXT NOT NULL UNIQUE,created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY,player_id TEXT NOT NULL,difficulty TEXT NOT NULL CHECK(difficulty IN ('normal','hard','extreme')),created_at INTEGER NOT NULL,consumed_at INTEGER);
+CREATE TABLE IF NOT EXISTS submissions(id TEXT PRIMARY KEY,player_id TEXT NOT NULL,session_id TEXT NOT NULL UNIQUE,difficulty TEXT NOT NULL,score INTEGER NOT NULL,events TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS best_scores(player_id TEXT NOT NULL,difficulty TEXT NOT NULL CHECK(difficulty IN ('normal','hard','extreme')),score INTEGER NOT NULL,updated_at INTEGER NOT NULL,PRIMARY KEY(player_id,difficulty));
+CREATE INDEX IF NOT EXISTS scores_rank ON best_scores(difficulty,score DESC,updated_at ASC);
