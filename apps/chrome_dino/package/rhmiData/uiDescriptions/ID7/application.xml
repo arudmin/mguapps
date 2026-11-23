@@ -15,11 +15,11 @@
                 <property id="2" value="1"/>
                 <property id="3" value="2"/>
             </component>
-            <component id="23" type="label" widget="LT_Label_1Row">
+            <component id="4" type="label" widget="LT_Label_1Row">
                 <property id="2" value="1"/>
                 <property id="3" value="0"/>
             </component>
-            <component id="4" type="label" widget="LT_Label_1Row">
+            <component id="23" type="label" widget="LT_Label_1Row">
                 <property id="2" value="1"/>
                 <property id="3" value="0"/>
             </component>

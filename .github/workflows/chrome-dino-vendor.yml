@@ -24,6 +24,9 @@ jobs:
         run: |
           node --check apps/chrome_dino/build.js
           node --check apps/chrome_dino/package/javascript/app.js
+          node --check apps/chrome_dino/package/javascript/src/i18n.js
+          node --check apps/chrome_dino/package/javascript/src/game.js
+          node --check apps/chrome_dino/package/javascript/src/render.js
       - name: Test and verify OAP package
         shell: bash
         run: |
@@ -33,9 +36,11 @@ jobs:
             node apps/chrome_dino/tests/test_game.js
             node apps/chrome_dino/tests/test_package.js
             node apps/chrome_dino/tests/test_version.js
+            node apps/chrome_dino/tests/test_148.js
             node apps/chrome_dino/build.js --preview-only
             node apps/chrome_dino/build.js
-            tar -tzf apps/chrome_dino/dist/chrome_dino@1.4.7.tgz | head -30
+            tar -tzf apps/chrome_dino/dist/chrome_dino@1.4.8.tgz > ci-logs/package-contents.txt
+            sed -n '1,30p' ci-logs/package-contents.txt
           } 2>&1 | tee ci-logs/chrome-dino-build.log
       - name: Save build diagnostics
         if: always()
