@@ -8,6 +8,8 @@ const { draw } = require('./src/render');
 const { Controls } = require('./src/input');
 const APP_VERSION = require('./kit/app-spec.json').version;
 const i18n = require('./src/i18n');
+const { Diag } = require('./kit/diag');
+const { findVin } = require('./src/vin');
 
 const W = 1600, H = 520, STEP = 1 / 120, SPEED_TTL = 5000;
 
@@ -24,6 +26,7 @@ mgu.run({
         let headLanguageRaw='';
         let headLanguageState='waiting';
         let headLanguageSource='not yet received';
+        let vinState='checking...';
         function language(){return languageChoice==='auto'?systemLanguage:languageChoice;}
         function t(){return i18n.words(language());}
         let speedAt = -Infinity, speedValid = false;
@@ -89,6 +92,7 @@ mgu.run({
             const detected=headLanguageRaw||headLanguageState;
             const current=language();
             ui.text('MENU_BMW','BMW HMI: '+detected+'  ->  '+systemLanguage+'  |  UI: '+current);
+            ui.text('MENU_VIN','VIN: '+vinState);
         }
         function sync() {
             const go = !closed && shown() && !!safe();
@@ -133,6 +137,22 @@ mgu.run({
             headLanguageState='error: '+String(err).slice(0,52);
             log.warn('BMW HMI language setup: '+err);
         }
+        // One read-only UDS request (22 F190) through BMW's existing TASU link.
+        // Never transmit or log the VIN. Unsupported ECUs show a status instead.
+        (async function probeVin() {
+            try {
+                const diag = await new Diag(ctx.signals, log).init();
+                if (!diag.p) { vinState='diagnostics unavailable'; menu(); return; }
+                const replies = await diag.functional(0x22,[0xF1,0x90],{idleMs:1800,maxMs:9000});
+                const found=findVin(replies);
+                vinState=found || 'not available (F190)';
+                log.info('VIN read-only probe: '+(found?'available':'not available'));
+            } catch(e) {
+                vinState='read failed';
+                log.warn('VIN read-only probe failed (no vehicle identifiers logged): '+String(e).slice(0,90));
+            }
+            menu();
+        })();
         log.info('initial UI language='+systemLanguage+' selected='+languageChoice);
         parked = Parked.watch(safetyCtx, log);
         ui.onClick('BTN_PLAY', () => {

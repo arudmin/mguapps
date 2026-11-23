@@ -42,6 +42,11 @@
           "text",
           "MENU_HELP",
           "Press Play, then controller to jump. BACK: menu. Parked only."
+        ],
+        [
+          "text",
+          "MENU_VIN",
+          "VIN: checking..."
         ]
       ]
     },

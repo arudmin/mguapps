@@ -46,3 +46,6 @@ node apps/chrome_dino/build.js
 - Сохранены чтение языка от HMIContext, экран диагностики BMW HMI, все режимы и управление игрой.
 - При ручной смене языка в меню приложение переводит свои обычные строки; нативные выпадающие списки ID7 следуют языку головного устройства. Это сделано сознательно ради стабильности.
 - CI проверяет наличие 9 ресурсов во всех 33 локалях, виджет ID7 dropDownMenu и разметку ID8.
+
+## VIN probe (1.4.12, experimental)
+One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90 + 17 ASCII VIN characters from an ECU. The bottom menu line displays the full VIN when available or an explicit diagnostic status. VIN is never logged, sent to a server, or saved. On unsupported vehicles, the game continues normally. **VIN is not a cryptographic identity or proof of ownership; do not use it as the sole authentication mechanism for a leaderboard.** Do not publish screenshots with an exposed VIN.

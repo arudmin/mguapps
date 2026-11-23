@@ -231,6 +231,28 @@
             }
           ]
         },
+        "25": {
+          "type": "label",
+          "name": "MENU_VIN",
+          "properties": {
+            "Visible": {
+              "value": 1,
+              "type": "UInt"
+            },
+            "Focusable": {
+              "value": 0,
+              "type": "UInt"
+            }
+          },
+          "rows": [
+            {
+              "Text": {
+                "value": "VIN: checking...",
+                "type": "Text"
+              }
+            }
+          ]
+        },
         "990": {
           "type": "label",
           "name": "KIT_HMI_ID8",

@@ -27,6 +27,15 @@
         "HMI_CID"
       ],
       "currentDisplayLanguage": "rs"
+    },
+    "com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu": {
+      "_instances": "SystemFunctionsInternalTasuInst1",
+      "_methods": [
+        "sendTasuRequest"
+      ],
+      "_broadcasts": [
+        "sendTasuResponse"
+      ]
     }
   },
   "screens": [
@@ -69,6 +78,11 @@
           "text",
           "MENU_HELP",
           "Press Play, then controller to jump. BACK: menu. Parked only."
+        ],
+        [
+          "text",
+          "MENU_VIN",
+          "VIN: checking..."
         ]
       ]
     },
