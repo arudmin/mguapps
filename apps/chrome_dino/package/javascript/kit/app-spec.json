@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "screens": [
     {
       "name": "MAIN",
@@ -32,6 +32,11 @@
           "text",
           "MENU_BEST",
           ""
+        ],
+        [
+          "text",
+          "MENU_BMW",
+          "BMW language: detecting..."
         ],
         [
           "text",

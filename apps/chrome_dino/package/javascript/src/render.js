@@ -2,7 +2,8 @@
 // Dinosaur silhouette traced to a pixel grid from the original Chrome T-Rex image supplied by the user.
 // The tile sprite is not used as a game sprite. Renderer uses the BMW MGU GPU command stream.
 const DINO_ROWS=[[22,0,16,1],[22,1,16,1],[20,2,20,1],[20,3,4,1],[26,3,14,1],[20,4,4,1],[26,4,14,1],[20,5,4,1],[26,5,14,1],[20,6,20,1],[20,7,20,1],[19,8,21,1],[19,9,21,1],[19,10,21,1],[19,11,11,1],[31,11,8,1],[19,12,11,1],[19,13,11,1],[19,14,16,1],[0,15,2,1],[18,15,10,1],[0,16,2,1],[17,16,10,1],[0,17,2,1],[15,17,12,1],[0,18,2,1],[15,18,12,1],[0,19,4,1],[12,19,16,1],[0,20,4,1],[12,20,19,1],[0,21,6,1],[10,21,17,1],[29,21,2,1],[0,22,6,1],[10,22,17,1],[29,22,2,1],[0,23,27,1],[0,24,27,1],[0,25,27,1],[2,26,25,1],[2,27,25,1],[4,28,21,1],[4,29,21,1],[4,30,21,1],[6,31,17,1],[7,32,16,1],[8,33,13,1],[9,34,6,1],[16,34,5,1],[10,35,5,1],[17,35,4,1],[10,36,3,1],[18,36,3,1],[10,37,3,1],[19,37,2,1],[10,38,1,1],[19,38,2,1],[10,39,1,1],[19,39,2,1],[9,40,4,1],[19,40,3,1],[10,41,3,1],[19,41,4,1]];
-function draw(cv,game,w,h,best){
+function draw(cv,game,w,h,best,words){
+ words=words||require('./i18n').words('en');
  const sx=w/game.width,sy=h/720,ink='#535353';
  function rect(x,y,a,b,c){cv.fillRect(x*sx,y*sy,a*sx,b*sy,c);}
  function text(t,x,y,size,c,align){cv.text(t,x*sx,y*sy,size*sy,c,{align:align||'left',font:'bold'});}
@@ -42,17 +43,17 @@ function draw(cv,game,w,h,best){
  const legsB=[[10,34,5,1],[11,35,3,3],[12,38,3,2],[12,40,5,2],[17,34,4,1],[17,35,3,3],[16,38,3,2],[15,40,5,2]];
  const airborne=[[10,34,5,1],[11,35,5,2],[11,37,6,2],[17,34,4,1],[17,35,4,2],[18,37,5,2]];
  pixel(x,y,running?(phase?legsB:legsA):airborne,unit,ink);
- text('CHROME DINO GAME',28,42,24,ink);
- text(game.mode().name,game.width/2,42,22,'#858585','center');
+ text(words.title,28,42,24,ink);
+ text(words.levels[game.difficulty],game.width/2,42,22,'#858585','center');
  text(String(game.score).padStart(5,'0'),game.width-28,42,30,ink,'right');
- text('HI '+String(best).padStart(5,'0'),game.width-28,76,22,'#999999','right');
- text('PRESS CONTROLLER = JUMP     BACK = MENU',game.width/2,698,18,'#858585','center');
+ text(words.hi+' '+String(best).padStart(5,'0'),game.width-28,76,22,'#999999','right');
+ text(words.jump,game.width/2,698,18,'#858585','center');
  if(game.state!=='playing'){
  const cx=game.width/2,pw=Math.min(720,game.width-32);
  rect(cx-pw/2,185,pw,255,'#ededed');rect(cx-pw/2,185,pw,3,'#888888');
- text(game.state==='over'?'GAME OVER':'CHROME DINO',cx,264,42,ink,'center');
- text(game.state==='over'?'SCORE '+game.score+'   BEST '+best:'PRESS CONTROLLER TO START',cx,331,26,ink,'center');
- text(game.mode().name+'  |  PARKED ONLY',cx,392,20,'#858585','center');
+ text(game.state==='over'?words.over:words.title,cx,264,42,ink,'center');
+ text(game.state==='over'?words.score+' '+game.score+'   '+words.best+' '+best:words.start,cx,331,26,ink,'center');
+ text(words.levels[game.difficulty]+'  |  '+words.parkedOnly,cx,392,20,'#858585','center');
  }
  return cv;
 }

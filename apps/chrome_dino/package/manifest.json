@@ -149,6 +149,14 @@
       "attributes": {
         "statusRotaryEncoderState": "rs"
       }
+    },
+    "de.bmw.infotainment.hmi.hmicontext.HMIContext": {
+      "instances": [
+        "HMI_CID"
+      ],
+      "attributes": {
+        "currentDisplayLanguage": "rs"
+      }
     }
   },
   "services": {

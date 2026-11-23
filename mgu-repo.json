@@ -31,7 +31,7 @@
       "kind": "app",
       "path": "apps/chrome_dino",
       "title": "Chrome Dino Game",
-      "description": "Пиксельная игра Chrome Dino для BMW iDrive 7/8. Четыре уровня сложности, кактусы и птицы, анимация бега, рекорды, русский и английский языки. Прыжок нажатием контроллера iDrive. Только на стоящем автомобиле.",
+      "description": "Pixel dinosaur runner for BMW iDrive 7/8. Four difficulty modes, animated dinosaur, high scores, automatic BMW language detection and multilingual menus. Parked only.",
       "mguHmi": [
         "ID7",
         "ID8"
@@ -49,6 +49,44 @@
           "{dir}"
         ],
         "shared": []
+      },
+      "texts": {
+        "ru": {
+          "title": "Игра Chrome Dino",
+          "description": "Пиксельная игра с динозавром для BMW iDrive 7/8. Четыре уровня сложности, рекорды, анимация бега, русский язык и автоматический выбор языка BMW. Играть только на стоянке."
+        },
+        "de": {
+          "title": "Chrome Dino Spiel",
+          "description": "Pixel-Dinosaurierspiel für BMW iDrive 7/8. Vier Schwierigkeitsgrade, Rekorde, animierter Dinosaurier und automatische Spracherkennung. Nur im Stand."
+        },
+        "fr": {
+          "title": "Jeu Chrome Dino",
+          "description": "Jeu de dinosaure pour BMW iDrive 7/8. Quatre niveaux, records, course animée et détection automatique de la langue. À l'arrêt uniquement."
+        },
+        "es": {
+          "title": "Juego Chrome Dino",
+          "description": "Juego del dinosaurio para BMW iDrive 7/8. Cuatro dificultades, récords, animación y detección automática del idioma. Solo con el coche parado."
+        },
+        "it": {
+          "title": "Gioco Chrome Dino",
+          "description": "Gioco del dinosauro per BMW iDrive 7/8. Quattro difficoltà, record, animazione e rilevamento automatico della lingua. Solo a veicolo fermo."
+        },
+        "pt": {
+          "title": "Jogo Chrome Dino",
+          "description": "Jogo do dinossauro para BMW iDrive 7/8. Quatro níveis, recordes, animação e deteção automática do idioma. Apenas com o carro parado."
+        },
+        "uk": {
+          "title": "Гра Chrome Dino",
+          "description": "Гра з піксельним динозавром для BMW iDrive 7/8. Чотири рівні складності, рекорди, анімація та автоматичне визначення мови. Лише на стоянці."
+        },
+        "pl": {
+          "title": "Gra Chrome Dino",
+          "description": "Gra z dinozaurem dla BMW iDrive 7/8. Cztery poziomy trudności, rekordy, animacja i automatyczny wybór języka. Tylko na postoju."
+        },
+        "nl": {
+          "title": "Chrome Dino spel",
+          "description": "Dinosaurusspel voor BMW iDrive 7/8. Vier niveaus, records, animatie en automatische taalherkenning. Alleen bij stilstand."
+        }
       }
     }
   ]

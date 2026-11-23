@@ -1,8 +1,8 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "description": "Пиксельная игра Chrome Dino для BMW iDrive 7/8. Четыре уровня сложности, кактусы и птицы, анимация бега, рекорды, русский и английский языки. Прыжок нажатием контроллера iDrive. Только на стоящем автомобиле.",
-  "version": "1.4.8",
+  "description": "Pixel dinosaur runner for BMW iDrive 7/8. Four difficulty modes, animated dinosaur, high scores, automatic BMW language detection and multilingual menus. Parked only.",
+  "version": "1.4.9",
   "vendor": "arudmin",
   "loggingId": "CDG1",
   "maxDiskUsage": 10485760,
@@ -21,6 +21,12 @@
     },
     "de.bmw.infotainment.controlelements.FrontCCU": {
       "statusRotaryEncoderState": "rs"
+    },
+    "de.bmw.infotainment.hmi.hmicontext.HMIContext": {
+      "_instances": [
+        "HMI_CID"
+      ],
+      "currentDisplayLanguage": "rs"
     }
   },
   "screens": [
@@ -53,6 +59,11 @@
           "text",
           "MENU_BEST",
           ""
+        ],
+        [
+          "text",
+          "MENU_BMW",
+          "BMW language: detecting..."
         ],
         [
           "text",

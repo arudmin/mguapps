@@ -22,4 +22,5 @@ assert(items.includes('MENU_BEST'));
 assert(items.includes('MENU_HELP'));
 const allowed = new Set(['number','choice','bool']);
 for(const setting of spec.settings) assert(allowed.has(setting.type), 'unsupported setting type '+setting.type);
+assert(spec.screens.find(s=>s.name==='MAIN').items.some(x=>x[1]==='MENU_BMW'));
 console.log('Version and RHMI compatibility checks OK:',ver);

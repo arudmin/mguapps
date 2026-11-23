@@ -21,6 +21,9 @@ mgu.run({
         let languageChoice=settings.get('language')||'auto';
         if (['auto','ru','en'].indexOf(languageChoice)<0) languageChoice='auto';
         let systemLanguage=i18n.detect(ctx);
+        let headLanguageRaw='';
+        let headLanguageState='waiting';
+        let headLanguageSource='not yet received';
         function language(){return languageChoice==='auto'?systemLanguage:languageChoice;}
         function t(){return i18n.words(language());}
         let speedAt = -Infinity, speedValid = false;
@@ -66,6 +69,9 @@ mgu.run({
             ui.text('MENU_INFO',w.version+' '+APP_VERSION);
             ui.text('MENU_BEST',w.best+': '+best);
             ui.text('MENU_HELP',safe()?w.help:w.parked);
+            const detected=headLanguageRaw||headLanguageState;
+            const current=language();
+            ui.text('MENU_BMW','BMW HMI: '+detected+'  ->  '+systemLanguage+'  |  UI: '+current);
         }
         function sync() {
             const go = !closed && shown() && !!safe();
@@ -78,23 +84,39 @@ mgu.run({
             }
             if (!closed && shown() && !safe()) ui.open('MAIN');
         }
-        // Read BMW HMI language on a best-effort basis. Any missing proxy is nonfatal.
-        [['de.bmw.infotainment.hmi.hmicontext.HMIContext','HMI_CID'],
-         ['de.bmw.infotainment.hmi.hmicontext2.HMIContext2','1']].forEach(function(item){
-            try {
-                Promise.resolve(ctx.signals.watch(item[0],item[1],{
-                    currentDisplayLanguage: function(value){
-                        const next=i18n.langOf(value);
-                        if(next && next!==systemLanguage){
-                            systemLanguage=next;log.info('head language: '+next);menu();
-                        }
-                    }
-                },log)).then(function(sub){
-                    if(sub && sub.error)log.warn('language signal: '+sub.error);
-                }).catch(function(e){log.warn('language signal: '+e);});
-            } catch(e){log.warn('language signal unavailable: '+e);}
-        });
-        log.info('initial language '+systemLanguage+' selection '+languageChoice);
+        // Exact BMW CommonTypes.Language via HMI_CID; signal read and subscription.
+        // Manifest includes HMIContext so the unit generates its SOME/IP definition.
+        // No guessed language from option 6UD; only real signal values are reported.
+        try {
+            ctx.signals.watch('de.bmw.infotainment.hmi.hmicontext.HMIContext','HMI_CID',{
+                currentDisplayLanguage(value){
+                    const raw=i18n.raw(value);
+                    const next=i18n.langOf(value);
+                    headLanguageRaw=raw;
+                    headLanguageState=next?'received':'unrecognized';
+                    headLanguageSource='HMIContext.currentDisplayLanguage';
+                    if(next)systemLanguage=next;
+                    log.info('BMW display language raw='+JSON.stringify(raw)+' resolved='+(next||'unknown'));
+                    menu();
+                }
+            },log).then(function(sub){
+                if(sub && sub.error) {
+                    headLanguageState='error: '+String(sub.error).slice(0,52);
+                    log.warn('BMW HMIContext: '+sub.error);
+                } else if(sub && !sub.available && !headLanguageRaw){
+                    headLanguageState='provider unavailable';
+                }
+                menu();
+            }).catch(function(err){
+                headLanguageState='error: '+String(err).slice(0,52);
+                log.warn('BMW HMI language: '+err);
+                menu();
+            });
+        } catch(err){
+            headLanguageState='error: '+String(err).slice(0,52);
+            log.warn('BMW HMI language setup: '+err);
+        }
+        log.info('initial UI language='+systemLanguage+' selected='+languageChoice);
         parked = Parked.watch(safetyCtx, log);
         ui.onClick('BTN_PLAY', () => {
             if (!safe()) { menu(); return; }
@@ -160,9 +182,9 @@ mgu.run({
             if (full) {
                 if (!screenRecorder || screenRecorder.w !== w || screenRecorder.h !== h) screenRecorder = new Recorder(w, h);
                 screenRecorder.reset();
-                draw(screenRecorder, game, w, h, best);
+                draw(screenRecorder, game, w, h, best, t());
                 cv.xf(1, 0, 0).append(screenRecorder).xf();
-            } else draw(cv, game, w, h, best);
+            } else draw(cv, game, w, h, best, t());
             return ui.image('GAME_GFX', cv);
         });
         menu();

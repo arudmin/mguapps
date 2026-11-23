@@ -23,3 +23,11 @@ node apps/chrome_dino/build.js
 ```
 
 Все зависимости для MGU App Kit и ресурсы ID7/ID8 уже находятся в папке package. Не требуется vendor_once.js.
+
+
+## 1.4.9 — BMW language and localization
+- BMW HMIContext.currentDisplayLanguage is registered as a SOME/IP proxy (like robertn_waze_cluster).
+- Detects exact BMW language enums, including RUSSISCH, ENGLISCH__UK, DEUTSCH.
+- Menu displays raw BMW language value and the resolved active UI language.
+- RHMI app title uses per-locale StringIds. Store card uses catalog `texts` with translated names/descriptions.
+- Game screen text and menu localized; English fallback for unsupported languages.
