@@ -2,6 +2,16 @@
   "schema": 1,
   "components": [
     {
+      "id": "fx_drive",
+      "kind": "app",
+      "path": "apps/fx_drive",
+      "build": "unit",
+      "title": "FX Drive",
+      "description": "Currency and crypto reference dashboard for BMW iDrive",
+      "mguHmi": ["ID7", "ID8"],
+      "uninstallable": true
+    },
+    {
       "id": "flappy_bird",
       "kind": "app",
       "path": "apps/flappy_bird",
