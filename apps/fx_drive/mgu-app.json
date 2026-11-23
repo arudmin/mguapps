@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "id": "fx_drive",
+  "version": "0.1.0",
+  "tree": "package",
+  "internet": true,
+  "modules": ["src/fx_drive.js"],
+  "sdk": [
+    "oap-sdk/src/core/OnlineApp.js",
+    "oap-sdk/src/logging/logging"
+  ]
+}

@@ -1,0 +1,3 @@
+FX Drive application code: MIT License.
+
+The RHMI resource/template files are derived from the mgu-store sample package and remain subject to the mgu-store repository license and notices. Keep the repository THIRD_PARTY_NOTICES.md with this project.
