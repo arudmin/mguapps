@@ -12,7 +12,7 @@ function checkUpdate(current,callback){
    if(res.statusCode!==200){res.resume();return finish({checked:false,available:false});}
    let body='';
    res.on('data',c=>{body+=c;if(body.length>32768)req.destroy();});
-   res.on('end',()=>{try{const j=JSON.parse(body);const latest=j.version;if(!/^\\d+\\.\\d+\\.\\d+$/.test(latest))throw Error('version');finish({checked:true,latest,available:compare(latest,current)>0});}catch(e){finish({checked:false,available:false});}});
+   res.on('end',()=>{try{const j=JSON.parse(body);const latest=j.version;if(!/^\d+\.\d+\.\d+$/.test(latest))throw Error('version');finish({checked:true,latest,available:compare(latest,current)>0});}catch(e){finish({checked:false,available:false});}});
    res.on('error',()=>finish({checked:false,available:false}));
   });
   req.on('timeout',()=>req.destroy());

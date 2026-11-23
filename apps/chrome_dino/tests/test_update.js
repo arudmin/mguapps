@@ -7,7 +7,7 @@ assert(compare('1.4.12','1.4.13')<0);
 const app=require('../app.json');
 assert.strictEqual(app.version,'1.4.13');
 assert(!/Four difficulty/i.test(app.description));
-assert(app.description.includes('\\n'));
+assert(app.description.includes('\n'));
 const source=fs.readFileSync(path.join(__dirname,'../package/javascript/app.js'),'utf8');
 assert(source.includes("+' (VIN: '+vinState+')"));
 assert(source.includes('checkUpdate(APP_VERSION'));
