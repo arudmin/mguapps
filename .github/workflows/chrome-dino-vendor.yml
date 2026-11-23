@@ -1,0 +1,35 @@
+name: Finalize standalone Chrome Dino
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/chrome_dino/vendor_once.js'
+      - 'apps/chrome_dino/package/javascript/src/**'
+      - 'apps/chrome_dino/package/javascript/app.js'
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Vendor OAP and RHMI assets once
+        run: node apps/chrome_dino/vendor_once.js
+      - name: Verify independent build
+        run: |
+          node apps/chrome_dino/build.js --preview-only
+          node apps/chrome_dino/build.js
+          node apps/chrome_dino/tests/test_game.js
+      - name: Commit fully standalone source
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f apps/chrome_dino/package/javascript
+          git add apps/chrome_dino/package
+          if ! git diff --cached --quiet; then
+            git commit -m 'Vendor Chrome Dino standalone OAP package'
+            git push
+          fi

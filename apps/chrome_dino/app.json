@@ -2,7 +2,7 @@
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
   "description": "Offline pixel dinosaur runner controlled by the central iDrive knob. Requires a fresh, valid zero vehicle-speed signal.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "vendor": "arudmin",
   "loggingId": "CDG1",
   "maxDiskUsage": 10485760,
