@@ -20,5 +20,5 @@ for(const v of ['ID7','ID8']) {
 }
 const src=fs.readFileSync(path.join(root,'package/javascript/app.js'),'utf8');
 assert(src.includes('diag.functional(0x22,[0xF1,0x90]'));
-assert(src.includes("ui.text('MENU_VIN'"));
+assert(src.includes(" (VIN: "));
 console.log('VIN F190 read-only parsing and ID7/ID8 diagnostic row OK');
