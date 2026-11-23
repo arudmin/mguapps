@@ -209,6 +209,28 @@
             }
           ]
         },
+        "24": {
+          "type": "label",
+          "name": "MENU_BMW",
+          "properties": {
+            "Visible": {
+              "value": 1,
+              "type": "UInt"
+            },
+            "Focusable": {
+              "value": 0,
+              "type": "UInt"
+            }
+          },
+          "rows": [
+            {
+              "Text": {
+                "value": "BMW HMI: waiting...",
+                "type": "Text"
+              }
+            }
+          ]
+        },
         "990": {
           "type": "label",
           "name": "KIT_HMI_ID8",

@@ -23,6 +23,10 @@
                 <property id="2" value="1"/>
                 <property id="3" value="0"/>
             </component>
+            <component id="24" type="label" widget="LT_ScrollLabel">
+                <property id="2" value="1"/>
+                <property id="3" value="0"/>
+            </component>
             <component id="5" type="label" widget="LT_ScrollLabel">
                 <property id="2" value="1"/>
                 <property id="3" value="0"/>
