@@ -98,8 +98,8 @@
           },
           "cells": {
             "HeaderText": {
-              "value": "Difficulty",
-              "type": "Text"
+              "value": "SID_CHROME_DINO_DROPDOWN_DIFFICULTY",
+              "type": "StringId"
             },
             "SelectedItem": {
               "value": 1,
@@ -109,26 +109,26 @@
           "rows": [
             {
               "ItemText": {
-                "value": "Easy",
-                "type": "Text"
+                "value": "SID_CHROME_DINO_DIFFICULTY_0",
+                "type": "StringId"
               }
             },
             {
               "ItemText": {
-                "value": "Normal",
-                "type": "Text"
+                "value": "SID_CHROME_DINO_DIFFICULTY_1",
+                "type": "StringId"
               }
             },
             {
               "ItemText": {
-                "value": "Hard",
-                "type": "Text"
+                "value": "SID_CHROME_DINO_DIFFICULTY_2",
+                "type": "StringId"
               }
             },
             {
               "ItemText": {
-                "value": "Extreme",
-                "type": "Text"
+                "value": "SID_CHROME_DINO_DIFFICULTY_3",
+                "type": "StringId"
               }
             }
           ]
@@ -148,8 +148,8 @@
           },
           "cells": {
             "HeaderText": {
-              "value": "Language",
-              "type": "Text"
+              "value": "SID_CHROME_DINO_DROPDOWN_LANGUAGE",
+              "type": "StringId"
             },
             "SelectedItem": {
               "value": 0,
@@ -159,20 +159,20 @@
           "rows": [
             {
               "ItemText": {
-                "value": "Auto (BMW)",
-                "type": "Text"
+                "value": "SID_CHROME_DINO_LANGUAGE_0",
+                "type": "StringId"
               }
             },
             {
               "ItemText": {
-                "value": "Русский",
-                "type": "Text"
+                "value": "SID_CHROME_DINO_LANGUAGE_1",
+                "type": "StringId"
               }
             },
             {
               "ItemText": {
-                "value": "English",
-                "type": "Text"
+                "value": "SID_CHROME_DINO_LANGUAGE_2",
+                "type": "StringId"
               }
             }
           ]

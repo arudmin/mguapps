@@ -23,4 +23,13 @@ assert(items.includes('MENU_HELP'));
 const allowed = new Set(['number','choice','bool']);
 for(const setting of spec.settings) assert(allowed.has(setting.type), 'unsupported setting type '+setting.type);
 assert(spec.screens.find(s=>s.name==='MAIN').items.some(x=>x[1]==='MENU_BMW'));
+const rhmi = read('package/rhmiData/uiDescriptions/ID7/uiDescription.json');
+const list = rhmi.containers['1'].components;
+for(const id of ['21','22']) {
+  const component=list[id];
+  assert.strictEqual(component.cells.HeaderText.type,'StringId','ID7 dropdown header must use native HMI locale');
+  for(const row of component.rows) assert.strictEqual(row.ItemText.type,'StringId','ID7 dropdown options must use HMI locale');
+}
+assert(!app.includes("ui.cells('BTN_DIFFICULTY',0,{HeaderText"),'Must not overwrite native localized header');
+assert(!app.includes("ui.cells('BTN_LANGUAGE',0,{HeaderText"),'Must not overwrite native localized header');
 console.log('Version and RHMI compatibility checks OK:',ver);

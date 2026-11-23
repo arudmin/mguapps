@@ -74,11 +74,11 @@ mgu.run({
                     ui.text('LANG_'+idx,(code===languageChoice?'✓ ':'')+value);
                 });
             } else {
-                // ID7 native BMW dropDownMenu. ItemText/SelectedItem are real RHMI cells.
-                ui.cells('BTN_DIFFICULTY',0,{HeaderText:w.difficulty});
-                w.levels.forEach((label,idx)=>ui.cells('BTN_DIFFICULTY',idx,{ItemText:label}));
-                ui.cells('BTN_LANGUAGE',0,{HeaderText:w.language});
-                [w.auto,i18n.languageNames.ru,i18n.languageNames.en].forEach((label,idx)=>ui.cells('BTN_LANGUAGE',idx,{ItemText:label}));
+                // ID7: the native HMI localizes drop-down headers and options
+                // from StringId resources according to BMW's *actual* HMI locale.
+                // Do NOT replace them using RHMI Text: this did not update the
+                // Unicode HeaderText/ItemText cells on the user's ID7 firmware.
+                // Only the selected numeric indices change dynamically.
                 const diff=ui.comp('BTN_DIFFICULTY'),lng=ui.comp('BTN_LANGUAGE');
                 if(diff)Promise.resolve(diff.setValue(0,'SelectedItem',game.difficulty,'UInt')).catch(e=>log.warn('difficulty selected: '+e));
                 if(lng)Promise.resolve(lng.setValue(0,'SelectedItem',Math.max(0,['auto','ru','en'].indexOf(languageChoice)),'UInt')).catch(e=>log.warn('language selected: '+e));
