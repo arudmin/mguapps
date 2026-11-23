@@ -39,7 +39,11 @@ jobs:
             node apps/chrome_dino/tests/test_148.js
             node apps/chrome_dino/build.js --preview-only
             node apps/chrome_dino/build.js
-            tar -tzf apps/chrome_dino/dist/chrome_dino@1.4.8.tgz > ci-logs/package-contents.txt
+            VERSION="$(node -p "require('./apps/chrome_dino/app.json').version")"
+            PACKAGE="apps/chrome_dino/dist/chrome_dino@${VERSION}.tgz"
+            echo "Validating ${PACKAGE}"
+            test -s "${PACKAGE}"
+            tar -tzf "${PACKAGE}" > ci-logs/package-contents.txt
             sed -n '1,30p' ci-logs/package-contents.txt
           } 2>&1 | tee ci-logs/chrome-dino-build.log
       - name: Save build diagnostics

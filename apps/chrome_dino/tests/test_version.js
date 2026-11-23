@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const read = p => JSON.parse(fs.readFileSync(path.join(root,p),'utf8'));
 const spec = read('package/javascript/kit/app-spec.json');
 const ver = read('app.json').version;
-assert.strictEqual(ver,'1.4.8');
+assert(/^\d+\.\d+\.\d+$/.test(ver), 'Invalid semantic version in app.json: '+ver);
 assert.strictEqual(spec.version,ver);
 assert.strictEqual(read('package/package.json').version,ver);
 assert.strictEqual(read('package/npm-shrinkwrap.json').version,ver);
