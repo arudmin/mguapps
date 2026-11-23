@@ -77,26 +77,13 @@ mgu.run({
             }
             if (!closed && shown() && !safe()) ui.open('MAIN');
         }
-        // Use the same head-unit display-language service as MGU Store.
-        // Either ID7 or ID8 may be absent on this firmware: never block gameplay.
-        const contexts = [
-            ['de.bmw.infotainment.hmi.hmicontext.HMIContext', 'HMI_CID'],
-            ['de.bmw.infotainment.hmi.hmicontext2.HMIContext2', '1']
-        ];
-        contexts.forEach(([iface, instance]) => {
-            ctx.signals.watch(iface, instance, {
-                currentDisplayLanguage(value) {
-                    const next = langOf(value);
-                    if (next !== systemLanguage) {
-                        systemLanguage = next;
-                        log.info('head unit language: ' + systemLanguage);
-                        menu();
-                    }
-                }
-            }, log).then((sub) => {
-                if (sub.error) log.warn('menu language unavailable: ' + iface + ': ' + sub.error);
-            }).catch((err) => log.warn('menu language: ' + err));
-        });
+        // Do not add HMIContext/HMIContext2 proxies to the installation manifest:
+        // on some ID7 firmwares their generation fails and blocks installation.
+        // Auto is a best-effort locale fallback; manual language always works.
+        try {
+            const envLocale = String(process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || 'en');
+            systemLanguage = langOf(envLocale.split('.')[0]);
+        } catch (_) { systemLanguage = 'en'; }
         parked = Parked.watch(safetyCtx, log);
         ui.onClick('BTN_PLAY', () => {
             if (!safe()) { menu(); return; }
