@@ -23,4 +23,4 @@ g.action();
 assert.strictEqual(g.state, 'playing');
 assert.strictEqual(g.score, 0);
 assert(g.jumpY > 0);
-console.log('Chrome Dino: physics, controller action and collision tests passed');
+console.log('Chrome Dino Game: physics, controller action and collision tests passed');

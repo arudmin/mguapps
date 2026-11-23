@@ -1,40 +1,76 @@
 {
   "id": "chrome_dino",
-  "title": "Chrome Dino",
+  "title": "Chrome Dino Game",
   "description": "Offline pixel dinosaur runner controlled by the central iDrive knob. Requires a fresh, valid zero vehicle-speed signal.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "vendor": "arudmin",
-  "loggingId": "D1A0",
+  "loggingId": "CDG1",
   "maxDiskUsage": 10485760,
   "iconGlyph": "play",
-  "mguHmi": ["ID7", "ID8"],
+  "mguHmi": [
+    "ID7",
+    "ID8"
+  ],
   "requires": {
     "idrive7-renderd": "2.1.18",
     "mgu-inputgate": "1.1.0"
   },
   "signals": {
-    "de.bmw.infotainment.vehicle.Vehicle2": {"statusCarSpeed2": "rs"},
-    "de.bmw.infotainment.controlelements.FrontCCU": {"statusRotaryEncoderState": "rs"}
+    "de.bmw.infotainment.vehicle.Vehicle2": {
+      "statusCarSpeed2": "rs"
+    },
+    "de.bmw.infotainment.controlelements.FrontCCU": {
+      "statusRotaryEncoderState": "rs"
+    }
   },
   "screens": [
     {
       "name": "MAIN",
       "kind": "menu",
-      "title": "Chrome Dino",
+      "title": "Chrome Dino Game",
       "items": [
-        ["button", "BTN_PLAY", "Play / Continue"],
-        ["button", "BTN_RESTART", "Restart"],
-        ["text", "MENU_INFO", ""],
-        ["text", "MENU_HELP", "Press central iDrive controller to jump. BACK: menu. Parked only."]
+        [
+          "button",
+          "BTN_PLAY",
+          "Play / Continue"
+        ],
+        [
+          "button",
+          "BTN_RESTART",
+          "Restart"
+        ],
+        [
+          "text",
+          "MENU_INFO",
+          ""
+        ],
+        [
+          "text",
+          "MENU_HELP",
+          "Press central iDrive controller to jump. BACK: menu. Parked only."
+        ]
       ]
     },
     {
       "name": "GAME",
       "kind": "canvas",
-      "title": "Chrome Dino",
+      "title": "Chrome Dino Game",
       "chrome": false,
-      "buttons": [["BTN_FLAP", "Jump / Start"]]
+      "buttons": [
+        [
+          "BTN_FLAP",
+          "Jump / Start"
+        ]
+      ]
     }
   ],
-  "settings": [{"key": "best", "label": "Best score", "type": "number", "default": 0, "hidden": true}]
+  "settings": [
+    {
+      "key": "best",
+      "label": "Best score",
+      "type": "number",
+      "default": 0,
+      "hidden": true
+    }
+  ]
 }

@@ -1,27 +1,26 @@
-# Chrome Dino for BMW MGU Store
+# Chrome Dino Game — BMW MGU Store (v1.1.0)
 
-Native RHMI/OAP game using the same MGU integration as `apps/flappy_bird`.
+Chrome Dino gameplay has its own JavaScript app, game, renderer and input handlers,
+metadata, RHMI application override, transparent icon and build tool.
+The build process copies ONLY BMW/OAP transport and RHMI platform files from
+`apps/flappy_bird/package`, then overwrites all game/application-specific files
+from this folder. At runtime, a separate `chrome_dino@1.1.0.tgz` is installed;
+Chrome Dino does not import or launch the installed Flappy Bird.
 
-- **Central iDrive knob click**: start / jump / restart. The button-bar action is an alternative.
-- **BACK**: go to the in-car app menu using the donor's RHMI navigation.
-- **Safety**: requires a valid, fresh, **exactly 0 km/h** Vehicle2 speed sample, otherwise the game screen closes. No bypass is provided.
-- Offline pixel art, increasing speed, cacti, birds, score and persistent high score.
-- ID7 / ID8, existing `idrive7-renderd` and `mgu-inputgate` dependencies.
+## Deploy
+1. Extract this archive over the ROOT of your existing mguapps repository.
+2. Keep `apps/flappy_bird/package` in the repository: build-time donor only.
+3. Commit the new folder and root `mgu-repo.json`, then refresh your Store source.
+4. Uninstall old Chrome Dino first; reinstall version 1.1.0 (restart HU if necessary).
 
-## Add to your existing repository
+## Local checks (where Node.js is available)
+`node apps/chrome_dino/tests/test_game.js`
+`node apps/chrome_dino/build.js --preview-only`
 
-1. Copy `apps/chrome_dino` into the existing `mguapps/apps/` folder **without deleting `apps/flappy_bird`**.
-2. Replace root `mgu-repo.json` with the file from this ZIP.
-3. Commit and push to the GitHub repo; refresh source in mgu-store.
+Build requires the donor at `apps/flappy_bird/package`, unavailable in this
+standalone ZIP. The build produces its own TGZ with all bundled runtime files.
 
-## Check with Node.js
-
-```bash
-node apps/chrome_dino/tests/test_game.js
-node apps/chrome_dino/build.js --preview-only
-node apps/chrome_dino/build.js
-```
-
-The final command writes `apps/chrome_dino/dist/chrome_dino@1.0.0.tgz`, a self-contained *source* OAP archive for the Store. The Store should supply its normal SDK integration at installation time. `build.js` requires the adjacent `apps/flappy_bird/package`, but the produced `.tgz` does not.
-
-The game was tested statically, not on a physical BMW head unit. Test while the vehicle is stationary; do not use while driving.
+## Controls and safety
+Press central iDrive knob to start, jump, retry. BACK returns to menu.
+Game is only enabled on a fresh valid ZERO vehicle-speed signal.
+No internet needed for gameplay. No real-HU installation test has been performed.

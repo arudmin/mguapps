@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('fs'), path=require('path'),assert=require('assert');
+const app=path.resolve(__dirname,'..');
+const spec=JSON.parse(fs.readFileSync(path.join(app,'app.json')));
+const pkg=JSON.parse(fs.readFileSync(path.join(app,'package/package.json')));
+const js=fs.readFileSync(path.join(app,'package/javascript/app.js'),'utf8');
+const render=fs.readFileSync(path.join(app,'package/javascript/src/render.js'),'utf8');
+const game=fs.readFileSync(path.join(app,'package/javascript/src/game.js'),'utf8');
+assert.strictEqual(spec.id,'chrome_dino');
+assert.strictEqual(pkg.name,'chrome_dino');
+assert.strictEqual(spec.version,pkg.version);
+assert.strictEqual(spec.version,'1.1.0');
+assert(js.includes("require('./src/game')"));
+assert(js.includes('Chrome Dino Game'));
+assert(render.includes('DINO'));
+assert(!/FLAPPY \/ MGU|FLIGHT COMPLETE|READY TO FLY|ONE CLICK\. ONE FLAP/i.test(js+render+game));
+console.log('Chrome Dino package metadata/source isolation OK');
