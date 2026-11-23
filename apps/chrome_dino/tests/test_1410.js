@@ -25,7 +25,9 @@ for(const [id,num] of [['30',4],['40',3]]){
  assert(!layoutIds.some(x=>componentIds.includes(x)), 'ID8 layout group and component IDs must not overlap');
 }
 const app=read('package/javascript/app.js');
-assert(app.includes("ui.cells('BTN_DIFFICULTY'"));
+assert(!app.includes("ui.cells('BTN_DIFFICULTY'"),'ID7 must use localized RHMI StringIds');
+assert.strictEqual(seven.containers['1'].components['21'].cells.HeaderText.type,'StringId');
+assert.strictEqual(seven.containers['1'].components['22'].cells.HeaderText.type,'StringId');
 assert(app.includes("ui.open('SELECT_DIFFICULTY')"));
 assert(app.includes("ui.open('SELECT_LANGUAGE')"));
 assert(app.includes("chooseDifficulty(Number(ev.row))"));
