@@ -27,6 +27,7 @@ jobs:
           node --check apps/chrome_dino/package/javascript/src/i18n.js
           node --check apps/chrome_dino/package/javascript/src/game.js
           node --check apps/chrome_dino/package/javascript/src/render.js
+          node --check apps/chrome_dino/package/javascript/src/dashboard.js
       - name: Test and verify OAP package
         shell: bash
         run: |
@@ -42,6 +43,7 @@ jobs:
             node apps/chrome_dino/tests/test_vin.js
             node apps/chrome_dino/tests/test_update.js
             node apps/chrome_dino/tests/test_1410.js
+            node apps/chrome_dino/tests/test_1414_dashboard.js
             node apps/chrome_dino/build.js --preview-only
             node apps/chrome_dino/build.js
             VERSION="$(node -p "require('./apps/chrome_dino/app.json').version")"
@@ -58,3 +60,11 @@ jobs:
           name: chrome-dino-diagnostics
           path: ci-logs/
           if-no-files-found: warn
+
+      - name: Upload installable Chrome Dino package
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-dino-test-package
+          path: apps/chrome_dino/dist/chrome_dino@*.tgz
+          if-no-files-found: error

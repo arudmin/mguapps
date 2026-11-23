@@ -5,6 +5,7 @@ const { Recorder } = require('./kit/record');
 const Parked = require('./kit/parked');
 const { Game } = require('./src/game');
 const { draw } = require('./src/render');
+const { drawDashboard, WORLD_ASPECT } = require('./src/dashboard');
 const { Controls } = require('./src/input');
 const APP_VERSION = require('./kit/app-spec.json').version;
 const i18n = require('./src/i18n');
@@ -20,7 +21,18 @@ mgu.run({
         const game = new Game();
         const savedDifficulty = Number(settings.get('difficulty'));
         game.setDifficulty(Number.isFinite(savedDifficulty) ? savedDifficulty : 1);
-        let best = Math.max(0, Number(settings.get('best')) || 0);
+        // Track local bests independently for Normal, Hard and Extreme.
+        // The former single record is assigned once to the last selected mode.
+        const bestKeys=['best_normal','best_hard','best_extreme'];
+        const bestModes=bestKeys.map(key=>Math.max(0,Number(settings.get(key))||0));
+        if(Number(settings.get('bestSchema'))!==1){
+            bestModes[game.difficulty]=Math.max(bestModes[game.difficulty],Math.max(0,Number(settings.get('best'))||0));
+            settings.set(bestKeys[game.difficulty],bestModes[game.difficulty]);
+            settings.set('bestSchema',1);
+        }
+        let best=bestModes[game.difficulty];
+        let visualTheme=settings.get('visualTheme')==='classic'?'classic':'dashboard';
+        game.resize(WORLD_ASPECT);
         let languageChoice=settings.get('language')||'auto';
         if (['auto','ru','en'].indexOf(languageChoice)<0) languageChoice='auto';
         let systemLanguage=i18n.detect(ctx);
@@ -64,11 +76,17 @@ mgu.run({
         }
         function shown() { return ui.isVisible('GAME') && (!ui.hasFocus || ui.hasFocus('GAME')); }
         function saveBest() {
-            if (game.score > best) { best = game.score; settings.set('best', best); }
+            if (game.score > best) {
+                best=game.score;
+                bestModes[game.difficulty]=best;
+                settings.set(bestKeys[game.difficulty],best);
+                settings.set('best',Math.max.apply(null,bestModes));
+            }
         }
         function menu() {
             const w=t();
             ui.text('BTN_PLAY', game.state==='playing'?w.continue_:w.play);
+            ui.text('BTN_THEME',w.style+': '+(visualTheme==='dashboard'?w.styleDashboard:w.styleClassic));
             if (ui.id8) {
                 ui.text('BTN_DIFFICULTY',w.difficulty+': '+w.levels[game.difficulty]+' ('+w.change+')');
                 ui.text('BTN_LANGUAGE',w.language+': '+(languageChoice==='auto'?w.auto:i18n.languageNames[languageChoice])+' ('+w.change+')');
@@ -172,6 +190,7 @@ mgu.run({
             if (!safe()) { menu(); return; }
             saveBest();
             game.setDifficulty(index);
+            best=bestModes[index];
             settings.set('difficulty',game.difficulty);
             menu();
         }
@@ -192,6 +211,14 @@ mgu.run({
             ui.onClick('BTN_DIFFICULTY',ev=>chooseDifficulty(Number(ev.row)));
             ui.onClick('BTN_LANGUAGE',ev=>chooseLanguage(Number(ev.row)));
         }
+        ui.onClick('BTN_THEME',()=>{
+            if(!safe()){menu();return;}
+            saveBest();
+            visualTheme=visualTheme==='dashboard'?'classic':'dashboard';
+            settings.set('visualTheme',visualTheme);
+            game.reset(); // Make layout changes only between runs.
+            menu();
+        });
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
         if (ctx.controller && ctx.controller.onInput) {
             ctx.controller.onInput((value) => { sync(); ctl.raw(value, 'renderer'); });
@@ -215,7 +242,7 @@ mgu.run({
         process.on('SIGTERM', () => { stop(); process.exit(0); });
         process.on('SIGINT', () => { stop(); process.exit(0); });
 
-        ctx.loop('GAME', 30, () => {
+        ctx.loop('GAME', 8, () => {
             sync();
             if (!going) return;
             const now = Date.now();
@@ -223,7 +250,7 @@ mgu.run({
             const pl = cv.place;
             const full = pl && pl.full && pl.w > 0 && pl.h > 0;
             const w = full ? pl.w : W, h = full ? pl.h : H;
-            game.resize(w / h);
+            game.resize(WORLD_ASPECT); // Fixed collision/spawn world for both styles and screen sizes.
             if (last !== null) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.1));
             last = now;
             while (accumulator >= STEP) {
@@ -231,18 +258,20 @@ mgu.run({
                 accumulator -= STEP;
             }
             saveBest();
-            // ctx.loop's GPU path may tick at 60 Hz; explicitly limit presentation to 30.
-            if (now - frameAt < 1000 / 30) return;
+            // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
+            if (now - frameAt < 1000 / 60) return;
             frameAt = now;
             if (full) {
                 if (!screenRecorder || screenRecorder.w !== w || screenRecorder.h !== h) screenRecorder = new Recorder(w, h);
                 screenRecorder.reset();
-                draw(screenRecorder, game, w, h, best, t(), updateState);
+                if(visualTheme==='dashboard')drawDashboard(screenRecorder, game, w, h, best, t(), updateState);
+                else draw(screenRecorder, game, w, h, best, t(), updateState);
                 cv.xf(1, 0, 0).append(screenRecorder).xf();
-            } else draw(cv, game, w, h, best, t(), updateState);
+            } else if(visualTheme==='dashboard')drawDashboard(cv,game,w,h,best,t(),updateState);
+            else draw(cv, game, w, h, best, t(), updateState);
             return ui.image('GAME_GFX', cv);
         });
         menu();
-        log.info('Chrome Dino Game: strict stationary gate; 120 Hz physics, 30 fps presentation');
+        log.info('Chrome Dino Game: strict stationary gate; 120 Hz physics, GPU up to 60 fps, software 8 fps; dashboard/classic');
     },
 });

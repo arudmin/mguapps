@@ -1,7 +1,7 @@
 {
   "name": "chrome_dino",
-  "version": "1.4.13",
-  "description": "Pixel dinosaur runner for BMW iDrive 7/8. Four difficulty modes, animated dinosaur, high scores, automatic BMW language detection and multilingual menus. Parked only.",
+  "version": "1.4.14",
+  "description": "BMW iDrive Chrome Dino: GPU dashboard or classic style, Normal/Hard/Extreme, parked only.",
   "main": "javascript/app.js",
   "private": false,
   "author": "arudmin",

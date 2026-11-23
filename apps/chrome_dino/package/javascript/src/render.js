@@ -58,4 +58,4 @@ function draw(cv,game,w,h,best,words,update){
  }
  return cv;
 }
-module.exports={draw};
+module.exports={draw,DINO_ROWS};

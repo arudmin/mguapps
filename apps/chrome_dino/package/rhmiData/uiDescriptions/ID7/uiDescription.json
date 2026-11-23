@@ -242,6 +242,28 @@
               }
             }
           ]
+        },
+        "26": {
+          "type": "button",
+          "name": "BTN_THEME",
+          "properties": {
+            "Visible": {
+              "value": 1,
+              "type": "UInt"
+            },
+            "Focusable": {
+              "value": 2,
+              "type": "UInt"
+            }
+          },
+          "rows": [
+            {
+              "Text": {
+                "value": "Theme: Dashboard",
+                "type": "Text"
+              }
+            }
+          ]
         }
       }
     },

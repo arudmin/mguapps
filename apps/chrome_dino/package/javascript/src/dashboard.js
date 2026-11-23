@@ -1,0 +1,82 @@
+'use strict';
+// Independent dashboard look inspired by automotive instrumentation.
+// All dinosaur and obstacle drawing is original and uses the existing Chrome Dino model.
+// This renderer does not change game physics. The fixed world stays 1920x720 on every layout.
+const { DINO_ROWS }=require('./render');
+const WORLD_ASPECT=1920/720;
+const CACTUS=[[5,1,4,1],[4,2,6,1],[4,3,6,20],[5,23,4,3],[2,11,2,1],[1,10,2,1],[1,11,2,6],[2,17,2,2],[3,19,2,1],[10,8,2,1],[11,7,2,1],[11,8,2,8],[10,16,2,2],[9,18,2,1]];
+const A=[[10,34,5,1],[10,35,3,3],[9,38,3,2],[8,40,5,2],[17,34,4,1],[18,35,3,3],[19,38,3,2],[18,40,5,2]];
+const B=[[10,34,5,1],[11,35,3,3],[12,38,3,2],[12,40,5,2],[17,34,4,1],[17,35,3,3],[16,38,3,2],[15,40,5,2]];
+const AIR=[[10,34,5,1],[11,35,5,2],[11,37,6,2],[17,34,4,1],[17,35,4,2],[18,37,5,2]];
+function drawDashboard(cv,game,w,h,best,words,update){
+ words=words||require('./i18n').words('en');
+ const kx=w/1600,ky=h/520;
+ const rect=(x,y,rw,rh,c)=>cv.fillRect(x*kx,y*ky,rw*kx,rh*ky,c);
+ const round=(x,y,rw,rh,r,c)=>cv.roundRect(x*kx,y*ky,rw*kx,rh*ky,r*Math.min(kx,ky),c);
+ const border=(x,y,rw,rh,r,c)=>cv.strokeRoundRect(x*kx,y*ky,rw*kx,rh*ky,r*Math.min(kx,ky),Math.max(1,Math.min(kx,ky)),c);
+ const text=(s,x,y,size,c,align,font)=>cv.text(String(s),x*kx,y*ky,size*ky,c,{literal:true,align:align||'left',font:font||'bold'});
+ const pf={x:22,y:52,w:1132,h:421},side={x:1172,y:52,w:404,h:421};
+ const f={x:34,y:86,w:1108,h:360};
+ const wx=x=>f.x+x*f.w/game.width, wy=y=>f.y+y*f.h/720;
+ const wr=(x,y,rw,rh,c)=>rect(wx(x),wy(y),rw*f.w/game.width,rh*f.h/720,c);
+ const pixel=(x,y,pts,unit,c)=>{for(const a of pts)wr(x+a[0]*unit,y+a[1]*unit,a[2]*unit,a[3]*unit,c)};
+ cv.clear('#0a0c12');
+ // Compact automotive header and racing accent.
+ rect(0,0,286,35,'#231923');rect(16,0,254,35,'#481723');
+ rect(16,33,62,3,'#71bdff');rect(78,33,62,3,'#175a9c');rect(140,33,62,3,'#ed233d');
+ text('CHROME DINO',34,26,23,'#f0f5fa');text(words.levels[game.difficulty],1109,27,19,'#b6c5d6','right');
+ round(pf.x,pf.y,pf.w,pf.h,12,'#11161e');border(pf.x,pf.y,pf.w,pf.h,12,'#314052');
+ round(side.x,side.y,side.w,side.h,9,'#10141b');border(side.x,side.y,side.w,side.h,9,'#344454');
+ rect(pf.x+1,pf.y+1,52,4,'#77c2ff');rect(pf.x+53,pf.y+1,39,4,'#144f90');rect(pf.x+92,pf.y+1,27,4,'#e91d3e');
+ // The game viewport is clipped independently of the score panel.
+ cv.clip(f.x*kx,f.y*ky,f.w*kx,f.h*ky);
+ rect(f.x,f.y,f.w,f.h,'#0c1119');
+ for(let i=0;i<43;i++){const x=(i*227+53)%1100, y=(i*139+31)%276;rect(f.x+x,f.y+y,(i%4===0?3:2),(i%3===0?2:1),i%6===0?'#425d78':'#344052')}
+ // Slow moving sky decoration and original pixel obstacles.
+ for(const c of game.clouds){wr(c.x,c.y+8,55,8,'#20303e');wr(c.x+14,c.y,30,13,'#233444')}
+ wr(0,game.floor+3,game.width,4,'#627789');
+ const distance=game.distance%66;for(let x=-distance;x<game.width;x+=66)wr(x,game.floor+15,29,3,'#314252');
+ for(const o of game.obstacles){
+   if(o.type==='bird'){
+     const fl=Math.floor(game.elapsed*7)%2;
+     wr(o.x+5,o.y-18,43,13,'#87bfe7');wr(o.x+43,o.y-15,17,6,'#87bfe7');
+     wr(o.x+17,o.y-25,18,11,'#87bfe7');
+     if(fl){wr(o.x+6,o.y-33,25,9,'#87bfe7');wr(o.x,o.y-37,9,7,'#87bfe7')}
+     else{wr(o.x+12,o.y-4,30,8,'#87bfe7');wr(o.x+2,o.y+3,16,6,'#87bfe7')}
+   }else for(const p of o.parts){const u=p.large?3.15:2.5;pixel(o.x+p.x,o.y-26*u,CACTUS,u,'#3cce8b')}
+ }
+ const u=2.6, dx=game.x-60,dy=game.y-42*u;
+ pixel(dx,dy,DINO_ROWS.filter(p=>p[1]<34),u,'#eaf5fc');
+ const running=game.state==='playing'&&game.y>=game.floor-.1;
+ pixel(dx,dy,running?(Math.floor(game.distance/27)%2?B:A):AIR,u,'#eaf5fc');
+ cv.noclip();
+ // Floating score readout in the panel, not over the dinosaur's course.
+ text(words.score||'SCORE',1192,106,22,'#bdc7d5');
+ text(String(game.score),1192,178,67,'#87c3ff','left','num');
+ text(words.best||'BEST',1194,215,19,'#8d99aa');
+ text(String(best),1194,251,34,'#f2f5fa','left','num');
+ text(words.difficulty||'MODE',1391,215,19,'#8d99aa');
+ text(words.levels[game.difficulty],1391,249,23,'#f2f5fa');
+ rect(1193,273,359,1,'#344455');
+ text(words.online||'ONLINE TOP 10',1194,310,20,'#ffbf5e');
+ round(1191,327,363,78,8,'#1e2a36');border(1191,327,363,78,8,'#456f93');
+ text(words.onlineInactive||'NOT CONNECTED',1214,357,21,'#83c5ff');
+ text(words.offlineNotice||'RANKING NOT ACTIVE',1214,386,17,'#a2b0c1');
+ // Versioned in-game update notices remain independent of network leaderboard.
+ if(update&&update.available&&update.latest)text((words.updateNotice||'UPDATE AVAILABLE')+' '+update.latest,1100,72,18,'#e9ad6f','right');
+ // Overlay in the playfield while ready/over; preserves the controller-to-start UX.
+ if(game.state!=='playing'){
+   round(222,176,733,171,11,'#19212c');border(222,176,733,171,11,'#5b87ae');
+   text(game.state==='over'?words.over:words.title,585,237,36,'#f4f6f8','center');
+   text(game.state==='over'?(words.score+' '+game.score+'  '+words.best+' '+best):words.start,585,282,24,'#9dc9ed','center');
+   text(words.hudParked||'PARKED ONLY',585,322,17,'#9aabbf','center');
+ }
+ rect(22,459,1132,3,'#526a83');
+ for(let i=0;i<18;i++){rect(23+i*63,465,45,7,i%4===2?'#e91d3e':i%4===1?'#14518a':'#75bdf5')}
+ rect(0,489,1600,31,'#0a0c12');
+ text(words.hudJump||'CONTROLLER: JUMP',38,509,18,'#8fa0b5');
+ text(words.hudBack||'BACK: MENU',944,509,18,'#8fa0b5');
+ text('v1.4.14',1548,509,16,'#70859a','right');
+ return cv;
+}
+module.exports={drawDashboard,WORLD_ASPECT};
