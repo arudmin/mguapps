@@ -25,6 +25,31 @@
         ],
         "shared": []
       }
+    },
+    {
+      "id": "chrome_dino",
+      "kind": "app",
+      "path": "apps/chrome_dino",
+      "title": "Chrome Dino",
+      "description": "Offline dinosaur runner. Central iDrive knob to jump. Stationary use only.",
+      "mguHmi": [
+        "ID7",
+        "ID8"
+      ],
+      "uninstallable": true,
+      "requires": {
+        "idrive7-renderd": "2.1.18",
+        "mgu-inputgate": "1.1.0"
+      },
+      "build": {
+        "node": "apps/chrome_dino/build.js",
+        "args": [
+          "{id}",
+          "{version}",
+          "{dir}"
+        ],
+        "shared": []
+      }
     }
   ]
 }

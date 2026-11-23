@@ -1,0 +1,40 @@
+{
+  "id": "chrome_dino",
+  "title": "Chrome Dino",
+  "description": "Offline pixel dinosaur runner controlled by the central iDrive knob. Requires a fresh, valid zero vehicle-speed signal.",
+  "version": "1.0.0",
+  "vendor": "arudmin",
+  "loggingId": "D1A0",
+  "maxDiskUsage": 10485760,
+  "iconGlyph": "play",
+  "mguHmi": ["ID7", "ID8"],
+  "requires": {
+    "idrive7-renderd": "2.1.18",
+    "mgu-inputgate": "1.1.0"
+  },
+  "signals": {
+    "de.bmw.infotainment.vehicle.Vehicle2": {"statusCarSpeed2": "rs"},
+    "de.bmw.infotainment.controlelements.FrontCCU": {"statusRotaryEncoderState": "rs"}
+  },
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "menu",
+      "title": "Chrome Dino",
+      "items": [
+        ["button", "BTN_PLAY", "Play / Continue"],
+        ["button", "BTN_RESTART", "Restart"],
+        ["text", "MENU_INFO", ""],
+        ["text", "MENU_HELP", "Press central iDrive controller to jump. BACK: menu. Parked only."]
+      ]
+    },
+    {
+      "name": "GAME",
+      "kind": "canvas",
+      "title": "Chrome Dino",
+      "chrome": false,
+      "buttons": [["BTN_FLAP", "Jump / Start"]]
+    }
+  ],
+  "settings": [{"key": "best", "label": "Best score", "type": "number", "default": 0, "hidden": true}]
+}
