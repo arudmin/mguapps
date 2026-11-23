@@ -1,97 +1,34 @@
 'use strict';
-/** All-vector pixel art: no external image fetches or browser APIs. */
+// Original monochrome pixel-art, uses existing recorder canvas API.
 function draw(cv, game, w, h, best) {
-    const sx = w / game.width, sy = h / 720;
-    const ink = '#535353', pale = '#f7f7f7', mid = '#949494';
-    function rect(x, y, ww, hh, color) {
-        if (ww > 0 && hh > 0) cv.fillRect(x * sx, y * sy, ww * sx, hh * sy, color);
-    }
-    function text(s, x, y, size, color, align) {
-        cv.text(String(s), x * sx, y * sy, size * sy, color, { align: align || 'left', font: 'bold' });
-    }
-    const floor = game.floor;
-    rect(0, 0, game.width, 720, pale);
-    // Sparse clouds, drifting slower than the ground.
-    for (let i = 0; i < Math.ceil(game.width / 350) + 2; i++) {
-        const cx = i * 350 + 70 - (game.distance * 0.09 % 350), cy = 125 + (i % 3) * 43;
-        rect(cx, cy + 10, 81, 4, '#cdcdcd'); rect(cx + 13, cy + 6, 20, 4, '#cdcdcd');
-        rect(cx + 32, cy, 30, 6, '#cdcdcd'); rect(cx + 59, cy + 6, 18, 4, '#cdcdcd');
-    }
-    rect(0, floor, game.width, 4, ink);
-    for (let i = 0; i < Math.ceil(game.width / 68) + 2; i++) {
-        const x = i * 68 - game.distance % 68;
-        rect(x, floor + 21 + (i % 3) * 5, 18 + (i * 7 % 19), 3, mid);
-        if (i % 5 === 0) rect(x + 28, floor + 32, 7, 3, mid);
-    }
-    for (const o of game.obstacles) {
-        if (o.kind === 'bird') {
-            const wing = Math.floor(game.elapsed * 9) % 2 === 0;
-            rect(o.x + 11, o.y + 10, 46, 15, ink);
-            rect(o.x + 53, o.y + 15, 15, 7, ink);
-            rect(o.x + 8, o.y + 15, 12, 7, ink);
-            rect(o.x + 47, o.y + 12, 4, 4, pale);
-            rect(o.x + 45, o.y + 12, 2, 2, ink);
-            if (wing) {
-                rect(o.x + 24, o.y, 20, 12, ink); rect(o.x + 19, o.y + 2, 9, 9, ink);
-            } else {
-                rect(o.x + 19, o.y + 24, 28, 6, ink); rect(o.x + 24, o.y + 29, 18, 6, ink);
-            }
-        } else {
-            // Pixel cacti, with branches; double obstacles contain two different stems.
-            function cactus(x, top, height, ww) {
-                rect(x + 10, top, ww - 19, height, ink);
-                rect(x + 5, top + 5, ww - 9, 9, ink);
-                rect(x + 1, top + height * 0.50, 10, 10, ink);
-                rect(x - 4, top + height * 0.30, 9, height * 0.26, ink);
-                rect(x + ww - 12, top + height * 0.36, 13, 9, ink);
-                rect(x + ww - 3, top + height * 0.17, 9, height * 0.25, ink);
-            }
-            if (o.kind === 'double') {
-                cactus(o.x + 5, floor - 57, 57, 32);
-                cactus(o.x + 43, floor - 78, 78, 35);
-            } else cactus(o.x + 5, o.y, o.h, 33);
-        }
-    }
-    const x = game.x, y = floor - 78 - game.jumpY;
-    // Original pixel-dino silhouette (not copied sprite assets).
-    rect(x + 33, y, 38, 10, ink);
-    rect(x + 33, y + 8, 44, 22, ink);
-    rect(x + 29, y + 26, 42, 12, ink);
-    rect(x + 30, y + 35, 22, 14, ink);
-    rect(x + 13, y + 42, 42, 22, ink);
-    rect(x + 7, y + 50, 12, 10, ink);
-    rect(x + 1, y + 45, 8, 9, ink);
-    rect(x + 19, y + 60, 33, 8, ink);
-    rect(x + 58, y + 19, 19, 9, ink);
-    rect(x + 62, y + 29, 8, 4, ink);
-    rect(x + 45, y + 13, 6, 6, pale);
-    rect(x + 48, y + 14, 3, 3, ink);
-    rect(x + 49, y + 43, 5, 8, ink); // little arm
-    const running = Math.floor(game.elapsed * 13) % 2 === 0;
-    if (game.jumpY > 0 || game.state !== 'playing') {
-        rect(x + 23, y + 66, 10, 12, ink);
-        rect(x + 43, y + 66, 10, 12, ink);
-    } else if (running) {
-        rect(x + 21, y + 65, 10, 13, ink);
-        rect(x + 41, y + 65, 17, 7, ink);
-    } else {
-        rect(x + 22, y + 65, 15, 7, ink);
-        rect(x + 44, y + 65, 10, 13, ink);
-    }
-    text('CHROME DINO GAME / MGU', 35, 50, 24, ink);
-    text(String(game.score).padStart(5, '0'), game.width - 34, 55, 31, ink, 'right');
-    text('HI ' + String(Math.max(best, game.score)).padStart(5, '0'), game.width - 235, 55, 28, mid, 'right');
-    text('PUSH iDRIVE = JUMP    |    BACK = MENU', game.width / 2, 689, 21, mid, 'center');
-    if (game.state !== 'playing') {
-        const cx = game.width / 2;
-        const pw = Math.min(700, game.width - 20);
-        rect(cx - pw / 2, 191, pw, 248, pale);
-        rect(cx - pw / 2, 191, pw, 3, ink);
-        text(game.state === 'over' ? 'GAME OVER' : 'T-REX RUNNER', cx, 262, 43, ink, 'center');
-        text(game.state === 'over' ? 'SCORE ' + game.score + '   BEST ' + Math.max(best, game.score) : 'JUMP OVER CACTI AND BIRDS', cx, 316, 24, mid, 'center');
-        text('PRESS CENTRAL iDRIVE CONTROLLER', cx, 375, 25, ink, 'center');
-        text('PLAY ONLY WHILE PARKED', cx, 415, 18, mid, 'center');
-    }
-    return cv;
+  const sx = w / game.width, sy = h / 720;
+  function rect(x,y,a,b,c) { cv.fillRect(x*sx,y*sy,a*sx,b*sy,c); }
+  function text(t,x,y,size,c,align) { cv.text(t,x*sx,y*sy,size*sy,c,{align:align||'left',font:'bold'}); }
+  const ink = '#505050';
+  rect(0,0,game.width,720,'#f7f7f7');
+  game.clouds.forEach(c => { rect(c.x,c.y+8,55,8,'#d4d4d4'); rect(c.x+14,c.y,30,13,'#d4d4d4'); });
+  rect(0,game.floor+2,game.width,3,'#6e6e6e');
+  for (let i=0;i<Math.ceil(game.width/50)+2;i++) rect(i*50-game.distance%50, game.floor+12,25,3,'#b4b4b4');
+  game.obstacles.forEach(o => {
+    if (o.type === 'bird') { rect(o.x,o.y-21,39,17,ink); rect(o.x+39,o.y-17,19,7,ink); rect(o.x+14,o.y-31,18,12,ink); }
+    else { rect(o.x+7,o.y-o.h,o.w-10,o.h,ink); rect(o.x,o.y-o.h+17,12,10,ink); rect(o.x,o.y-o.h+13,7,28,ink); rect(o.x+o.w-5,o.y-o.h+25,12,8,ink); rect(o.x+o.w+3,o.y-o.h+17,6,23,ink); }
+  });
+  const x=game.x, y=game.y;
+  rect(x-13,y-49,38,27,ink); rect(x+23,y-35,13,8,ink);
+  rect(x-11,y-24,27,25,ink); rect(x-25,y-17,15,8,ink);
+  rect(x+13,y-3,8,10,ink); rect(x-5,y-3,8,10,ink);
+  rect(x+8,y-41,5,5,'#ffffff'); rect(x+10,y-39,2,2,'#1b1b1b');
+  text('CHROME DINO GAME',28,42,24,ink);
+  text(String(game.score).padStart(5,'0'),game.width-28,42,30,ink,'right');
+  text('HI '+String(best).padStart(5,'0'),game.width-28,76,22,'#999999','right');
+  text('PRESS CONTROLLER = JUMP     BACK = MENU',game.width/2,698,18,'#858585','center');
+  if (game.state !== 'playing') {
+    const cx=game.width/2, pw=Math.min(720,game.width-32);
+    rect(cx-pw/2,185,pw,255,'#ededed'); rect(cx-pw/2,185,pw,3,'#888888');
+    text(game.state==='over'?'GAME OVER':'CHROME DINO',cx,264,42,ink,'center');
+    text(game.state==='over'?'SCORE '+game.score+'   BEST '+best:'PRESS CONTROLLER TO START',cx,331,26,ink,'center');
+    text('PARKED ONLY',cx,392,20,'#858585','center');
+  }
+  return cv;
 }
 module.exports = { draw };

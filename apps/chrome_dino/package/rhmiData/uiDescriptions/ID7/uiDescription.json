@@ -135,7 +135,7 @@
     },
     "11": {
      "type": "button",
-     "name": "BTN_FLAP",
+     "name": "BTN_JUMP",
      "properties": {
       "Focusable": {
        "value": 3,
@@ -145,7 +145,7 @@
      "rows": [
       {
        "Text": {
-        "value": "SID_CHROME_DINO_BTN_FLAP",
+        "value": "SID_CHROME_DINO_BTN_JUMP",
         "type": "StringId"
        }
       }

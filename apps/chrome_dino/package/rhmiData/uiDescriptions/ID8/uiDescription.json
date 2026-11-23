@@ -192,7 +192,7 @@
     },
     "11": {
      "type": "button",
-     "name": "BTN_FLAP",
+     "name": "BTN_JUMP",
      "properties": {
       "Visible": {
        "value": 1,
@@ -206,7 +206,7 @@
      "rows": [
       {
        "PrimaryText": {
-        "value": "SID_CHROME_DINO_BTN_FLAP",
+        "value": "SID_CHROME_DINO_BTN_JUMP",
         "type": "StringId"
        },
        "FrequencyText": {

@@ -1,5 +1,5 @@
 'use strict';
-// Reuse the known-good MGU/OAP input, RHMI, GPU and strict parked-only integration.
+
 const mgu = require('./kit/mgu');
 const { Recorder } = require('./kit/record');
 const Parked = require('./kit/parked');
@@ -8,6 +8,7 @@ const { draw } = require('./src/render');
 const { Controls } = require('./src/input');
 
 const W = 1600, H = 520, STEP = 1 / 120, SPEED_TTL = 5000;
+
 mgu.run({
     start(ctx) {
         const { ui, log, settings } = ctx;
@@ -16,7 +17,9 @@ mgu.run({
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
-        // Fail closed: unknown, invalid or stale speed readings never start a game.
+
+        // Parked.watch exposes speed(), but treats unknown as parked and permits <=3 km/h.
+        // Observe its real polling callback to reject invalid, unknown and stale data too.
         const safetyCtx = Object.assign({}, ctx, {
             signals: {
                 watch(service, instance, callbacks, logger, options) {
@@ -37,10 +40,7 @@ mgu.run({
         let parked = null;
         const ctl = new Controls(() => {
             sync();
-            if (going) {
-                if (game.state === 'over') saveBest();
-                game.action();
-            }
+            if (going) game.action();
         });
         function safe() {
             return parked && speedValid && Date.now() - speedAt <= SPEED_TTL && parked.speed() === 0;
@@ -51,7 +51,7 @@ mgu.run({
         }
         function menu() {
             const reason = !safe() ? 'Parked only: waiting for fresh, valid zero speed.' :
-                'Press Play, then push the iDrive knob to start / jump. BACK: menu.';
+                'Press Play, then press the controller to start / jump. BACK returns here.';
             ui.text('MENU_INFO', reason + ' Best: ' + best);
             ui.text('BTN_PLAY', game.state === 'playing' ? 'Continue' : 'Play');
         }
@@ -69,7 +69,7 @@ mgu.run({
         parked = Parked.watch(safetyCtx, log);
         ui.onClick('BTN_PLAY', () => {
             if (!safe()) { menu(); return; }
-            if (game.state === 'over') { saveBest(); game.reset(); }
+            if (game.state === 'over') game.reset();
             return ui.open('GAME');
         });
         ui.onClick('BTN_RESTART', () => {
@@ -77,7 +77,7 @@ mgu.run({
             saveBest(); game.reset();
             return ui.open('GAME');
         });
-        ui.onClick('BTN_FLAP', () => { sync(); ctl.barClick(); });
+        ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
         if (ctx.controller && ctx.controller.onInput) {
             ctx.controller.onInput((value) => { sync(); ctl.raw(value, 'renderer'); });
         }
@@ -99,11 +99,12 @@ mgu.run({
         process.on('exit', stop);
         process.on('SIGTERM', () => { stop(); process.exit(0); });
         process.on('SIGINT', () => { stop(); process.exit(0); });
+
         ctx.loop('GAME', 30, () => {
             sync();
             if (!going) return;
             const now = Date.now();
-            const cv = ctx.canvas(W, H).clear('#f7f7f7');
+            const cv = ctx.canvas(W, H).clear('#000000');
             const pl = cv.place;
             const full = pl && pl.full && pl.w > 0 && pl.h > 0;
             const w = full ? pl.w : W, h = full ? pl.h : H;
@@ -115,6 +116,7 @@ mgu.run({
                 accumulator -= STEP;
             }
             saveBest();
+            // ctx.loop's GPU path may tick at 60 Hz; explicitly limit presentation to 30.
             if (now - frameAt < 1000 / 30) return;
             frameAt = now;
             if (full) {
@@ -126,6 +128,6 @@ mgu.run({
             return ui.image('GAME_GFX', cv);
         });
         menu();
-        log.info('Chrome Dino Game MGU: central knob jump, strict zero-speed gate, 120 Hz physics, 30 fps');
+        log.info('Chrome Dino Game: strict stationary gate; 120 Hz physics, 30 fps presentation');
     },
 });

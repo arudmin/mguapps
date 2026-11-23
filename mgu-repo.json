@@ -31,7 +31,7 @@
       "kind": "app",
       "path": "apps/chrome_dino",
       "title": "Chrome Dino Game",
-      "description": "Standalone offline dinosaur runner. Central iDrive controller to jump. Parked only.",
+      "description": "Offline dinosaur runner. Central iDrive controller to jump. Parked only.",
       "mguHmi": [
         "ID7",
         "ID8"

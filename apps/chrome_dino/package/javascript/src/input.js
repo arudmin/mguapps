@@ -5,6 +5,7 @@ const PUSH = {
     DREHGEBER_KURZ_GEDRUECKT: 1,
     DREHGEBER_LANG_GEDRUECKT: 2,
 };
+
 /** Single rising edge; no synthetic release on timeout (a held knob must not repeat). */
 class Controls {
     constructor(action, opts) {
@@ -37,8 +38,10 @@ class Controls {
     }
     barClick() {
         const now = this.now();
+        // Native CCU copies and the HMI action can describe the same physical press.
         if (now - this.liveAt <= 1500) return;
         this.fire(now);
     }
 }
+
 module.exports = { Controls, PUSH };
