@@ -31,3 +31,6 @@ node apps/chrome_dino/build.js
 - Menu displays raw BMW language value and the resolved active UI language.
 - RHMI app title uses per-locale StringIds. Store card uses catalog `texts` with translated names/descriptions.
 - Game screen text and menu localized; English fallback for unsupported languages.
+
+## Автоматический язык BMW (1.4.9)
+Используется реальный SOME/IP HMIContext/HMI_CID currentDisplayLanguage (например, BMW RUSSISCH); значения выводятся отдельной строкой BMW HMI в меню. Если сигнал недоступен, строка показывает статус, а язык можно переключить вручную. Карточка MGU Store поддерживает тексты `texts` для ru/de/fr/es/it/uk/pl/pt/nl; RHMI заголовки переведены в соответствующих файлах.
