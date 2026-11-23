@@ -7,6 +7,7 @@ const { Game } = require('./src/game');
 const { draw } = require('./src/render');
 const { Controls } = require('./src/input');
 const APP_VERSION = require('./kit/app-spec.json').version;
+const i18n = require('./src/i18n');
 
 const W = 1600, H = 520, STEP = 1 / 120, SPEED_TTL = 5000;
 
@@ -17,6 +18,11 @@ mgu.run({
         const savedDifficulty = Number(settings.get('difficulty'));
         game.setDifficulty(Number.isFinite(savedDifficulty) ? savedDifficulty : 1);
         let best = Math.max(0, Number(settings.get('best')) || 0);
+        let languageChoice=settings.get('language')||'auto';
+        if (['auto','ru','en'].indexOf(languageChoice)<0) languageChoice='auto';
+        let systemLanguage=i18n.detect(ctx);
+        function language(){return languageChoice==='auto'?systemLanguage:languageChoice;}
+        function t(){return i18n.words(language());}
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
@@ -53,11 +59,13 @@ mgu.run({
             if (game.score > best) { best = game.score; settings.set('best', best); }
         }
         function menu() {
-            const reason = !safe() ? 'Parked only: waiting for fresh, valid zero speed.' :
-                'Press Play, then press the controller to start / jump. BACK returns here.';
-            ui.text('MENU_INFO', 'Chrome Dino v' + APP_VERSION + ' | Best: ' + best + ' | ' + reason);
-            ui.text('BTN_PLAY', game.state === 'playing' ? 'Continue' : 'Play');
-            ui.text('BTN_DIFFICULTY', 'Difficulty: ' + game.mode().name + '  (change)');
+            const w=t();
+            ui.text('BTN_PLAY', game.state==='playing'?w.continue_:w.play);
+            ui.text('BTN_DIFFICULTY',w.difficulty+': '+w.levels[game.difficulty]+' ('+w.change+')');
+            ui.text('BTN_LANGUAGE',w.language+': '+(languageChoice==='auto'?w.auto:i18n.languageNames[languageChoice])+' ('+w.change+')');
+            ui.text('MENU_INFO',w.version+' '+APP_VERSION);
+            ui.text('MENU_BEST',w.best+': '+best);
+            ui.text('MENU_HELP',safe()?w.help:w.parked);
         }
         function sync() {
             const go = !closed && shown() && !!safe();
@@ -70,6 +78,23 @@ mgu.run({
             }
             if (!closed && shown() && !safe()) ui.open('MAIN');
         }
+        // Read BMW HMI language on a best-effort basis. Any missing proxy is nonfatal.
+        [['de.bmw.infotainment.hmi.hmicontext.HMIContext','HMI_CID'],
+         ['de.bmw.infotainment.hmi.hmicontext2.HMIContext2','1']].forEach(function(item){
+            try {
+                Promise.resolve(ctx.signals.watch(item[0],item[1],{
+                    currentDisplayLanguage: function(value){
+                        const next=i18n.langOf(value);
+                        if(next && next!==systemLanguage){
+                            systemLanguage=next;log.info('head language: '+next);menu();
+                        }
+                    }
+                },log)).then(function(sub){
+                    if(sub && sub.error)log.warn('language signal: '+sub.error);
+                }).catch(function(e){log.warn('language signal: '+e);});
+            } catch(e){log.warn('language signal unavailable: '+e);}
+        });
+        log.info('initial language '+systemLanguage+' selection '+languageChoice);
         parked = Parked.watch(safetyCtx, log);
         ui.onClick('BTN_PLAY', () => {
             if (!safe()) { menu(); return; }
@@ -81,6 +106,13 @@ mgu.run({
             saveBest();
             game.nextDifficulty();
             settings.set('difficulty', game.difficulty);
+            menu();
+        });
+        ui.onClick('BTN_LANGUAGE', () => {
+            const choices=['auto','ru','en'];
+            languageChoice=choices[(choices.indexOf(languageChoice)+1)%choices.length];
+            settings.set('language',languageChoice);
+            log.info('language manually set to '+languageChoice);
             menu();
         });
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
