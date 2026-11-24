@@ -13,12 +13,9 @@ function request(base,path,method,token,payload,cb){
  }catch(e){finish(e);}
 }
 class Leaderboard{
- constructor(base,token){this.base=base;this.token=token||null;}
- register(vin,consent,cb){if(consent!==true)return cb(Error('consent required'));let hash;try{hash=identity(vin);}catch(e){return cb(e);}request(this.base,'/v1/register','POST',null,{identity_hash:hash,consent:true},(e,v)=>{if(!e)this.token=v.token;cb(e,v);});}
- top(d,cb){if(!MODES.includes(d))return cb(Error('invalid difficulty'));request(this.base,'/v1/leaderboard?difficulty='+d,'GET',null,null,cb);}
- me(cb){request(this.base,'/v1/me','GET',this.token,null,cb);}
- rename(n,cb){request(this.base,'/v1/profile','PATCH',this.token,{nickname:n},cb);}
- start(d,cb){request(this.base,'/v1/session','POST',this.token,{difficulty:d,game_version:'1.5.5'},cb);}
- submit(s,d,score,events,ticks,cb){request(this.base,'/v1/submit','POST',this.token,{session_id:s,difficulty:d,score,events,ticks},cb);}
+ constructor(base){this.base=base;}
+ enroll(hash,token,cb){request(this.base,'/v1/register','POST',null,{identity_hash:hash,consent:true,token},cb);}
+ syncProfile(token,id,records,nickname,cb){request(this.base,'/v1/sync','POST',token,{operation_id:id,records,nickname},cb);}
+ all(token,cb){request(this.base,'/v1/leaderboard','GET',token,null,cb);}
 }
 module.exports={Leaderboard,identity,MODES};

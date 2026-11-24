@@ -1,3 +1,6 @@
+## 1.5.23 — 24.11.2026
+- Shortened Store descriptions (Russian 12 logical lines, other languages compact; actual wrapping depends on MGU width). Replaced API with one current v1, kept local data and migrated old record-only queued jobs. Server 0.2.4. Explicit nonempty build.shared names the app's own build script, allowing MGU Store contentSpec/partPaths to select app files rather than full repo. Store may still fall back to whole archive; installed updater behavior not tested. 64 MiB display originates from upstream maxBytes fallback when archive length absent. No upstream modification. CI pending; 1.5.22 game and server CI passed 45385581662/45385581707. Real BMW photo confirms earlier registration and easy score 143.
+
 # Chrome Dino Game 1.5.13 — BMW MGU Store
 
 Пиксельная аркада для BMW iDrive 7/8 (MGU), устанавливаемая через [MGU Store](https://github.com/robertnisipeanu/mgu-store). Рабочая ветка — top-chart; стабильная main — 1.4.13.

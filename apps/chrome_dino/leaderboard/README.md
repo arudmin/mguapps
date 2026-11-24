@@ -1,3 +1,15 @@
+# Chrome Dino Leaderboard 0.2.4
+
+Current API: [API.md](API.md). Only /health, /v1/register, /v1/sync and /v1/leaderboard are supported. Older clients must update; database and HMAC key retained. Replay verification remains a development backlog.
+
+### 0.2.4 — 24.11.2026
+Removed legacy API implementations, renamed batch API to v1. Preserved stored players, credentials, records and operation IDs for existing batch jobs; older record-only jobs migrate to new IDs with monotonic scores. CI pending.
+
+### 0.2.3
+Server CI and deployment passed (45385581707).
+
+## Historical documentation (not current API)
+
 # Chrome Dino Leaderboard 0.2.3 — staging
 
 Серверная версия независима от игры 1.5.5. Пока не интегрирована в BMW. Только тестовый контур; результаты не публикуются до проверки повторов.
