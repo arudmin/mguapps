@@ -1,0 +1,17 @@
+'use strict';
+// One in-flight operation; durable snapshot and idempotent retry.
+const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const MODES=['easy','normal','hard','extreme'];
+function uuid(){const b=crypto.randomBytes(16);b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;const h=b.toString('hex');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
+class Outbox{
+ constructor(dir,client){this.client=client;this.file=dir?path.join(dir,'dino-outbox.json'):null;this.busy=false;this.next=0;this.failures=0;this.error='';this.state=null;this.closed=false;if(this.file){try{this.state=JSON.parse(fs.readFileSync(this.file,'utf8'));if(!this.state||this.state.schema!==1||!Array.isArray(this.state.jobs))throw Error('format');}catch(e){if(e.code!=='ENOENT')this.error='STORAGE';}}}
+ save(state){if(!this.file||this.error==='STORAGE')return false;try{const tmp=this.file+'.tmp';const fd=fs.openSync(tmp,'w',0o600);try{fs.fchmodSync(fd,0o600);fs.writeFileSync(fd,JSON.stringify(state));fs.fsyncSync(fd);}finally{fs.closeSync(fd);}fs.renameSync(tmp,this.file);this.state=state;return true;}catch(e){this.error='STORAGE';return false;}}
+ enroll(hash,records){if(this.state||!this.file||!/^[a-f0-9]{64}$/.test(hash))return false;const token=crypto.randomBytes(32).toString('hex');const state={schema:1,token,registered:false,nickname:'',jobs:[{kind:'register',hash}],last:null};if(!this.save(state))return false;this.capture(records);return true;}
+ capture(values){if(!this.state)return;const records={};MODES.forEach((m,i)=>{records[m]=Math.max(0,Math.min(1000000,Math.floor(Number(values[i])||0)));});const signature=JSON.stringify(records);if(signature===this.state.last)return;const s=JSON.parse(JSON.stringify(this.state));s.last=signature;const job={kind:'sync',id:uuid(),records}; // Only replace a snapshot which has never been sent.
+ const tail=s.jobs[s.jobs.length-1];if(tail&&tail.kind==='sync'&&!tail.sent)s.jobs[s.jobs.length-1]=job;else s.jobs.push(job);this.save(s);}
+ tick(now){if(this.closed||this.busy||!this.state||!this.state.jobs.length||now<this.next||this.error==='STORAGE'||this.error==='HTTP_409'||this.error==='HTTP_400'||this.error==='HTTP_401')return;const job=this.state.jobs[0];if(!job.sent){const s=JSON.parse(JSON.stringify(this.state));s.jobs[0].sent=true;if(!this.save(s))return;}this.busy=true;const finish=(err,result)=>{this.busy=false;if(this.closed)return;const valid=!err&&result&&result.accepted===true&&(job.kind==='register'?typeof result.nickname==='string':result.operation_id===job.id);if(!valid){this.error=err?String(err.code||'NETWORK'):'INVALID_RESPONSE';this.next=Date.now()+Math.min(60000,5000*Math.pow(2,Math.min(4,this.failures++)));return;}const s=JSON.parse(JSON.stringify(this.state));if(job.kind==='register'){s.registered=true;s.nickname=result.nickname;}s.jobs.shift();if(this.save(s)){this.error='';this.failures=0;this.next=0;}};
+ if(job.kind==='register')this.client.enroll(job.hash,this.state.token,finish);else this.client.syncRecords(this.state.token,job.id,job.records,finish);}
+ status(){return {enabled:!!this.state,registered:!!(this.state&&this.state.registered),nickname:this.state?this.state.nickname:'',pending:this.state?this.state.jobs.length:0,error:this.error};}
+ stop(){this.closed=true;}
+}
+module.exports={Outbox};

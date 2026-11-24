@@ -103,3 +103,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.18 (top-chart):** native touchscreen routing for Dashboard and immediate touch-down jump; server unchanged.
+
+
+**1.5.19 / server 0.2.1 (top-chart):** opt-in durable offline synchronization of private personal bests, API v2 idempotent registration and sync. Public verified ranking unchanged; CI pending.

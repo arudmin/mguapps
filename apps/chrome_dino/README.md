@@ -224,3 +224,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.18 — 24.11.2026
 - Enabled native renderer touch claims for the chrome-free GAME canvas, separate from kit-owned navigation so rotary input remains app-controlled. Raw down events converted from renderer logical coordinates to the dashboard's 1600×520 hitboxes; one action per down, immediate jump in playfield and direct menu controls. No physical BACK changes. Zero-speed gate retained. Requires renderer native touch capability; actual car touch and coordinates not yet verified. CI pending. Server unchanged.
+
+
+### 1.5.19 — 24.11.2026
+- Added opt-in personal score sync from Top Players, local SHA-256 VIN and random persisted credential; raw VIN never sent. Durable atomic outbox with one in-flight operation, snapshot coalescing, retry 5/10/20/40/60 s, stable operation ID, ACK-only removal, all four existing bests and subsequent bests. Local records remain playable offline. Permanent errors displayed, no silent deletion. Server 0.2.1 API v2 required. Sync currently private unverified best snapshots, not individual game replays or ranked submissions; nickname editing/recovery/deletion outstanding. Consent translations Russian/English, fallback English. CI and actual BMW upload pending. DNS successful on real BMW per user photo 1.5.17.
