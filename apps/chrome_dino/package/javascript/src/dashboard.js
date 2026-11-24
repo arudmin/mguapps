@@ -65,13 +65,17 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  rect(1193,180,359,1,'#344455');
  text(words.records,1194,207,20,'#9eadbf');
  words.levels.forEach((label,i)=>{
-   const y=222+i*45,active=i===game.difficulty;
-   if(active)round(1191,y,363,41,5,'#223c56');
-   text(label,1204,y+28,22,active?'#eaf5fc':'#bdc7d5');
+   const y=216+i*39,active=i===game.difficulty;
+   if(active)round(1191,y,363,35,5,'#223c56');
+   text(label,1204,y+25,22,active?'#eaf5fc':'#bdc7d5');
    text(String(records[i]||0),1540,y+28,25,'#c7e3ff','right','num');
  });
- rect(1193,413,359,1,'#344455');
- text('FPS '+String(opts.fps===undefined?'-':opts.fps)+' / 60',1194,441,18,'#92ceff');
+ const rankEnabled=game.state!=='playing'&&!opts.paused&&!opts.exitDialog;
+ const rankFocus=rankEnabled&&(focus==='ranking'||opts.rankingOpen);
+ round(1191,376,363,46,7,rankFocus?'#244768':'#1a2939');border(1191,376,363,46,7,rankFocus?'#88caff':'#45617b');
+ text(words.topPlayers,1372,405,22,rankEnabled?'#f0f7ff':'#78889a','center');
+ rect(1193,429,359,1,'#344455');
+ text('FPS '+String(opts.fps===undefined?'-':opts.fps)+' / 60',1194,453,18,'#92ceff');
  // Versioned in-game update notices remain independent of network leaderboard.
  if(update&&update.available&&update.latest)text((words.updateNotice||'UPDATE AVAILABLE')+' '+update.latest,1100,72,18,'#e9ad6f','right');
  // Overlay in the playfield while ready/over; preserves the controller-to-start UX.
@@ -88,6 +92,19 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    text((words.score||'SCORE')+' '+game.score,585,252,23,'#9dc9ed','center');
    for(const item of [{id:'resume',x:242,label:words.continue_},{id:'menu',x:600,label:words.exitToMenu}]){
      round(item.x,275,328,62,8,focus===item.id?'#244768':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,24,'#f0f7ff','center');
+   }
+ }else if(opts.rankingOpen){
+   round(205,64,766,386,11,'#19212c');border(205,64,766,386,11,'#5b87ae');
+   text(words.topPlayers,585,97,26,'#f4f6f8','center');
+   round(300,108,550,42,7,focus==='rankMode'?'#244768':'#1a2939');border(300,108,550,42,7,focus==='rankMode'?'#88caff':'#45617b');
+   text('< '+words.levels[opts.rankingMode||0]+' >',575,136,22,'#f0f7ff','center');
+   const rows=opts.rankingRows||[];
+   if(opts.rankingStatus==='loading')text(words.rankLoading,585,264,23,'#9dc9ed','center');
+   else if(opts.rankingStatus==='error')text(words.rankError,585,264,23,'#ffc17c','center');
+   else if(!rows.length)text(words.rankEmpty,585,264,23,'#9dc9ed','center');
+   else rows.slice(0,10).forEach((row,i)=>{const y=174+i*21;text(String(row.rank),260,y,18,'#9dc9ed');text(row.nickname,315,y,18,'#f0f7ff');text(String(row.score),916,y,18,'#c7e3ff','right','num');});
+   for(const item of [{id:'refresh',x:300,label:words.rankRefresh},{id:'rankDone',x:600,label:words.doneSettings}]){
+     round(item.x,398,265,42,7,focus===item.id?'#244768':'#1a2939');border(item.x,398,265,42,7,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+132,426,21,'#f0f7ff','center');
    }
  }else if(opts.settingsOpen){
    round(222,126,733,296,11,'#19212c');border(222,126,733,296,11,'#5b87ae');

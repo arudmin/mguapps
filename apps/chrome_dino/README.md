@@ -1,4 +1,4 @@
-# Chrome Dino Game 1.5.12 — BMW MGU Store
+# Chrome Dino Game 1.5.13 — BMW MGU Store
 
 Пиксельная аркада для BMW iDrive 7/8 (MGU), устанавливаемая через [MGU Store](https://github.com/robertnisipeanu/mgu-store). Рабочая ветка — top-chart; стабильная main — 1.4.13.
 
@@ -199,3 +199,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.12 — 24.11.2026
 - Removed decorative header and bottom racing stripes. Right panel shows four persisted local personal bests, current mode highlighted. Gear opens a Dashboard settings overlay for difficulty/language, Done and back close it. Settings locked during active runs; strict zero speed remains. 12 locales. Updated startup and visual tests. Online leaderboard still separate; server unchanged. CI pending.
+
+
+### 1.5.13 — 24.11.2026
+- Added Top Players button under the four local records, controller focus and touch. Opens read-only live staging leaderboard, four difficulty filters, refresh and close, loading/offline/empty states. Only verified server entries displayed. No VIN transmission, registration or score submission in this version. Offline gameplay unaffected. Startup test mocks the API and checks navigation; CI and real MGU network validation pending. Server 0.1.0 unchanged.

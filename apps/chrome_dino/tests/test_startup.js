@@ -5,7 +5,7 @@ const {Recorder}=require('../package/javascript/kit/record');
 async function run(id8){
  let closedScreens=[],lastGame,lastOptions;let clock=10000,visible='GAME',tap,draw,shutdown,focus=true,grab=false,frames=0,settings={},watchers={},timers=[],clicks={},input,vis;
  const ctx={ui:{id8,isVisible:n=>n===visible,hasFocus:()=>focus,open:n=>{visible=n;if(vis)vis(n,true);return Promise.resolve();},close:n=>{closedScreens.push(n);visible='OUTSIDE';if(vis)vis(n,false);return Promise.resolve();},onClick:(n,fn)=>clicks[n]=fn,onVisible:fn=>vis=fn,onFocus:()=>{},image:(n,cv)=>{assert.strictEqual(n,'GAME_GFX');assert(cv.words().length>60);frames++;},text(){},comp(){return null;}},log:{info(){},warn(){},error(){}},settings:{get:k=>settings[k],set:(k,v)=>settings[k]=v},signals:{watch:(s,i,cb)=>{Object.assign(watchers,cb);return Promise.resolve({available:true});}},controller:{grab:v=>grab=v,onInput:fn=>input=fn},onTap:fn=>tap=fn,hideButton(){},loop:(n,f,fn)=>{assert.strictEqual(n,'GAME');assert.strictEqual(f,8);draw=fn;},canvas:(w,h)=>new Recorder(w,h),app:{on:(n,fn)=>shutdown=fn}};
- const sandbox={require:p=>p==='./kit/mgu'?{run:o=>o.start(ctx)}:p==='./kit/diag'?{Diag:class{async init(){return {p:null};}}}:p==='./src/dashboard'?{...require(path.resolve(root,p)),drawDashboard:(cv,g,w,h,b,words,u,o)=>{lastGame=g;lastOptions=o;return require(path.resolve(root,p)).drawDashboard(cv,g,w,h,b,words,u,o);}}:p==='./src/update'?{checkUpdate:(v,cb)=>cb({checked:false,available:false})}:require(path.resolve(root,p)),Date:{now:()=>clock},process:{on(){},exit(){}},setTimeout:fn=>{timers.push(fn);},setInterval:fn=>{sandbox.safety=fn;return 1;},clearInterval(){},console};
+ const sandbox={require:p=>p==='./kit/mgu'?{run:o=>o.start(ctx)}:p==='./kit/diag'?{Diag:class{async init(){return {p:null};}}}:p==='./src/dashboard'?{...require(path.resolve(root,p)),drawDashboard:(cv,g,w,h,b,words,u,o)=>{lastGame=g;lastOptions=o;return require(path.resolve(root,p)).drawDashboard(cv,g,w,h,b,words,u,o);}}:p==='./src/leaderboard'?{MODES:['easy','normal','hard','extreme'],Leaderboard:class{top(d,cb){cb(null,{verified_only:true,entries:[{rank:1,nickname:'Test_Dino',score:12}]});}}}:p==='./src/update'?{checkUpdate:(v,cb)=>cb({checked:false,available:false})}:require(path.resolve(root,p)),Date:{now:()=>clock},process:{on(){},exit(){}},setTimeout:fn=>{timers.push(fn);},setInterval:fn=>{sandbox.safety=fn;return 1;},clearInterval(){},console};
  vm.runInNewContext(source,sandbox,{filename:'app.js'});
  await Promise.resolve();await Promise.resolve();
  for(const t of timers.splice(0))t();
@@ -18,6 +18,9 @@ async function run(id8){
  tap(585,301);assert.strictEqual(settings.language,'ru');
  tap(585,373);clock+=100;draw();assert(!lastOptions.settingsOpen);
  assert.strictEqual(lastOptions.selectedControl,'play');assert.strictEqual(lastOptions.bestModes.length,4);
+ tap(1372,399);clock+=100;draw();assert(lastOptions.rankingOpen);assert.strictEqual(lastOptions.rankingRows[0].nickname,'Test_Dino');
+ tap(575,129);clock+=100;draw();assert.strictEqual(lastOptions.rankingMode,3);
+ tap(730,419);clock+=100;draw();assert(!lastOptions.rankingOpen);
  input({frontRotaryEncoderOperation:0});input({frontRotaryEncoderOperation:1});
  clock+=100;input({frontRotaryEncoderPushButton:1});input({frontRotaryEncoderPushButton:0});
  clock+=100;draw();assert(lastOptions.settingsOpen);
