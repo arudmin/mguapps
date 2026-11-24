@@ -1,5 +1,5 @@
 'use strict';
-const https=require('https'),crypto=require('crypto');
+const https=require('https'),crypto=require('crypto'),URL=require('url').URL;
 const MODES=['easy','normal','hard','extreme'];
 function identity(vin){if(typeof vin!=='string'||!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin))throw Error('invalid vehicle identity');return crypto.createHash('sha256').update(vin,'utf8').digest('hex');}
 function request(base,path,method,token,payload,cb){

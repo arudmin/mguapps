@@ -28,3 +28,7 @@ Node 22: в worker выполнить npm test. Используется SQLite 
 
 ### 24.11.2026 — integration check
 Добавлена отдельная проверка реального staging API и D1: синтетическая регистрация, проверка HMAC/хеша токена в SQL, смена имени, сессия Extreme, pending-результат, защита от повторной отправки и отсутствие непроверенного рекорда. Временные записи удаляются после теста. Версии игры и сервера не изменены. Результат проверки публикуется в Actions.
+
+
+### 24.11.2026 — persistent player and MGU client integration
+CI 45357189282 confirmed live HTTPS, D1 registration, HMAC, token hash, profile, session, pending score and duplicate rejection. Added live integration using the actual MGU client module with synthetic VINs (no real vehicle identifier): persistent Test_Dino, independent temporary Test_New_BMW, consent, restart with token, duplicate rejection and pending Extreme submission. Test_New_BMW is cleaned up; Test_Dino remains. Its initial token is not logged or retained after CI; recovery is still not implemented. Explicit URL import for legacy Node compatibility. Actual ID7/ID8 UI integration, real VIN reading, TLS on BMW and protected token persistence still require hardware testing. Server/game versions unchanged; test workflow records actual results.
