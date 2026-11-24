@@ -9,7 +9,6 @@ assert.strictEqual(app.version,require('../package/package.json').version);
 assert(app.description.includes('Four difficulties'));
 assert(app.description.includes('\n'));
 const source=fs.readFileSync(path.join(__dirname,'../package/javascript/app.js'),'utf8');
-assert(source.includes("+' (VIN: '+vinState+')"));
 assert(source.includes('checkUpdate(APP_VERSION'));
 assert(source.includes('updateState'));
 console.log('1.4.13 update-check, VIN inline and descriptions OK');

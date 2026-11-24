@@ -23,18 +23,18 @@ for(const lang of ['ru','en','de','fr','es','it','pt','nl','pl','uk','zh','ja'])
 }
 const app=require('../app.json');
 assert.strictEqual(app.version,require('../package/package.json').version);
-assert(app.screens.find(x=>x.name==='MAIN').items.some(x=>x[1]==='BTN_THEME'));
+assert.deepStrictEqual(app.screens.map(x=>x.name),['GAME']);
 const src=fs.readFileSync(path.join(__dirname,'../package/javascript/app.js'),'utf8');
 assert(src.includes("ctx.loop('GAME', 8"));
 assert(src.includes('1000 / 60'));
 assert(src.includes('game.resize(WORLD_ASPECT)'));
 assert(src.includes('selectedControl'));
 assert(src.includes('frontRotaryEncoderOperation'));
-assert(src.includes("ui.open('GAME')"));
+assert(src.includes('backAction'));
 for(const hmi of ['ID7','ID8']){
  const ui=require('../package/rhmiData/uiDescriptions/'+hmi+'/uiDescription.json');
- assert.strictEqual(ui.containers['1'].components['26'].properties.Visible.value,0);
+ assert(!ui.containers['1']);
  const xml=fs.readFileSync(path.join(__dirname,'../package/rhmiData/uiDescriptions/'+hmi+'/application.xml'),'utf8');
- assert(xml.includes('<component id="26" type="button"'));
+ assert(!xml.includes('<component id="26"'));
 }
 console.log('1.5.5: dashboard render, classic fallback, 12 languages, native theme button, fixed physics and GPU pacing OK');

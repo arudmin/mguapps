@@ -749,7 +749,7 @@ async function runInner(impl) {
 
     // a separate SETTINGS state exists only when no menu screen shows the settings itself
     // ("settings": true, as in Doom: kit/tools/build.py builds no SETTINGS state then)
-    const settingsScreen = !!(SPEC.settings && SPEC.settings.length) && !(SPEC.screens || []).some((s) => s.settings === true);
+    const settingsScreen = !!(SPEC.settings && SPEC.settings.some(s=>!s.hidden)) && !(SPEC.screens || []).some((s) => s.settings === true);
     // visibility of our states (pauses rendering when the user leaves); the HMI's settings screen too (the
     // drawn screen gives way to it: display.js)
     const tracked = (SPEC.screens || []).concat(settingsScreen ? [{ name: 'SETTINGS' }] : []);
@@ -776,7 +776,7 @@ async function runInner(impl) {
 
     // entry points (tiles): map them to the main screen once, up front, like
     // BMW's own apps do; a tap then only opens the mapped state
-    const mainName = (SPEC.screens && SPEC.screens[0] && SPEC.screens[0].name) || 'MAIN';
+    const mainName = (SPEC.screens && SPEC.screens[0] && SPEC.screens[0].name) || 'GAME';
     let entryUuids = [];
     try {
         const appDesc = JSON.parse(fs.readFileSync(path.join(APP_ROOT, 'rhmiData', 'application.json'), 'utf8'));
@@ -795,7 +795,7 @@ async function runInner(impl) {
         let again = false;
         const map = mapped[uuid] ? Promise.resolve() : ui.rhmi.mapEntryState(uuid, mainState).then(() => { mapped[uuid] = true; });
         opening = map
-            .then(() => (mainState && mainState.updateResources ? mainState.updateResources().catch(() => {}) : null))
+            .then(() => (SPEC.screens[0].kind !== 'canvas' && mainState && mainState.updateResources ? mainState.updateResources().catch(() => {}) : null))
             .then(() => ui.rhmi.openEntryState(uuid))
             .then(() => ui._setVisible(mainName, true))
             .catch((e) => {

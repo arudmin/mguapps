@@ -40,7 +40,7 @@ assert(cv.words().length>60,'right panel and original dinosaur rendered');
 const source=require('fs').readFileSync(require('path').join(__dirname,'../package/javascript/app.js'),'utf8');
 assert(source.includes('frontRotaryEncoderOperation'),'BMW rotary counter selection');
 assert(source.includes("ctx.onTap"),'touch settings');
-assert(source.includes("ui.open('GAME')"),'Dashboard direct entry');
+assert.deepStrictEqual(spec.screens.map(x=>x.name),['GAME']);
 assert(!source.includes("draw(screenRecorder"),'Classic disabled');
 assert(source.includes('fps:actualFPS'),'actual measured FPS');
 console.log('1.5.5 four levels, upgraded scores, T-Rex, sidebar settings and FPS diagnostics OK');

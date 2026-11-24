@@ -97,7 +97,7 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  for(let i=0;i<18;i++){rect(23+i*63,465,45,7,i%4===2?'#e91d3e':i%4===1?'#14518a':'#75bdf5')}
  rect(0,489,1600,31,'#0a0c12');
  text(words.hudJump||'CONTROLLER: JUMP',38,509,18,'#8fa0b5');
- text(words.hudBack||'BACK: MENU',944,509,18,'#8fa0b5');
+ round(890,489,260,30,5,'#1a2939');text(words.hudBack||'BACK',1020,509,18,'#c6d9ed','center');
  text('v'+require('../kit/app-spec.json').version,1548,509,16,'#70859a','right');
  return cv;
 }

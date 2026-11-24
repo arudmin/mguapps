@@ -31,14 +31,14 @@ mgu.run({
         let headLanguageRaw='';
         let headLanguageState='waiting';
         let headLanguageSource='not yet received';
-        let vinState='проверка...';
+        
         let updateState={available:false,latest:null,checked:false};
         function language(){return languageChoice==='auto'?systemLanguage:languageChoice;}
         function t(){return i18n.words(language());}
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
-        let selectedControl='play', paused=false, returning=false, exitDialog=false, exiting=false, backWasPlaying=false, hasDashboard=false;
+        let selectedControl='play', paused=false, exitDialog=false, exiting=false, tiltHeld=false, rendererTiltAt=-Infinity;
         let rotaryPosition=null,rendererRotaryAt=-Infinity;
         let fpsAt=0,fpsFrames=0,actualFPS=0;
 
@@ -83,37 +83,6 @@ mgu.run({
                 settings.set('best',Math.max.apply(null,bestModes));
             }
         }
-        function menu() {
-            const w=t();
-            ui.text('BTN_PLAY', game.state==='playing'?w.continue_:w.play);
-            ui.text('BTN_THEME',w.style+': '+w.styleDashboard);
-            if (ui.id8) {
-                ui.text('BTN_DIFFICULTY',w.difficulty+': '+w.levels[game.difficulty]+' ('+w.change+')');
-                ui.text('BTN_LANGUAGE',w.language+': '+(languageChoice==='auto'?w.auto:i18n.languageNames[languageChoice])+' ('+w.change+')');
-                // ID8 has no RHMI drop-down widget; its buttons open dedicated option lists.
-                w.levels.forEach((label,idx)=>ui.text('DIF_'+idx,(idx===game.difficulty?'✓ ':'')+label));
-                ['auto','ru','en'].forEach((code,idx)=>{
-                    const value=idx===0?w.auto:i18n.languageNames[code];
-                    ui.text('LANG_'+idx,(code===languageChoice?'✓ ':'')+value);
-                });
-            } else {
-                // ID7: the native HMI localizes drop-down headers and options
-                // from StringId resources according to BMW's *actual* HMI locale.
-                // Do NOT replace them using RHMI Text: this did not update the
-                // Unicode HeaderText/ItemText cells on the user's ID7 firmware.
-                // Only the selected numeric indices change dynamically.
-                const diff=ui.comp('BTN_DIFFICULTY'),lng=ui.comp('BTN_LANGUAGE');
-                if(diff)Promise.resolve(diff.setValue(0,'SelectedItem',game.difficulty,'UInt')).catch(e=>log.warn('difficulty selected: '+e));
-                if(lng)Promise.resolve(lng.setValue(0,'SelectedItem',Math.max(0,['auto','ru','en'].indexOf(languageChoice)),'UInt')).catch(e=>log.warn('language selected: '+e));
-            }
-            ui.text('MENU_INFO',w.version+' '+APP_VERSION+' (VIN: '+vinState+')');
-            ui.text('MENU_BEST',w.best+': '+best+(updateState.available?' | '+(language()==='ru'?'Обновите игру до ':'Update to ')+updateState.latest:''));
-            ui.text('MENU_HELP',safe()?w.help:w.parked);
-            const detected=headLanguageRaw||headLanguageState;
-            const current=language();
-            ui.text('MENU_BMW','BMW HMI: '+detected+'  ->  '+systemLanguage+'  |  UI: '+current);
-            // VIN is intentionally embedded in MENU_INFO: ID7 did not render a separate label.
-        }
         function pauseRun() {
             if(game.state==='playing'&&!paused){paused=true;selectedControl='resume';saveBest();}
             last=null;accumulator=0;
@@ -124,18 +93,29 @@ mgu.run({
             else if(choice!=='resume')return;
             paused=false;selectedControl='play';last=null;accumulator=0;
         }
+        function backAction(){
+            if(!shown()||closed||exiting)return;
+            if(exitDialog){exitDialog=false;selectedControl=paused?'resume':'play';return;}
+            if(game.state==='playing'&&!paused){pauseRun();return;}
+            exitDialog=true;selectedControl='cancel';
+        }
         function exitAction(choice){
             if(!exitDialog)return;
             if(choice==='cancel'){exitDialog=false;selectedControl=paused?'resume':'play';return;}
             if(choice!=='exit'||exiting)return;
             exiting=true;exitDialog=false;saveBest();sync();
-            (async function(){await ui.close('GAME');await ui.close('MAIN');})().catch(e=>{log.warn('close dashboard '+e);exiting=false;exitDialog=true;selectedControl='cancel';returnDashboard();});
+            Promise.resolve(ui.close('GAME')).catch(e=>{log.warn('close dashboard '+e);exiting=false;exitDialog=true;selectedControl='cancel';sync();});
         }
-        function returnDashboard(){
-            if(closed||returning||exiting)return;
-            returning=true;
-            pauseRun();
-            Promise.resolve(ui.open('GAME')).then(()=>{returning=false;sync();},e=>{returning=false;log.warn('open dashboard '+e);});
+        function backTilt(value,source){
+            if(!value)return;
+            const raw=value.frontRotaryEncoderDeflection;
+            if(raw===undefined)return;
+            const now=Date.now();
+            if(source==='renderer')rendererTiltAt=now;
+            else if(now-rendererTiltAt<1000)return;
+            const left=raw===10||raw===11||raw==='10'||raw==='11'||raw==='DREHGEBER_KURZ_LINKS'||raw==='DREHGEBER_LANG_LINKS';
+            if(left&&!tiltHeld)backAction();
+            tiltHeld=left;
         }
         function sync() {
             const go = !closed && !exiting && shown() && !!safe();
@@ -144,7 +124,7 @@ mgu.run({
                 last = null; accumulator = 0; frameAt = -Infinity; fpsAt=0; fpsFrames=0; actualFPS=0;
                 ctl.enable(go);
                 if (ctx.controller && ctx.controller.grab) ctx.controller.grab(go);
-                if (!go) { saveBest(); if(!safe()){game.reset();paused=false;selectedControl='play';}else pauseRun(); menu(); }
+                if (!go) { saveBest(); if(!safe()){game.reset();paused=false;exitDialog=false;selectedControl='play';}else pauseRun();  }
             }
             // On unsafe/unknown speed the dashboard remains visible with a warning; gameplay is disabled.
         }
@@ -161,7 +141,7 @@ mgu.run({
                     headLanguageSource='HMIContext.currentDisplayLanguage';
                     if(next)systemLanguage=next;
                     log.info('BMW display language raw='+JSON.stringify(raw)+' resolved='+(next||'unknown'));
-                    menu();
+                    
                 }
             },log).then(function(sub){
                 if(sub && sub.error) {
@@ -170,11 +150,11 @@ mgu.run({
                 } else if(sub && !sub.available && !headLanguageRaw){
                     headLanguageState='provider unavailable';
                 }
-                menu();
+                
             }).catch(function(err){
                 headLanguageState='error: '+String(err).slice(0,52);
                 log.warn('BMW HMI language: '+err);
-                menu();
+                
             });
         } catch(err){
             headLanguageState='error: '+String(err).slice(0,52);
@@ -185,39 +165,39 @@ mgu.run({
         (async function probeVin() {
             try {
                 const diag = await new Diag(ctx.signals, log).init();
-                if (!diag.p) { vinState='недоступен'; menu(); return; }
+                if (!diag.p) { return; }
                 const replies = await diag.functional(0x22,[0xF1,0x90],{idleMs:1800,maxMs:9000});
                 const found=findVin(replies);
-                vinState=found ? 'доступен' : 'недоступен';
+                
                 log.info('VIN read-only probe: '+(found?'available':'not available'));
             } catch(e) {
-                vinState='ошибка чтения';
+                
                 log.warn('VIN read-only probe failed (no vehicle identifiers logged): '+String(e).slice(0,90));
             }
-            menu();
+            
         })();
         checkUpdate(APP_VERSION, function(result) {
             updateState=result;
             log.info('version check: '+(result.checked?(result.available?'update available':'current'):'offline'));
-            menu();
+            
         });
         log.info('initial UI language='+systemLanguage+' selected='+languageChoice);
         parked = Parked.watch(safetyCtx, log);
         function chooseDifficulty(index) {
             if (!Number.isInteger(index)||index<0||index>=4)return;
-            if (!safe()) { menu(); return; }
+            if (!safe()) {  return; }
             saveBest();
             game.setDifficulty(index);
             best=bestModes[index];
             settings.set('difficulty',game.difficulty);
-            menu();
+            
         }
         function chooseLanguage(index) {
             if (!Number.isInteger(index)||index<0||index>=languageChoices.length)return;
             languageChoice=languageChoices[index];
             settings.set('language',languageChoice);
             log.info('language selected: '+languageChoice);
-            menu();
+            
         }
         function rotary(value,source){
             const raw=value&&value.frontRotaryEncoderOperation;
@@ -236,6 +216,7 @@ mgu.run({
         // Touch areas use the 1600x520 dashboard coordinates.
         if(ctx.onTap)ctx.onTap((x,y)=>{
             sync();
+            if(x>=890&&x<=1150&&y>=489&&shown()){backAction();return;}
             if(!going)return;
             if(exitDialog){if(y>=275&&y<=337){if(x>=242&&x<=570)exitAction('cancel');else if(x>=600&&x<=928)exitAction('exit');}return;}
             if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('restart');}return;}
@@ -247,21 +228,17 @@ mgu.run({
         if(ctx.hideButton)ctx.hideButton('BTN_JUMP');
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
         if (ctx.controller && ctx.controller.onInput) {
-            ctx.controller.onInput((value) => { sync(); rotary(value,'renderer'); ctl.raw(value,'renderer'); });
+            ctx.controller.onInput((value) => { sync(); backTilt(value,'renderer'); rotary(value,'renderer'); ctl.raw(value,'renderer'); });
         }
         ctx.signals.watch('de.bmw.infotainment.controlelements.FrontCCU', '1', {
-            statusRotaryEncoderState(value) { sync(); rotary(value,'signals'); ctl.raw(value,'signals'); },
+            statusRotaryEncoderState(value) { sync(); backTilt(value,'signals'); rotary(value,'signals'); ctl.raw(value,'signals'); },
         }, log).then((s) => { if (s.error) log.warn('controller: ' + s.error); });
         if (ui.onFocus) ui.onFocus(sync);
         if (ui.onVisible) ui.onVisible((name,visible) => {
-            if(exiting)return;
-            if(name==='GAME'&&!visible){backWasPlaying=game.state==='playing'&&!paused&&!exitDialog;pauseRun();}
+            if(name!=='GAME')return;
+            if(!visible){pauseRun();exitDialog=false;tiltHeld=false;}
+            else {if(exiting){game.reset();paused=false;selectedControl='play';}exiting=false;last=null;accumulator=0;}
             sync();
-            if(name==='MAIN'&&visible){
-                if(hasDashboard){if(exitDialog){exitDialog=false;selectedControl=paused?'resume':'play';}else if(!backWasPlaying){exitDialog=true;selectedControl='cancel';}backWasPlaying=false;}
-                returnDashboard();
-            }
-            if(name==='GAME'&&visible){hasDashboard=true;returning=false;last=null;accumulator=0;}
         });
         const safetyTimer = setInterval(sync, 100);
         function stop() {
@@ -280,7 +257,6 @@ mgu.run({
         ctx.loop('GAME', 8, () => {
             sync();
             if (closed || exiting || !shown()) return;
-            hasDashboard=true;
             const now = Date.now();
             const cv = ctx.canvas(W, H).clear('#000000');
             const pl = cv.place;
@@ -307,8 +283,7 @@ mgu.run({
             }else drawDashboard(cv,game,w,h,best,t(),updateState,options);
             return ui.image('GAME_GFX', cv);
         });
-        menu();
-        setTimeout(()=>{if(!closed&&!exiting&&!hasDashboard)Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e));},150);
+        
         log.info('Chrome Dino '+APP_VERSION+' Dashboard-only, right-side controls, strict zero speed; GPU 60 Hz target, PNG fallback 8 Hz');
     },
 });

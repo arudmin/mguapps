@@ -1,55 +1,8 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "screens": [
-    {
-      "name": "MAIN",
-      "kind": "menu",
-      "title": "Chrome Dino Game",
-      "items": [
-        [
-          "button",
-          "BTN_PLAY",
-          "Play / Continue"
-        ],
-        [
-          "button",
-          "BTN_DIFFICULTY",
-          "Difficulty: NORMAL"
-        ],
-        [
-          "button",
-          "BTN_LANGUAGE",
-          "Language: Auto"
-        ],
-        [
-          "button",
-          "BTN_THEME",
-          "Theme: Dashboard"
-        ],
-        [
-          "text",
-          "MENU_INFO",
-          ""
-        ],
-        [
-          "text",
-          "MENU_BEST",
-          ""
-        ],
-        [
-          "text",
-          "MENU_BMW",
-          "BMW language: detecting..."
-        ],
-        [
-          "text",
-          "MENU_HELP",
-          "Press Play, then controller to jump. BACK: menu. Parked only."
-        ]
-      ]
-    },
     {
       "name": "GAME",
       "kind": "canvas",
@@ -185,8 +138,6 @@
   "config": null,
   "startWidget": null,
   "stateIds": {
-    "MAIN": 1,
-    "GAME": 9,
-    "SETTINGS": 16
+    "GAME": 9
   }
 }
