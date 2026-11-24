@@ -108,7 +108,7 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    text('< '+words.levels[opts.rankingMode||0]+' >',575,136,22,'#f0f7ff','center');
    const rows=opts.rankingRows||[];
    if(opts.rankingStatus==='loading')text(words.rankLoading,585,264,23,'#9dc9ed','center');
-   else if(opts.rankingStatus==='error')text(words.rankError,585,264,23,'#ffc17c','center');
+   else if(opts.rankingStatus==='error'){text(words.rankError,585,250,23,'#ffc17c','center');text(opts.rankingError||'NETWORK',585,282,18,'#9dc9ed','center');}
    else if(!rows.length)text(words.rankEmpty,585,264,23,'#9dc9ed','center');
    else rows.slice(0,10).forEach((row,i)=>{const y=174+i*21;text(String(row.rank),260,y,18,'#9dc9ed');text(row.nickname,315,y,18,'#f0f7ff');text(String(row.score),916,y,18,'#c7e3ff','right','num');});
    for(const item of [{id:'refresh',x:300,label:words.rankRefresh},{id:'rankDone',x:600,label:words.doneSettings}]){

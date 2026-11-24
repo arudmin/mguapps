@@ -207,3 +207,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.14 — 24.11.2026
 - Fixed malformed settings icon reported on real BMW ID7 (1.5.13 photo). Replaced overlapping rounded rectangles with a fixed symmetric 21×21 eight-tooth pixel mask, transparent center, horizontal rectangle runs, centered in existing button. Focus, controls, gameplay and leaderboard unchanged. Added symmetry regression assertions; CI and hardware verification pending. Server unchanged.
+
+
+### 1.5.15 — 24.11.2026
+- BMW reported leaderboard connection failure. Legacy Node HTTPS client now uses explicit request options rather than URL + options overload, explicit SNI, 10s socket timeout, diagnostic error code on screen and log. TLS validation remains enabled. Server connectivity from BMW not yet verified; CI pending. Server unchanged.

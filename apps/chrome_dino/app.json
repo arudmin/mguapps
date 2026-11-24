@@ -2,7 +2,7 @@
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
   "description": "Pixel dinosaur runner for BMW iDrive 7/8.\nFour difficulties: Easy, Normal, Hard, Extreme.\nDashboard only; difficulty and language on the right, GPU animation and multilingual menus.\nBMW language detection. Play only while parked.",
-  "version": "1.5.14",
+  "version": "1.5.15",
   "vendor": "arudmin",
   "loggingId": "CDG1",
   "maxDiskUsage": 10485760,

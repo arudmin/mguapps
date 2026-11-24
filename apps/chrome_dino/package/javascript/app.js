@@ -40,7 +40,7 @@ mgu.run({
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
         const rankingClient=new Leaderboard('https://chrome-dino-leaderboard-staging.mguapps.workers.dev');
-        let rankingOpen=false, rankingMode=game.difficulty, rankingRows=[], rankingStatus='loading', rankingRequest=0;
+        let rankingOpen=false, rankingMode=game.difficulty, rankingRows=[], rankingStatus='loading', rankingRequest=0, rankingError='';
         let selectedControl='play', paused=false, settingsOpen=false, exitDialog=false, exiting=false, tiltHeld=false, rendererTiltAt=-Infinity;
         let rotaryPosition=null,rendererRotaryAt=-Infinity;
         let fpsAt=0,fpsFrames=0,actualFPS=0;
@@ -99,10 +99,10 @@ mgu.run({
             paused=false;selectedControl='play';last=null;accumulator=0;
         }
         function loadRanking(mode){
-            rankingMode=mode;rankingRows=[];rankingStatus='loading';const request=++rankingRequest;
+            rankingMode=mode;rankingRows=[];rankingStatus='loading';rankingError='';const request=++rankingRequest;
             rankingClient.top(MODES[mode],(err,result)=>{
                 if(request!==rankingRequest||!rankingOpen||closed)return;
-                if(err||!result||!Array.isArray(result.entries)||result.verified_only!==true){rankingStatus='error';return;}
+                if(err||!result||!Array.isArray(result.entries)||result.verified_only!==true){rankingStatus='error';rankingError=err?String(err.code||err.message||'NETWORK').replace(/[^A-Za-z0-9_ .:-]/g,'').slice(0,72):'INVALID_RESPONSE';log.warn('Leaderboard: '+rankingError);return;}
                 rankingRows=result.entries.slice(0,10).filter(row=>row&&Number.isInteger(row.rank)&&Number.isInteger(row.score)&&typeof row.nickname==='string').map(row=>({rank:row.rank,score:row.score,nickname:row.nickname.slice(0,24)}));
                 rankingStatus='ready';
             });
@@ -307,7 +307,7 @@ mgu.run({
             // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
             if (now - frameAt + 2 < 1000 / 60) return; // Allow 16 ms tick rounding on 60 Hz displays.
             frameAt = now;fpsFrames++;
-            const options={paused,settingsOpen,bestModes,rankingOpen,rankingMode,rankingRows,rankingStatus,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
+            const options={paused,settingsOpen,bestModes,rankingOpen,rankingMode,rankingRows,rankingStatus,rankingError,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
             if(full){
                 if(!screenRecorder||screenRecorder.w!==w||screenRecorder.h!==h)screenRecorder=new Recorder(w,h);
                 screenRecorder.reset();drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options);
