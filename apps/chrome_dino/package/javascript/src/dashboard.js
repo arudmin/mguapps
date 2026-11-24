@@ -102,8 +102,20 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
      round(item.x,275,328,62,8,focus===item.id?'#244768':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,24,'#f0f7ff','center');
    }
  }else if(opts.editName){
-   round(205,64,766,386,11,'#19212c');border(205,64,766,386,11,'#5b87ae');text(words.editName||'Edit name',585,96,25,'#f4f6f8','center');text(opts.nameDraft||'_',585,133,25,'#c7e3ff','center');
-   (opts.nameKeys||[]).forEach((k,i)=>{const x=235+(i%12)*58,y=145+Math.floor(i/12)*40;round(x,y,54,36,5,i===opts.nameCursor?'#244768':'#1a2939');text(k,x+27,y+25,17,'#f0f7ff','center');});
+   round(205,64,766,386,11,'#131a24');border(205,64,766,386,11,'#5b87ae');text(words.editName||'Edit name',585,95,25,'#f4f6f8','center');
+   round(245,104,680,42,5,'#0d141e');border(245,104,680,42,5,'#78bfff');
+   const draft=opts.nameDraft||'',pos=opts.namePos||0;
+   // A fixed character grid places the caret exactly between glyph cells.
+   draft.split('').forEach((ch,i)=>text(ch,265+i*25,133,25,'#f4f6f8','center'));
+   if(opts.nameBlink!==false)rect(252+pos*25,112,3,27,'#78d6ff');
+   text(draft.length+'/16',907,133,19,'#9dc9ed','right');
+   const labels={SHIFT:'Shift',LEFT:'<',RIGHT:'>',DEL:words.keyDelete||'DEL',RESET:words.keyReset||'Reset',SAVE:words.keySave||'Save',BACK:words.keyBack||'Back'};
+   (opts.nameKeys||[]).forEach((k,i)=>{const active=i===opts.nameCursor,disabled=k.id==='RESET'&&!(opts.syncProfile||{}).originalNickname||k.id==='SAVE'&&(draft.length<3||draft.length>16);
+     const label=labels[k.id]||(opts.nameShift?k.id:k.id.toLowerCase());
+     round(k.x,k.y,k.w,k.h,6,active?'#286da4':k.id==='SAVE'&&!disabled?'#235b46':k.id==='SHIFT'&&opts.nameShift?'#244768':'#293747');
+     border(k.x,k.y,k.w,k.h,6,active?'#b5e6ff':'#405269');
+     text(label,k.x+k.w/2,k.y+29,labels[k.id]?18:25,disabled?'#657482':'#f0f7ff','center');
+   });
  }else if(opts.consentOpen){
    round(205,138,766,230,11,'#19212c');border(205,138,766,230,11,'#5b87ae');
    text(words.syncTitle,585,181,28,'#f4f6f8','center');text(words.syncConsent1,585,220,19,'#9dc9ed','center');text(words.syncConsent2,585,246,19,'#9dc9ed','center');

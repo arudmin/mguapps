@@ -1,3 +1,6 @@
+## 1.5.25 — 24.11.2026
+- BMW-style custom QWERTY keyboard with digits, Shift, caret, left/right caret movement, 16-character counter, delete, reset to immutable original nickname and save. Rotary selection and four-way deflection navigation; numeric mappings beyond left are assumptions pending BMW verification. Touch keys share geometry with renderer. Server 0.2.5 migration required. Store description replaces unsupported bullet glyph with ASCII hyphen and removes blank lines. CI pending. 1.5.24 CI passed 45388615719.
+
 ## 1.5.24 — 24.11.2026
 - Four direct-access difficulty tabs via touch or rotary selection, no additional network reads on tab change; refresh retains batch API and cache. Ranking cards narrowed from 704 to 534 logical pixels, larger text, drawn gold/silver/bronze cups and TOP-1–TOP-3 labels, own row highlight. All ten ranks remain visible. Updated startup touch test. Server 0.2.4 unchanged. CI and BMW visual verification pending. Previous 1.5.23 CI and deployment green; user confirmed ~1.8 MB Store download and real ranking with 48 Normal points, sync queue empty.
 

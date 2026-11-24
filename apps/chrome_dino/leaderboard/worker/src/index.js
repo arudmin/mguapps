@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.2.4';
+export const VERSION='0.2.5';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -21,10 +21,10 @@ async function body(req){
  const decoder=new TextDecoder('utf-8',{fatal:true});let n=0,text='';
  try{for(;;){const {done,value}=await reader.read();if(done)break;n+=value.length;if(n>16384){await reader.cancel();throw new HttpError('body_too_large',413);}text+=decoder.decode(value,{stream:true});}text+=decoder.decode();const b=JSON.parse(text);if(!b||typeof b!=='object'||Array.isArray(b))throw Error();return b;}catch(e){if(e instanceof HttpError)throw e;throw new HttpError('invalid_json',400);}
 }
-async function player(req,db){const h=req.headers.get('authorization')||'';if(!/^Bearer [a-f0-9]{64}$/.test(h))return null;return db.prepare('SELECT id,nickname FROM players WHERE token_hash=?').bind(await digest(h.slice(7))).first();}
+async function player(req,db){const h=req.headers.get('authorization')||'';if(!/^Bearer [a-f0-9]{64}$/.test(h))return null;return db.prepare('SELECT id,nickname,original_nickname FROM players WHERE token_hash=?').bind(await digest(h.slice(7))).first();}
 function exact(b,keys){return Object.keys(b).every(k=>keys.includes(k));}
 function validMode(d){return MODES.includes(d);}
-function validNickname(n){return typeof n==='string'&&/^[\p{L}\p{N}_-]{3,24}$/u.test(n)&&!(/^[A-HJ-NPR-Z0-9]{17}$/i.test(n));}
+function validNickname(n){return typeof n==='string'&&/^[A-Za-z0-9_-]{3,16}$/.test(n);}
 async function fetchHandler(req,env){
  const u=new URL(req.url),p=u.pathname,db=env.DB;
  try{
@@ -38,10 +38,10 @@ async function fetchHandler(req,env){
    const b=await body(req);
    if(!exact(b,['identity_hash','consent','token'])||!HEX.test(b.identity_hash||'')||b.consent!==true||!HEX.test(b.token||''))return error('invalid_registration',400);
    const hmac=await identityHmac(b.identity_hash,env.SERVER_SECRET),th=await digest(b.token),id=crypto.randomUUID();
-   await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at) VALUES(?,?,?,?,?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,defaultNickname(hmac),th,Date.now()).run();
-   const row=await db.prepare('SELECT id,nickname,token_hash FROM players WHERE identity_hash=?').bind(hmac).first();
+   await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at,original_nickname) VALUES(?,?,?,?,?,?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,defaultNickname(hmac),th,Date.now(),defaultNickname(hmac)).run();
+   const row=await db.prepare('SELECT id,nickname,token_hash,original_nickname FROM players WHERE identity_hash=?').bind(hmac).first();
    if(!row||row.token_hash!==th)return error('already_registered',409);
-   return respond({player_id:row.id,nickname:row.nickname,accepted:true});
+   return respond({player_id:row.id,nickname:row.nickname,original_nickname:row.original_nickname,accepted:true});
  }
  if(p==='/v1/sync'&&req.method==='POST'){
  const me=await player(req,db);if(!me)return error('unauthorized',401);
@@ -54,8 +54,8 @@ async function fetchHandler(req,env){
  await db.batch(ops);
  const prev=await db.prepare('SELECT payload FROM sync_operations WHERE player_id=? AND operation_id=?').bind(me.id,b.operation_id).first();
  if(!prev||prev.payload!==payload)return error('operation_conflict',409);
- const current=await db.prepare('SELECT nickname FROM players WHERE id=?').bind(me.id).first();
- return respond({accepted:true,operation_id:b.operation_id,nickname:current.nickname});
+ const current=await db.prepare('SELECT nickname,original_nickname FROM players WHERE id=?').bind(me.id).first();
+ return respond({accepted:true,operation_id:b.operation_id,nickname:current.nickname,original_nickname:current.original_nickname});
  }
  if(p==='/v1/leaderboard'&&req.method==='GET'){
  const me=await player(req,db);if(req.headers.has('authorization')&&!me)return error('unauthorized',401);
@@ -65,7 +65,7 @@ async function fetchHandler(req,env){
  boards[d]=r.results.map((v,i)=>({rank:i+1,nickname:v.nickname,score:v.score,self:!!me&&v.id===me.id}));
  if(me){const own=await db.prepare('SELECT s.score,1+(SELECT COUNT(*) FROM personal_scores t WHERE t.difficulty=s.difficulty AND t.score>0 AND (t.score>s.score OR (t.score=s.score AND (t.updated_at<s.updated_at OR (t.updated_at=s.updated_at AND t.player_id<s.player_id))))) AS rank FROM personal_scores s WHERE s.player_id=? AND s.difficulty=? AND s.score>0').bind(me.id,d).first();positions[d]=own||null;}
  }
- return respond({boards,profile:me?{nickname:me.nickname,positions}:null,generated_at:Date.now(),verification:'unverified'});
+ return respond({boards,profile:me?{nickname:me.nickname,original_nickname:me.original_nickname,positions}:null,generated_at:Date.now(),verification:'unverified'});
  }
  return error('not_found',404);
  }catch(e){return e instanceof HttpError?error(e.message,e.status):error('request_failed',500);}

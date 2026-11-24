@@ -1,3 +1,8 @@
+# Chrome Dino Leaderboard 0.2.5
+
+### 0.2.5 — 24.11.2026
+- Migration 0003 backfills immutable original nickname from existing HMAC. API v1 returns it only to the authenticated profile/registration/sync. Enforce 3–16 ASCII characters. Reset uses existing sync and preserves records. Tests added; deployment pending.
+
 # Chrome Dino Leaderboard 0.2.4
 
 Current API: [API.md](API.md). Only /health, /v1/register, /v1/sync and /v1/leaderboard are supported. Older clients must update; database and HMAC key retained. Replay verification remains a development backlog.

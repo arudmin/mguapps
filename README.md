@@ -124,3 +124,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.24:** four ranking tabs, compact colorful podium cards with cups and larger scores, no server change. CI pending.
+
+
+**1.5.25 / server 0.2.5:** QWERTY keyboard, cursor, iDrive navigation, name length and original name reset, compatible Store hyphens. CI pending.

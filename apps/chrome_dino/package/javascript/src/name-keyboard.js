@@ -1,0 +1,8 @@
+'use strict';
+const rows=['1234567890','QWERTYUIOP','ASDFGHJKL','ZXCVBNM_-'];
+function keys(){const out=[];rows.forEach((r,i)=>{const x=585-r.length*34;for(let j=0;j<r.length;j++)out.push({id:r[j],x:x+j*68,y:154+i*48,w:64,h:44,row:i});});let x=245;for(const [id,w] of [['SHIFT',100],['LEFT',65],['RIGHT',65],['DEL',100],['RESET',110],['SAVE',110],['BACK',100]]){out.push({id,x,y:350,w:w-4,h:46,row:4});x+=w;}return out;}
+const layout=keys();
+function direction(raw){const s=String(raw);if(/LINKS/.test(s)||s==='10'||s==='11')return 'left';if(/RECHTS/.test(s)||s==='12'||s==='13')return 'right';if(/OBEN|VORNE|VORN/.test(s)||s==='6'||s==='7')return 'up';if(/UNTEN|HINTEN/.test(s)||s==='8'||s==='9')return 'down';return null;}
+function move(index,dir){const k=layout[index];if(!k)return 0;const same=layout.map((v,i)=>({v,i})).filter(q=>q.v.row===k.row);if(dir==='left'||dir==='right'){const at=same.findIndex(q=>q.i===index);return same[(at+(dir==='left'?same.length-1:1))%same.length].i;}const row=(k.row+(dir==='up'?4:1))%5;return layout.map((v,i)=>({v,i})).filter(q=>q.v.row===row).sort((a,b)=>Math.abs(a.v.x+a.v.w/2-k.x-k.w/2)-Math.abs(b.v.x+b.v.w/2-k.x-k.w/2))[0].i;}
+function edit(value,pos,key,shift,original){if(key==='LEFT')pos=Math.max(0,pos-1);else if(key==='RIGHT')pos=Math.min(value.length,pos+1);else if(key==='SHIFT')shift=!shift;else if(key==='RESET'&&original){value=original;pos=value.length;}else if(key==='DEL'&&pos>0){value=value.slice(0,pos-1)+value.slice(pos);pos--;}else if(/^[A-Z0-9_-]$/.test(key)&&value.length<16){value=value.slice(0,pos)+(shift?key:key.toLowerCase())+value.slice(pos);pos++;}return {value,pos,shift};}
+module.exports={layout,direction,move,edit};
