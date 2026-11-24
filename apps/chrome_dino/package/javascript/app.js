@@ -38,7 +38,7 @@ mgu.run({
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
-        let selectedControl='play';
+        let selectedControl='play', paused=false, returning=false;
         let rotaryPosition=null,rendererRotaryAt=-Infinity;
         let fpsAt=0,fpsFrames=0,actualFPS=0;
 
@@ -65,6 +65,7 @@ mgu.run({
         const ctl = new Controls(() => {
             sync();
             if(!going)return;
+            if(paused){pauseAction(selectedControl);return;}
             if(game.state==='playing'||selectedControl==='play')game.action();
             else if(selectedControl==='mode')chooseDifficulty((game.difficulty+1)%4);
             else if(selectedControl==='language')chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);
@@ -112,6 +113,22 @@ mgu.run({
             ui.text('MENU_BMW','BMW HMI: '+detected+'  ->  '+systemLanguage+'  |  UI: '+current);
             // VIN is intentionally embedded in MENU_INFO: ID7 did not render a separate label.
         }
+        function pauseRun() {
+            if(game.state==='playing'&&!paused){paused=true;selectedControl='resume';saveBest();}
+            last=null;accumulator=0;
+        }
+        function pauseAction(choice){
+            if(!paused||!going||!safe())return;
+            if(choice==='restart'){game.reset();game.action();}
+            else if(choice!=='resume')return;
+            paused=false;selectedControl='play';last=null;accumulator=0;
+        }
+        function returnDashboard(){
+            if(closed||returning)return;
+            returning=true;
+            pauseRun();
+            Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e)).then(()=>{returning=false;sync();});
+        }
         function sync() {
             const go = !closed && shown() && !!safe();
             if (go !== going) {
@@ -119,7 +136,7 @@ mgu.run({
                 last = null; accumulator = 0; frameAt = -Infinity; fpsAt=0; fpsFrames=0; actualFPS=0;
                 ctl.enable(go);
                 if (ctx.controller && ctx.controller.grab) ctx.controller.grab(go);
-                if (!go) { saveBest(); game.reset(); menu(); }
+                if (!go) { saveBest(); if(!safe()){game.reset();paused=false;selectedControl='play';}else pauseRun(); menu(); }
             }
             // On unsafe/unknown speed the dashboard remains visible with a warning; gameplay is disabled.
         }
@@ -163,7 +180,7 @@ mgu.run({
                 if (!diag.p) { vinState='недоступен'; menu(); return; }
                 const replies = await diag.functional(0x22,[0xF1,0x90],{idleMs:1800,maxMs:9000});
                 const found=findVin(replies);
-                vinState=found || 'недоступен';
+                vinState=found ? 'доступен' : 'недоступен';
                 log.info('VIN read-only probe: '+(found?'available':'not available'));
             } catch(e) {
                 vinState='ошибка чтения';
@@ -202,16 +219,17 @@ mgu.run({
             if(source==='renderer')rendererRotaryAt=now;
             const prev=rotaryPosition;rotaryPosition=n;
             if(source==='signals'&&now-rendererRotaryAt<700)return;
-            if(prev===null||!going||game.state==='playing')return;
+            if(prev===null||!going||(game.state==='playing'&&!paused))return;
             const diff=((n-prev+32768)%65536)-32768;
             if(!diff||Math.abs(diff)>16)return;
-            const items=['play','mode','language'];
-            selectedControl=items[(items.indexOf(selectedControl)+(diff>0?1:2))%3];
+            const items=paused?['resume','restart']:['play','mode','language'];
+            selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
         // Touch areas use the 1600x520 dashboard coordinates.
         if(ctx.onTap)ctx.onTap((x,y)=>{
             sync();
             if(!going)return;
+            if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('restart');}return;}
             if(x>=1180&&x<=1580&&game.state!=='playing'){
                 if(y>=227&&y<=305){selectedControl='mode';chooseDifficulty((game.difficulty+1)%4);}
                 else if(y>=336&&y<=410){selectedControl='language';chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);}
@@ -226,7 +244,12 @@ mgu.run({
             statusRotaryEncoderState(value) { sync(); rotary(value,'signals'); ctl.raw(value,'signals'); },
         }, log).then((s) => { if (s.error) log.warn('controller: ' + s.error); });
         if (ui.onFocus) ui.onFocus(sync);
-        if (ui.onVisible) ui.onVisible(() => { sync(); if (ui.isVisible('MAIN')) setTimeout(()=>{if(!closed)Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e));},50); });
+        if (ui.onVisible) ui.onVisible((name,visible) => {
+            if(name==='GAME'&&!visible){pauseRun();}
+            sync();
+            if(name==='MAIN'&&visible) returnDashboard();
+            if(name==='GAME'&&visible){last=null;accumulator=0;}
+        });
         const safetyTimer = setInterval(sync, 100);
         function stop() {
             if (closed) return;
@@ -250,10 +273,10 @@ mgu.run({
             const full = pl && pl.full && pl.w > 0 && pl.h > 0;
             const w = full ? pl.w : W, h = full ? pl.h : H;
             game.resize(WORLD_ASPECT); // Fixed collision/spawn world for both styles and screen sizes.
-            if (last !== null && going) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
+            if (last !== null && going && !paused) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
             last = now;
             while (accumulator >= STEP) {
-                if (game.state === 'playing') game.step(STEP);
+                if (game.state === 'playing' && !paused) game.step(STEP);
                 accumulator -= STEP;
             }
             saveBest();
@@ -262,7 +285,7 @@ mgu.run({
             // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
             if (now - frameAt + 2 < 1000 / 60) return; // Allow 16 ms tick rounding on 60 Hz displays.
             frameAt = now;fpsFrames++;
-            const options={selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
+            const options={paused,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
             if(full){
                 if(!screenRecorder||screenRecorder.w!==w||screenRecorder.h!==h)screenRecorder=new Recorder(w,h);
                 screenRecorder.reset();drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options);
@@ -272,6 +295,6 @@ mgu.run({
         });
         menu();
         setTimeout(()=>{if(!closed)Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e));},150);
-        log.info('Chrome Dino 1.5.5 Dashboard-only, right-side controls, strict zero speed; GPU 60 Hz target, PNG fallback 8 Hz');
+        log.info('Chrome Dino '+APP_VERSION+' Dashboard-only, right-side controls, strict zero speed; GPU 60 Hz target, PNG fallback 8 Hz');
     },
 });

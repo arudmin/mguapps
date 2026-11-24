@@ -48,7 +48,7 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  }
  const u=2.6, dx=game.x-60,dy=game.y-42*u;
  pixel(dx,dy,DINO_ROWS.filter(p=>p[1]<34),u,'#eaf5fc');
- const running=game.state==='playing'&&game.y>=game.floor-.1;
+ const running=game.state==='playing'&&!opts.paused&&game.y>=game.floor-.1;
  pixel(dx,dy,running?(Math.floor(game.distance/27)%2?B:A):AIR,u,'#eaf5fc');
  cv.noclip();
 
@@ -69,11 +69,18 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  text('<  '+String(opts.languageLabel||'Auto (BMW)')+'  >',1207,380,21,'#f0f7ff');
  text('FPS '+String(opts.fps===undefined?'-':opts.fps)+' / 60',1194,441,18,'#92ceff');
  rect(1407,430,7,7,'#92ceff');
- text(focus==='play'?'PLAY':focus==='mode'?'MODE':'LANGUAGE',1550,441,16,'#9fb4c7','right');
+ text(opts.paused?'PAUSE':focus==='play'?'PLAY':focus==='mode'?'MODE':'LANGUAGE',1550,441,16,'#9fb4c7','right');
  // Versioned in-game update notices remain independent of network leaderboard.
  if(update&&update.available&&update.latest)text((words.updateNotice||'UPDATE AVAILABLE')+' '+update.latest,1100,72,18,'#e9ad6f','right');
  // Overlay in the playfield while ready/over; preserves the controller-to-start UX.
- if(game.state!=='playing'){
+ if(opts.paused){
+   round(222,154,733,208,11,'#19212c');border(222,154,733,208,11,'#5b87ae');
+   text(words.pauseTitle,585,220,36,'#f4f6f8','center');
+   text((words.score||'SCORE')+' '+game.score,585,252,23,'#9dc9ed','center');
+   for(const item of [{id:'resume',x:242,label:words.continue_},{id:'restart',x:600,label:words.restartRun}]){
+     round(item.x,275,328,62,8,focus===item.id?'#244768':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,24,'#f0f7ff','center');
+   }
+ }else if(game.state!=='playing'){
    round(222,176,733,171,11,'#19212c');border(222,176,733,171,11,'#5b87ae');
    text(game.state==='over'?words.over:words.title,585,237,36,'#f4f6f8','center');
    text(game.state==='over'?(words.score+' '+game.score+'  '+words.best+' '+best):words.start,585,282,24,'#9dc9ed','center');

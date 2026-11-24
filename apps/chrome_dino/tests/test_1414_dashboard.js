@@ -22,7 +22,7 @@ for(const lang of ['ru','en','de','fr','es','it','pt','nl','pl','uk','zh','ja'])
  for(const k of ['style','styleDashboard','styleClassic','online','onlineInactive','hudJump','hudParked'])assert(w[k],lang+' '+k);
 }
 const app=require('../app.json');
-assert.strictEqual(app.version,'1.5.5');
+assert.strictEqual(app.version,require('../package/package.json').version);
 assert(app.screens.find(x=>x.name==='MAIN').items.some(x=>x[1]==='BTN_THEME'));
 const src=fs.readFileSync(path.join(__dirname,'../package/javascript/app.js'),'utf8');
 assert(src.includes("ctx.loop('GAME', 8"));
@@ -33,7 +33,7 @@ assert(src.includes('frontRotaryEncoderOperation'));
 assert(src.includes("ui.open('GAME')"));
 for(const hmi of ['ID7','ID8']){
  const ui=require('../package/rhmiData/uiDescriptions/'+hmi+'/uiDescription.json');
- assert.strictEqual(ui.containers['1'].components['26'].name,'BTN_THEME');
+ assert.strictEqual(ui.containers['1'].components['26'].properties.Visible.value,0);
  const xml=fs.readFileSync(path.join(__dirname,'../package/rhmiData/uiDescriptions/'+hmi+'/application.xml'),'utf8');
  assert(xml.includes('<component id="26" type="button"'));
 }

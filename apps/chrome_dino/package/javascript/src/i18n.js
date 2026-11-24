@@ -37,7 +37,8 @@ function detect(ctx){
  for(const v of vals){const l=langOf(v);if(l)return l;}
  return 'en';
 }
-function words(l){return Object.assign({},dict.en,dict[l]||{},dashboardText.en,dashboardText[l]||{});}
+const pauseText={"en":{"pauseTitle":"PAUSE","continue_":"Continue","restartRun":"Start over","hudBack":"BACK: PAUSE"},"ru":{"pauseTitle":"ПАУЗА","continue_":"Продолжить","restartRun":"Начать сначала","hudBack":"BACK: ПАУЗА"},"de":{"pauseTitle":"PAUSE","continue_":"Fortsetzen","restartRun":"Neu starten","hudBack":"ZURÜCK: PAUSE"},"fr":{"pauseTitle":"PAUSE","continue_":"Continuer","restartRun":"Recommencer","hudBack":"RETOUR: PAUSE"},"es":{"pauseTitle":"PAUSA","continue_":"Continuar","restartRun":"Reiniciar","hudBack":"ATRÁS: PAUSA"},"it":{"pauseTitle":"PAUSA","continue_":"Continua","restartRun":"Ricomincia","hudBack":"INDIETRO: PAUSA"},"pt":{"pauseTitle":"PAUSA","continue_":"Continuar","restartRun":"Recomeçar","hudBack":"VOLTAR: PAUSA"},"nl":{"pauseTitle":"PAUZE","continue_":"Doorgaan","restartRun":"Opnieuw","hudBack":"TERUG: PAUZE"},"pl":{"pauseTitle":"PAUZA","continue_":"Kontynuuj","restartRun":"Od nowa","hudBack":"WSTECZ: PAUZA"},"uk":{"pauseTitle":"ПАУЗА","continue_":"Продовжити","restartRun":"Почати спочатку","hudBack":"НАЗАД: ПАУЗА"},"zh":{"pauseTitle":"暂停","continue_":"继续","restartRun":"重新开始","hudBack":"返回：暂停"},"ja":{"pauseTitle":"一時停止","continue_":"続ける","restartRun":"最初から","hudBack":"戻る：一時停止"}};
+function words(l){return Object.assign({},dict.en,dict[l]||{},dashboardText.en,dashboardText[l]||{},pauseText[l]||pauseText.en);}
 
 // Dashboard/menu additions in all 12 app languages. Other HMI strings still use existing fallbacks.
 const dashboardText={

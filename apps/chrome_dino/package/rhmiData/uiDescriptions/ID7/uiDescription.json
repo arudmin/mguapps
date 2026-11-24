@@ -10,11 +10,11 @@
           "name": "BTN_PLAY",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
-              "value": 2,
+              "value": 0,
               "type": "UInt"
             }
           },
@@ -32,7 +32,7 @@
           "name": "MENU_INFO",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
@@ -54,7 +54,7 @@
           "name": "MENU_HELP",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
@@ -88,11 +88,11 @@
           "name": "BTN_DIFFICULTY",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
-              "value": 3,
+              "value": 0,
               "type": "UInt"
             }
           },
@@ -138,11 +138,11 @@
           "name": "BTN_LANGUAGE",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
-              "value": 3,
+              "value": 0,
               "type": "UInt"
             }
           },
@@ -182,7 +182,7 @@
           "name": "MENU_BEST",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
@@ -204,7 +204,7 @@
           "name": "MENU_BMW",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
@@ -226,7 +226,7 @@
           "name": "MENU_VIN",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
@@ -248,11 +248,11 @@
           "name": "BTN_THEME",
           "properties": {
             "Visible": {
-              "value": 1,
+              "value": 0,
               "type": "UInt"
             },
             "Focusable": {
-              "value": 2,
+              "value": 0,
               "type": "UInt"
             }
           },

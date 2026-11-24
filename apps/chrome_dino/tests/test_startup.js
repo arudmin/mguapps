@@ -3,8 +3,8 @@ const assert=require('assert'),fs=require('fs'),path=require('path'),vm=require(
 const root=path.resolve(__dirname,'../package/javascript'),source=fs.readFileSync(path.join(root,'app.js'),'utf8');
 const {Recorder}=require('../package/javascript/kit/record');
 async function run(id8){
- let clock=10000,visible='MAIN',tap,draw,shutdown,focus=true,grab=false,frames=0,settings={},watchers={},timers=[],clicks={},input;
- const ctx={ui:{id8,isVisible:n=>n===visible,hasFocus:()=>focus,open:n=>{visible=n;return Promise.resolve();},onClick:(n,fn)=>clicks[n]=fn,onVisible:()=>{},onFocus:()=>{},image:(n,cv)=>{assert.strictEqual(n,'GAME_GFX');assert(cv.words().length>60);frames++;},text(){},comp(){return null;}},log:{info(){},warn(){},error(){}},settings:{get:k=>settings[k],set:(k,v)=>settings[k]=v},signals:{watch:(s,i,cb)=>{Object.assign(watchers,cb);return Promise.resolve({available:true});}},controller:{grab:v=>grab=v,onInput:fn=>input=fn},onTap:fn=>tap=fn,hideButton(){},loop:(n,f,fn)=>{assert.strictEqual(n,'GAME');assert.strictEqual(f,8);draw=fn;},canvas:(w,h)=>new Recorder(w,h),app:{on:(n,fn)=>shutdown=fn}};
+ let clock=10000,visible='MAIN',tap,draw,shutdown,focus=true,grab=false,frames=0,settings={},watchers={},timers=[],clicks={},input,vis;
+ const ctx={ui:{id8,isVisible:n=>n===visible,hasFocus:()=>focus,open:n=>{visible=n;return Promise.resolve();},onClick:(n,fn)=>clicks[n]=fn,onVisible:fn=>vis=fn,onFocus:()=>{},image:(n,cv)=>{assert.strictEqual(n,'GAME_GFX');assert(cv.words().length>60);frames++;},text(){},comp(){return null;}},log:{info(){},warn(){},error(){}},settings:{get:k=>settings[k],set:(k,v)=>settings[k]=v},signals:{watch:(s,i,cb)=>{Object.assign(watchers,cb);return Promise.resolve({available:true});}},controller:{grab:v=>grab=v,onInput:fn=>input=fn},onTap:fn=>tap=fn,hideButton(){},loop:(n,f,fn)=>{assert.strictEqual(n,'GAME');assert.strictEqual(f,8);draw=fn;},canvas:(w,h)=>new Recorder(w,h),app:{on:(n,fn)=>shutdown=fn}};
  const sandbox={require:p=>p==='./kit/mgu'?{run:o=>o.start(ctx)}:p==='./kit/diag'?{Diag:class{async init(){return {p:null};}}}:p==='./src/update'?{checkUpdate:(v,cb)=>cb({checked:false,available:false})}:require(path.resolve(root,p)),Date:{now:()=>clock},process:{on(){},exit(){}},setTimeout:fn=>{timers.push(fn);},setInterval:fn=>{sandbox.safety=fn;return 1;},clearInterval(){},console};
  vm.runInNewContext(source,sandbox,{filename:'app.js'});
  await Promise.resolve();await Promise.resolve();
@@ -17,6 +17,16 @@ async function run(id8){
  tap(1300,370);assert.strictEqual(settings.language,'ru');
  input({frontRotaryEncoderOperation:0});input({frontRotaryEncoderOperation:1});
  clock+=100;input({frontRotaryEncoderPushButton:1});input({frontRotaryEncoderPushButton:0});
+ tap(500,200);
+ clock+=100;draw();
+ visible='MAIN';vis('GAME',false);vis('MAIN',true);
+ await Promise.resolve();await Promise.resolve();
+ assert.strictEqual(visible,'GAME','BACK must reopen dashboard');
+ tap(400,300);clock+=100;draw();
+ visible='MAIN';vis('GAME',false);vis('MAIN',true);
+ await Promise.resolve();await Promise.resolve();
+ assert.strictEqual(visible,'GAME');
+ tap(750,300);clock+=100;draw();
  watchers.statusCarSpeed2({speedVehicleCentreOfGravity:64});assert(!grab);
  tap(1300,260);assert.strictEqual(settings.difficulty,2);
  watchers.statusCarSpeed2({speedVehicleCentreOfGravity:0});assert(grab);
