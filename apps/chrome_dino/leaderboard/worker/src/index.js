@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.2.5';
+export const VERSION='0.2.6';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -50,7 +50,7 @@ async function fetchHandler(req,env){
  const payload=JSON.stringify([b.nickname,...MODES.map(d=>b.records[d])]);
  const now=Date.now(),ops=[db.prepare('INSERT INTO sync_operations(player_id,operation_id,payload,created_at) VALUES(?,?,?,?) ON CONFLICT(player_id,operation_id) DO NOTHING').bind(me.id,b.operation_id,payload,now)];
  if(b.nickname!==null)ops.push(db.prepare('UPDATE players SET nickname=? WHERE id=? AND changes()=1').bind(b.nickname,me.id));
- for(const d of MODES)ops.push(db.prepare('INSERT INTO personal_scores(player_id,difficulty,score,updated_at) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM sync_operations WHERE player_id=? AND operation_id=? AND payload=?) ON CONFLICT(player_id,difficulty) DO UPDATE SET score=excluded.score,updated_at=excluded.updated_at WHERE excluded.score>personal_scores.score').bind(me.id,d,b.records[d],now,me.id,b.operation_id,payload));
+ for(const d of MODES)if(b.records[d]>0)ops.push(db.prepare('INSERT INTO personal_scores(player_id,difficulty,score,updated_at) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM sync_operations WHERE player_id=? AND operation_id=? AND payload=?) ON CONFLICT(player_id,difficulty) DO UPDATE SET score=excluded.score,updated_at=excluded.updated_at WHERE excluded.score>personal_scores.score').bind(me.id,d,b.records[d],now,me.id,b.operation_id,payload));
  await db.batch(ops);
  const prev=await db.prepare('SELECT payload FROM sync_operations WHERE player_id=? AND operation_id=?').bind(me.id,b.operation_id).first();
  if(!prev||prev.payload!==payload)return error('operation_conflict',409);

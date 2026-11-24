@@ -1,3 +1,8 @@
+# Chrome Dino Leaderboard 0.2.6
+
+### 0.2.6 — 24.11.2026
+- Positive scores only in personal_scores; migration cleans zero rows and guards inserts/updates. API v1 unchanged. Added regression test. CI pending. Previous 0.2.5 deployment passed 45390019253.
+
 # Chrome Dino Leaderboard 0.2.5
 
 ### 0.2.5 — 24.11.2026

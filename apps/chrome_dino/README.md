@@ -1,3 +1,6 @@
+## 1.5.26 — 24.11.2026
+- One-time four-step onboarding for new and existing installations, preserves account and records; optional profile name, explicit consent or offline play, local completion flag, 12 translations. Requires available VIN hash to enroll; offline play remains available. Difficulty colors, refresh-in-progress label, pencil icon, two Store description spacing lines. Server 0.2.6 positive-score-only migration. CI and BMW checks pending. Prior 1.5.25 game/server CI green (45390019209/45390019253); BMW photos show renamed profile and functional ranking.
+
 ## 1.5.25 — 24.11.2026
 - BMW-style custom QWERTY keyboard with digits, Shift, caret, left/right caret movement, 16-character counter, delete, reset to immutable original nickname and save. Rotary selection and four-way deflection navigation; numeric mappings beyond left are assumptions pending BMW verification. Touch keys share geometry with renderer. Server 0.2.5 migration required. Store description replaces unsupported bullet glyph with ASCII hyphen and removes blank lines. CI pending. 1.5.24 CI passed 45388615719.
 
