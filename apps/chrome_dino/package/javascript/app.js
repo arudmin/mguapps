@@ -129,7 +129,7 @@ mgu.run({
             if(choice==='cancel'){exitDialog=false;selectedControl=paused?'resume':'play';return;}
             if(choice!=='exit'||exiting)return;
             exiting=true;exitDialog=false;saveBest();sync();
-            Promise.resolve(ui.close('GAME')).then(()=>ui.close('MAIN')).catch(e=>{log.warn('close dashboard '+e);exiting=false;exitDialog=true;selectedControl='cancel';returnDashboard();});
+            (async function(){await ui.close('GAME');await ui.close('MAIN');})().catch(e=>{log.warn('close dashboard '+e);exiting=false;exitDialog=true;selectedControl='cancel';returnDashboard();});
         }
         function returnDashboard(){
             if(closed||returning||exiting)return;
@@ -308,7 +308,7 @@ mgu.run({
             return ui.image('GAME_GFX', cv);
         });
         menu();
-        setTimeout(()=>{if(!closed)Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e));},150);
+        setTimeout(()=>{if(!closed&&!exiting&&!hasDashboard)Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e));},150);
         log.info('Chrome Dino '+APP_VERSION+' Dashboard-only, right-side controls, strict zero speed; GPU 60 Hz target, PNG fallback 8 Hz');
     },
 });

@@ -181,3 +181,5 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 ### 1.5.8 — 24.11.2026
 - BACK на начальном экране или паузе открывает подтверждение выхода, по умолчанию Отмена. Повторный BACK закрывает диалог. Выход закрывает GAME и MAIN без повторного открытия. 12 переводов.
 - Исправлена асинхронная блокировка повторного перехода Dashboard, тест startup моделирует события видимости. CI ещё не подтверждён; аппаратный BACK требует проверки ID7/ID8. Сервер 0.1.0 без изменений.
+
+- 1.5.8 CI follow-up: run 45368720219 reached exit regression test; assertion observed MAIN before asynchronous second close completed. Test now waits for the event loop and asserts both close calls in order. Startup timer cannot reopen after exit. No physics or server change. CI pending.
