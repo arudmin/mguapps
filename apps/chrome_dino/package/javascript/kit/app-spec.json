@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.5.28",
+  "version": "1.5.29",
   "screens": [
     {
       "name": "GAME",

@@ -48,7 +48,6 @@ mgu.run({
         let rankingData=null,editName=false,nameDraft='',nameCursor=0,namePos=0,nameShift=false,nameTilt=null;
         let nameKeys=keyboard.layout.slice();
         function nameSuggestions(values){nameKeys=keyboard.layout.slice();(values||[]).filter(n=>typeof n==='string'&&/^[A-Za-z0-9_-]{3,16}$/.test(n)).slice(0,5).forEach((n,i)=>nameKeys.push({id:'SUGGEST'+i,label:n,x:245+i*136,y:405,w:132,h:35,row:5}));if(nameCursor>=nameKeys.length)nameCursor=0;}
-        function analytics(){return {consent:true,version:APP_VERSION,language:language()};}
         let nameCheck='idle',nameCheckSeq=0,nameCheckAt=0,checkedName='';
         function checkName(){nameSuggestions([]);const n=nameDraft,seq=++nameCheckSeq;checkedName='';nameCheck=/^[A-Za-z0-9_-]{3,16}$/.test(n)?'checking':'invalid';nameCheckAt=Date.now()+350;if(nameCheck==='invalid')return;}
         function tickName(){if(!editName||nameCheck!=='checking'||Date.now()<nameCheckAt)return;nameCheckAt=Infinity;const seq=nameCheckSeq,n=nameDraft;rankingClient.available(n,outbox.token(),(err,j)=>{if(seq!==nameCheckSeq||!editName||n!==nameDraft)return;nameCheck=err||!j?'offline':j.available?'free':'taken';checkedName=n;if(!err&&j&&!j.available)nameSuggestions(j.suggestions);});}
@@ -122,13 +121,13 @@ mgu.run({
         function onboardAction(action){if(!going||!safe()||!onboarding)return;if(action==='onBack'){onboardStep(Math.max(1,onboarding-1));return;}
             if(onboarding===1){onboardStep(2);return;}
             if(onboarding===2){if(action==='onEdit'){onboardEditing=true;editName=true;nameDraft=onboardName||outbox.status().nickname||'';namePos=nameDraft.length;nameCursor=0;nameShift=false;nameTilt=null;checkName();return;}onboardStep(3);return;}
-            if(onboarding===3){if(outbox.status().enabled){onboardStep(4);return;}onboardConsent=action==='onNext';if(onboardConsent){if(!vinHash)return;if(!outbox.enroll(vinHash,bestModes,onboardName,analytics()))return;}onboardStep(4);return;}
+            if(onboarding===3){if(outbox.status().enabled){onboardStep(4);return;}onboardConsent=action==='onNext';if(onboardConsent){if(!vinHash)return;if(!outbox.enroll(vinHash,bestModes,onboardName))return;}onboardStep(4);return;}
             if(onboarding===4){if(outbox.status().enabled&&onboardName&&onboardName!==outbox.status().nickname)outbox.rename(onboardName,bestModes);if(onboardName)settings.set('offlineNickname',onboardName);settings.set('onboardingSchema',1);onboarding=0;selectedControl='play';}
         }
         function onboardControls(){return onboarding===1?['onNext']:onboarding===2?['onEdit','onBack','onNext']:onboarding===3?(outbox.status().enabled?['onBack','onNext']:['onBack','onSkip','onNext']):['onBack','onNext'];}
         function openConsent(){if(outbox.status().enabled)return;consentOpen=true;selectedControl='consentNo';}
         function closeConsent(){consentOpen=false;selectedControl='syncProfile';}
-        function enableSync(){if(!vinHash||!going||!safe())return;if(outbox.enroll(vinHash,bestModes,String(settings.get('offlineNickname')||''),analytics()))closeConsent();}
+        function enableSync(){if(!vinHash||!going||!safe())return;if(outbox.enroll(vinHash,bestModes,String(settings.get('offlineNickname')||'')))closeConsent();}
         function openName(){if(!outbox.status().enabled)return;editName=true;nameDraft=outbox.status().nameRejected||outbox.status().nickname||String(settings.get('offlineNickname')||'');namePos=nameDraft.length;nameCursor=0;nameShift=false;nameTilt=null;checkName();}
         function nameKey(i){if(!editName||!going||!safe()||!nameKeys[i])return;nameCursor=i;const k=nameKeys[i].id;if(k==='BACK'){editName=false;onboardEditing=false;return;}if(/^SUGGEST/.test(k)){nameDraft=nameKeys[i].label;namePos=nameDraft.length;checkName();return;}if(k==='SAVE'){if(!/^[A-Za-z0-9_-]{3,16}$/.test(nameDraft)||nameCheck==='taken')return;if(onboardEditing){if(/^[A-Za-z0-9_-]{3,16}$/.test(nameDraft)){onboardName=nameDraft;editName=false;onboardEditing=false;}return;}if(outbox.rename(nameDraft,bestModes))editName=false;return;}const next=keyboard.edit(nameDraft,namePos,k,nameShift,outbox.status().originalNickname);const changed=nameDraft!==next.value;nameDraft=next.value;namePos=next.pos;nameShift=next.shift;if(changed)checkName();}
         function showRanking(){if(!rankingData)return;rankingRows=rankingData.boards[MODES[rankingMode]].slice(0,10);rankingStatus='ready';}

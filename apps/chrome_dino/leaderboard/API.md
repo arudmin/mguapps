@@ -30,3 +30,6 @@ GET /v1/name-availability?nickname=NAME (optional bearer) returns {available:boo
 
 ### 0.2.8
 Availability returns up to five free suggestions; approximate request geography informs suffixes without storing IP. Optional resolve_name:true on sync resolves conflicts within atomic batch attempts, preserving operation ID and score payload. Optional registration analytics consent stores country/region, registration date, game version and language in private D1 table; no raw VIN/IP, no vehicle attributes without validated source. No analytics for legacy registration without opt-in.
+
+### 0.2.9
+Registration analytics discontinued. Legacy analytics payload is ignored for compatibility; migration 0007 drops the table and all rows. Request geography is used only transiently for nickname suggestions. Existing players and scores are unchanged.

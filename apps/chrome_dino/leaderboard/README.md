@@ -1,3 +1,6 @@
+## 0.2.9 — 24.11.2026
+Removed registration analytics, dropped its table via migration, retained legacy registration compatibility. No extra statistics. Previous 0.2.8 CI passed 45397860958/45397860631. New CI pending.
+
 ## 0.2.8 — 24.11.2026
 Offline rename resolution and five checked suggestions; opt-in minimal registration analytics. No raw VIN or IP stored by application. CI pending.
 

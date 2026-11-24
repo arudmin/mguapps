@@ -136,3 +136,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.28 / server 0.2.8:** offline nickname, conflict resolution, checked suggestions, disclosed minimal registration statistics. CI pending.
+
+
+**1.5.29 / server 0.2.9:** removed additional registration statistics; offline names and regional suggestions retained. CI pending.
