@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.5.21",
+  "version": "1.5.22",
   "screens": [
     {
       "name": "GAME",
@@ -141,5 +141,20 @@
   "stateIds": {
     "GAME": 9
   },
-  "mguInternet": true
+  "mguInternet": true,
+  "description": "Classic Chrome Dino for BMW iDrive 7/8.\n\nGAMEPLAY\nFour difficulties, increasing speed, cacti and flying obstacles. Animation up to 60 FPS.\n\nCONTROLS\nTouchscreen or iDrive controller. Tap to jump, pause and resume.\n\nRECORDS & RANKING\nPersonal bests, global rankings for four modes, editable nickname and automatic offline sync.\n\n12 languages, automatic BMW language selection. Play offline, only while parked.",
+  "descriptionLocalized": {
+    "en": "Classic Chrome Dino for BMW iDrive 7/8.\n\nGAMEPLAY\nFour difficulties, increasing speed, cacti and flying obstacles. Animation up to 60 FPS.\n\nCONTROLS\nTouchscreen or iDrive controller. Tap to jump, pause and resume.\n\nRECORDS & RANKING\nPersonal bests, global rankings for four modes, editable nickname and automatic offline sync.\n\n12 languages, automatic BMW language selection. Play offline, only while parked.",
+    "ru": "Классическая игра Chrome Dino для BMW iDrive 7/8.\n\nИГРОВОЙ ПРОЦЕСС\nЧетыре сложности: Легко, Норма, Сложно, Экстрим. Рост скорости, кактусы и летающие препятствия. Анимация до 60 FPS.\n\nУПРАВЛЕНИЕ\nСенсорный экран и шайба iDrive. Касание — прыжок. Пауза и продолжение.\n\nРЕКОРДЫ И РЕЙТИНГ\nЛичные рекорды, мировой топ четырёх сложностей, смена имени, автоматическая синхронизация после восстановления сети.\n\n12 языков, автовыбор языка BMW. Игра без интернета, только на стоянке.",
+    "de": "Klassisches Chrome Dino für BMW iDrive 7/8.\n\nSPIEL\nVier Stufen, steigendes Tempo, Kakteen und fliegende Hindernisse. Bis zu 60 FPS.\n\nSTEUERUNG\nTouchscreen oder iDrive-Controller. Springen, Pause und Fortsetzen.\n\nBESTENLISTE\nPersönliche Rekorde, globale Ranglisten, änderbarer Name und Offline-Synchronisierung.\n\n12 Sprachen, automatische BMW-Sprachauswahl. Offline spielbar, nur im Stand.",
+    "fr": "Chrome Dino classique pour BMW iDrive 7/8.\n\nJEU\nQuatre difficultés, vitesse croissante, cactus et obstacles volants. Jusqu’à 60 FPS.\n\nCOMMANDES\nÉcran tactile ou contrôleur iDrive. Saut, pause et reprise.\n\nCLASSEMENT\nRecords personnels, classement mondial, pseudo modifiable et synchronisation hors ligne.\n\n12 langues, sélection automatique BMW. Jeu hors ligne, uniquement à l’arrêt.",
+    "es": "Chrome Dino clásico para BMW iDrive 7/8.\n\nJUEGO\nCuatro dificultades, velocidad creciente, cactus y obstáculos voladores. Hasta 60 FPS.\n\nCONTROLES\nPantalla táctil o mando iDrive. Salto, pausa y continuación.\n\nCLASIFICACIÓN\nRécords personales, clasificación mundial, nombre editable y sincronización sin conexión.\n\n12 idiomas, selección automática BMW. Juego sin conexión, solo parado.",
+    "it": "Chrome Dino classico per BMW iDrive 7/8.\n\nGIOCO\nQuattro difficoltà, velocità crescente, cactus e ostacoli volanti. Fino a 60 FPS.\n\nCOMANDI\nTouchscreen o controller iDrive. Salto, pausa e ripresa.\n\nCLASSIFICA\nRecord personali, classifica mondiale, nome modificabile e sincronizzazione offline.\n\n12 lingue, selezione automatica BMW. Gioco offline, solo da fermi.",
+    "pt": "Chrome Dino clássico para BMW iDrive 7/8.\n\nJOGO\nQuatro dificuldades, velocidade crescente, cactos e obstáculos voadores. Até 60 FPS.\n\nCONTROLOS\nEcrã tátil ou controlador iDrive. Salto, pausa e retoma.\n\nCLASSIFICAÇÃO\nRecordes pessoais, ranking mundial, nome editável e sincronização offline.\n\n12 idiomas, seleção automática BMW. Jogo offline, apenas estacionado.",
+    "nl": "Klassieke Chrome Dino voor BMW iDrive 7/8.\n\nSPEL\nVier niveaus, oplopende snelheid, cactussen en vliegende obstakels. Tot 60 FPS.\n\nBEDIENING\nTouchscreen of iDrive-controller. Springen, pauzeren en hervatten.\n\nRANGLIJST\nPersoonlijke records, wereldranglijst, bewerkbare naam en offline synchronisatie.\n\n12 talen, automatische BMW-taal. Offline spelen, alleen geparkeerd.",
+    "pl": "Klasyczne Chrome Dino dla BMW iDrive 7/8.\n\nGRA\nCztery poziomy, rosnąca prędkość, kaktusy i latające przeszkody. Do 60 FPS.\n\nSTEROWANIE\nEkran dotykowy lub kontroler iDrive. Skok, pauza i wznowienie.\n\nRANKING\nRekordy osobiste, ranking światowy, zmiana nazwy i synchronizacja offline.\n\n12 języków, automatyczny język BMW. Gra offline, tylko na postoju.",
+    "uk": "Класична Chrome Dino для BMW iDrive 7/8.\n\nГРА\nЧотири рівні, зростання швидкості, кактуси та літаючі перешкоди. До 60 FPS.\n\nКЕРУВАННЯ\nСенсорний екран або контролер iDrive. Стрибок, пауза та продовження.\n\nРЕЙТИНГ\nОсобисті рекорди, світовий рейтинг, зміна імені та офлайн-синхронізація.\n\n12 мов, автоматична мова BMW. Гра без інтернету, лише на стоянці.",
+    "zh": "BMW iDrive 7/8 经典 Chrome Dino 游戏。\n\n游戏\n四种难度、逐渐加速、仙人掌和飞行障碍。最高 60 FPS。\n\n操作\n触摸屏或 iDrive 控制器。跳跃、暂停和继续。\n\n排行榜\n个人纪录、全球排名、可修改昵称及离线同步。\n\n12 种语言，自动选择 BMW 语言。支持离线，仅限停车时游玩。",
+    "ja": "BMW iDrive 7/8 向けのクラシック Chrome Dino。\n\nゲーム\n4段階の難易度、加速、サボテンと飛行障害物。最大60 FPS。\n\n操作\nタッチ画面または iDrive。ジャンプ、一時停止、再開。\n\nランキング\n自己ベスト、世界ランキング、名前変更、オフライン同期。\n\n12言語、BMW言語の自動選択。オフライン対応、停車中のみ。"
+  }
 }

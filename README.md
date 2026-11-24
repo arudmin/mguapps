@@ -115,3 +115,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.21 (top-chart):** simplified ranking header; replay verification remains documented development backlog. Server unchanged.
+
+
+**1.5.22 / server 0.2.3:** API v3 batch sync and all boards, 60s cache, editable nickname, medal-style leaderboard, detailed localized Store descriptions. API documented in apps/chrome_dino/leaderboard/API.md. CI pending.

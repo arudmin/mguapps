@@ -236,3 +236,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.21 — 24.11.2026
 - Removed user-facing anti-cheat / unverified caption from the leaderboard in all 12 languages at owner's request. Public ranking still accepts unverified personal bests; replay verification and anti-cheat remain development backlog, not implemented. Consent to public nickname and scores remains unchanged. Server version unchanged. CI and BMW verification pending.
+
+
+### 1.5.22 — 24.11.2026
+- API v3 batch ranking and profile updates, persistent 60-second cache, 5-second minimum refresh interval, stale results retained offline, one request across modes. Editor for 3–16 Latin letters/digits/_/- via touch and rotary, queued together with four records. Medal-colored top three, row cards and self highlight, own rank below top ten. Existing outbox jobs retain v2 protocol for safe retries. Server 0.2.3. CI and BMW testing pending. Anti-cheat remains development backlog.

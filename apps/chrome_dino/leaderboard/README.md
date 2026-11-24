@@ -1,4 +1,4 @@
-# Chrome Dino Leaderboard 0.2.2 — staging
+# Chrome Dino Leaderboard 0.2.3 — staging
 
 Серверная версия независима от игры 1.5.5. Пока не интегрирована в BMW. Только тестовый контур; результаты не публикуются до проверки повторов.
 
@@ -40,3 +40,7 @@ API v2: POST /v2/register with consent, local VIN hash and randomly generated pe
 
 ### 0.2.2 — 24.11.2026
 - Owner requested to defer replay verification. New GET /v2/leaderboard?difficulty=easy|normal|hard|extreme&limit=10 (or 100) ranks positive synced personal records, marks verified_only:false and verification:unverified. Existing verified-only v1 route unchanged. No migration needed. Nicknames and scores only; no vehicle hash or token in board. Tests cover sort, mode isolation, zero exclusion and unchanged v1. Server 0.2.1 staging deployment and tests succeeded (Actions 45382951098). 0.2.2 CI pending; anti-cheat and account recovery/deletion remain outstanding.
+
+
+### 0.2.3 — 24.11.2026
+API v3 (see API.md): one authenticated atomic sync for name and all four records; one read for all boards and own ranks. Existing v1/v2 retained; no migration. Replay verification deferred. Tests added, CI pending.
