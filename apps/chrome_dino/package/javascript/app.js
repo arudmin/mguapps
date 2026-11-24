@@ -84,7 +84,7 @@ mgu.run({
         function menu() {
             const w=t();
             ui.text('BTN_PLAY', game.state==='playing'?w.continue_:w.play);
-            ui.text('BTN_THEME',w.style+': '+(visualTheme==='dashboard'?w.styleDashboard:w.styleClassic));
+            ui.text('BTN_THEME',w.style+': '+w.styleDashboard);
             if (ui.id8) {
                 ui.text('BTN_DIFFICULTY',w.difficulty+': '+w.levels[game.difficulty]+' ('+w.change+')');
                 ui.text('BTN_LANGUAGE',w.language+': '+(languageChoice==='auto'?w.auto:i18n.languageNames[languageChoice])+' ('+w.change+')');
@@ -116,7 +116,7 @@ mgu.run({
             const go = !closed && shown() && !!safe();
             if (go !== going) {
                 going = go;
-                last = null; accumulator = 0; frameAt = -Infinity;
+                last = null; accumulator = 0; frameAt = -Infinity; fpsAt=0; fpsFrames=0; actualFPS=0;
                 ctl.enable(go);
                 if (ctx.controller && ctx.controller.grab) ctx.controller.grab(go);
                 if (!go) { saveBest(); game.reset(); menu(); }
@@ -178,11 +178,6 @@ mgu.run({
         });
         log.info('initial UI language='+systemLanguage+' selected='+languageChoice);
         parked = Parked.watch(safetyCtx, log);
-        ui.onClick('BTN_PLAY', () => {
-            if (!safe()) { menu(); return; }
-            if (game.state === 'over') game.reset();
-            return ui.open('GAME');
-        });
         function chooseDifficulty(index) {
             if (!Number.isInteger(index)||index<0||index>=4)return;
             if (!safe()) { menu(); return; }
@@ -199,17 +194,6 @@ mgu.run({
             log.info('language selected: '+languageChoice);
             menu();
         }
-        if(ui.id8){
-            ui.onClick('BTN_DIFFICULTY',()=>ui.open('SELECT_DIFFICULTY'));
-            ui.onClick('BTN_LANGUAGE',()=>ui.open('SELECT_LANGUAGE'));
-            for(let i=0;i<4;i++)ui.onClick('DIF_'+i,()=>{chooseDifficulty(i);return ui.open('MAIN');});
-            for(let i=0;i<3;i++)ui.onClick('LANG_'+i,()=>{chooseLanguage(i);return ui.open('MAIN');});
-        } else {
-            ui.onClick('BTN_DIFFICULTY',ev=>chooseDifficulty(Number(ev.row)));
-            ui.onClick('BTN_LANGUAGE',ev=>chooseLanguage(Number(ev.row)));
-        }
-        // Compatibility-only RHMI button; not exposed by the dashboard.
-        ui.onClick('BTN_THEME',()=>{ if(safe())return ui.open('GAME'); });
         function rotary(value,source){
             const raw=value&&value.frontRotaryEncoderOperation;
             const nRaw=typeof raw==='number'?raw:(typeof raw==='string'&&raw.trim()?Number(raw):NaN);
@@ -226,7 +210,8 @@ mgu.run({
         }
         // Touch areas use the 1600x520 dashboard coordinates.
         if(ctx.onTap)ctx.onTap((x,y)=>{
-            if(!safe())return;
+            sync();
+            if(!going)return;
             if(x>=1180&&x<=1580&&game.state!=='playing'){
                 if(y>=227&&y<=305){selectedControl='mode';chooseDifficulty((game.difficulty+1)%4);}
                 else if(y>=336&&y<=410){selectedControl='language';chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);}
@@ -258,7 +243,7 @@ mgu.run({
 
         ctx.loop('GAME', 8, () => {
             sync();
-            if (!shown()) return;
+            if (closed || !shown()) return;
             const now = Date.now();
             const cv = ctx.canvas(W, H).clear('#000000');
             const pl = cv.place;
@@ -287,6 +272,6 @@ mgu.run({
         });
         menu();
         setTimeout(()=>{if(!closed)Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e));},150);
-        log.info('Chrome Dino 1.5.4 Dashboard-only, right-side controls, strict zero speed; GPU 60 Hz target, PNG fallback 8 Hz');
+        log.info('Chrome Dino 1.5.5 Dashboard-only, right-side controls, strict zero speed; GPU 60 Hz target, PNG fallback 8 Hz');
     },
 });

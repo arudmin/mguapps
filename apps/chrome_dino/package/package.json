@@ -1,6 +1,6 @@
 {
   "name": "chrome_dino",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "BMW iDrive Chrome Dino: Dashboard only, four difficulties, in-panel language controls and 60-Hz GPU target.",
   "main": "javascript/app.js",
   "private": false,

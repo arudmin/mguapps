@@ -2,7 +2,7 @@
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
   "description": "Pixel dinosaur runner for BMW iDrive 7/8.\nFour difficulties: Easy, Normal, Hard, Extreme.\nDashboard only; difficulty and language on the right, GPU animation and multilingual menus.\nBMW language detection. Play only while parked.",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "vendor": "arudmin",
   "loggingId": "CDG1",
   "maxDiskUsage": 10485760,
@@ -183,23 +183,6 @@
       "hidden": true
     },
     {
-      "key": "visualTheme",
-      "label": "Visual style",
-      "type": "choice",
-      "default": "dashboard",
-      "hidden": true,
-      "options": [
-        [
-          "dashboard",
-          "Dashboard"
-        ],
-        [
-          "classic",
-          "Classic"
-        ]
-      ]
-    },
-    {
       "key": "best_easy",
       "label": "Easy personal best",
       "type": "number",
@@ -236,7 +219,7 @@
     }
   ],
   "descriptionLocalized": {
-    "en": "Pixel dinosaur runner for BMW iDrive 7/8.\nFour difficulties: Easy, Normal, Hard, Extreme.\nNew dashboard UI or classic layout, GPU animation and multilingual menus.\nBMW language detection. Play only while parked.",
+    "en": "Pixel dinosaur runner for BMW iDrive 7/8.\nFour difficulties: Easy, Normal, Hard, Extreme.\nDashboard-only UI, GPU animation and multilingual menus.\nBMW language detection. Play only while parked.",
     "ru": "Пиксельная игра с динозавром для BMW iDrive 7/8.\nЧетыре сложности: Легко, Норма, Хард, Экстрим.\nРекорды, анимация бега и перевод меню.\nАвтовыбор языка BMW. Играть только на стоянке.",
     "de": "Pixel-Dinosaurierspiel für BMW iDrive 7/8.\nVier Stufen: Leicht, Normal, Schwer, Extrem.\nRekorde, Laufanimation und mehrsprachige Menüs.\nBMW-Spracherkennung. Nur im Stand spielen.",
     "es": "Juego del dinosaurio para BMW iDrive 7/8.\nCuatro niveles: Fácil, Normal, Difícil, Extremo.\nRécords, animación y menús multilingües.\nIdioma automático BMW. Solo con el coche parado.",

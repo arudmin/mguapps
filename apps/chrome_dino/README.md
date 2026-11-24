@@ -60,3 +60,8 @@ VIN status is shown inline beside the app version on ID7/ID8. The optional onlin
 - Existing saved Normal record migrates to Easy; Hard and Extreme records stay with their modes. BMW zero-speed gate remains strict; game freezes and resets when speed becomes unknown or nonzero.
 - GPU renderer is paced up to 60 Hz and shows the measured FPS in the sidebar. Software PNG fallback runs at 8 Hz; 60 FPS on actual BMW hardware is a target, not a guarantee.
 - The Classic file and native RHMI menu definitions remain packaged for compatibility, but the game uses the Dashboard renderer only.
+
+## 1.5.5 — Dashboard startup and CI
+- Fixed undefined theme reference. Dashboard is the only interactive game screen; native MAIN definitions are retained for entry/compatibility and diagnostics.
+- Removed legacy menu handlers and the unused theme setting. Touch input respects focus and the zero-speed gate.
+- GPU target is 60 Hz; PNG fallback is 8 Hz. Physical hardware testing remains required.

@@ -1,11 +1,11 @@
 'use strict';
 const assert=require('assert'),fs=require('fs'),path=require('path');
 const {compare}=require('../package/javascript/src/update');
-assert(compare('1.5.4','1.4.14')>0);
+assert(compare('1.5.5','1.4.14')>0);
 assert(compare('1.4.13','1.4.13')===0);
 assert(compare('1.4.12','1.4.13')<0);
 const app=require('../app.json');
-assert.strictEqual(app.version,'1.5.4');
+assert.strictEqual(app.version,'1.5.5');
 assert(app.description.includes('Four difficulties'));
 assert(app.description.includes('\n'));
 const source=fs.readFileSync(path.join(__dirname,'../package/javascript/app.js'),'utf8');

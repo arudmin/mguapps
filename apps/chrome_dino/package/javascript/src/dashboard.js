@@ -83,7 +83,7 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  rect(0,489,1600,31,'#0a0c12');
  text(words.hudJump||'CONTROLLER: JUMP',38,509,18,'#8fa0b5');
  text(words.hudBack||'BACK: MENU',944,509,18,'#8fa0b5');
- text('v1.5.4',1548,509,16,'#70859a','right');
+ text('v'+require('../kit/app-spec.json').version,1548,509,16,'#70859a','right');
  return cv;
 }
 module.exports={drawDashboard,WORLD_ASPECT};

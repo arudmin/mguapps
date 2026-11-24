@@ -22,7 +22,7 @@ for(const lang of ['ru','en','de','fr','es','it','pt','nl','pl','uk','zh','ja'])
  for(const k of ['style','styleDashboard','styleClassic','online','onlineInactive','hudJump','hudParked'])assert(w[k],lang+' '+k);
 }
 const app=require('../app.json');
-assert.strictEqual(app.version,'1.5.4');
+assert.strictEqual(app.version,'1.5.5');
 assert(app.screens.find(x=>x.name==='MAIN').items.some(x=>x[1]==='BTN_THEME'));
 const src=fs.readFileSync(path.join(__dirname,'../package/javascript/app.js'),'utf8');
 assert(src.includes("ctx.loop('GAME', 8"));
@@ -37,4 +37,4 @@ for(const hmi of ['ID7','ID8']){
  const xml=fs.readFileSync(path.join(__dirname,'../package/rhmiData/uiDescriptions/'+hmi+'/application.xml'),'utf8');
  assert(xml.includes('<component id="26" type="button"'));
 }
-console.log('1.5.4: dashboard render, classic fallback, 12 languages, native theme button, fixed physics and GPU pacing OK');
+console.log('1.5.5: dashboard render, classic fallback, 12 languages, native theme button, fixed physics and GPU pacing OK');

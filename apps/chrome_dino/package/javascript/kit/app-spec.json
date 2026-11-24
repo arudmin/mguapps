@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "screens": [
     {
       "name": "MAIN",
@@ -145,23 +145,6 @@
       "type": "number",
       "default": 0,
       "hidden": true
-    },
-    {
-      "key": "visualTheme",
-      "label": "Visual style",
-      "type": "choice",
-      "default": "dashboard",
-      "hidden": true,
-      "options": [
-        [
-          "dashboard",
-          "Dashboard"
-        ],
-        [
-          "classic",
-          "Classic"
-        ]
-      ]
     },
     {
       "key": "best_easy",
