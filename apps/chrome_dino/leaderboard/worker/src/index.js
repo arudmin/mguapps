@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.1.0';
+export const VERSION='0.2.1';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -41,6 +41,33 @@ async function fetchHandler(req,env){
    const r=await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at) VALUES(?,?,?,?,?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,nick,await digest(secret),Date.now()).run();
    if(r.meta.changes!==1)return error('already_registered',409);
    return respond({player_id:id,nickname:nick,token:secret},201);
+ }
+ // v2 enrollment: client-generated random credential is retained across retries.
+ if(p==='/v2/register'&&req.method==='POST'){
+   const b=await body(req);
+   if(!exact(b,['identity_hash','consent','token'])||!HEX.test(b.identity_hash||'')||b.consent!==true||!HEX.test(b.token||''))return error('invalid_registration',400);
+   const hmac=await identityHmac(b.identity_hash,env.SERVER_SECRET),th=await digest(b.token),id=crypto.randomUUID();
+   await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at) VALUES(?,?,?,?,?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,defaultNickname(hmac),th,Date.now()).run();
+   const row=await db.prepare('SELECT id,nickname,token_hash FROM players WHERE identity_hash=?').bind(hmac).first();
+   if(!row||row.token_hash!==th)return error('already_registered',409);
+   return respond({player_id:row.id,nickname:row.nickname,accepted:true});
+ }
+ if(p==='/v2/sync'&&req.method==='POST'){
+   const me=await player(req,db);if(!me)return error('unauthorized',401);
+   const b=await body(req);
+   if(!exact(b,['operation_id','records'])||!uuid.test(b.operation_id||'')||!b.records||typeof b.records!=='object'||Array.isArray(b.records)||Object.keys(b.records).length!==4||!MODES.every(d=>Number.isSafeInteger(b.records[d])&&b.records[d]>=0&&b.records[d]<=1000000))return error('invalid_sync',400);
+   const payload=JSON.stringify(MODES.map(d=>b.records[d]));
+   await db.prepare('INSERT INTO sync_operations(player_id,operation_id,payload,created_at) VALUES(?,?,?,?) ON CONFLICT(player_id,operation_id) DO NOTHING').bind(me.id,b.operation_id,payload,Date.now()).run();
+   const previous=await db.prepare('SELECT payload FROM sync_operations WHERE player_id=? AND operation_id=?').bind(me.id,b.operation_id).first();
+   if(!previous||previous.payload!==payload)return error('operation_conflict',409);
+   // Each upsert is monotonic and repeatable: a retry also repairs a partial write.
+   for(const d of MODES)await db.prepare('INSERT INTO personal_scores(player_id,difficulty,score,updated_at) VALUES(?,?,?,?) ON CONFLICT(player_id,difficulty) DO UPDATE SET score=excluded.score,updated_at=excluded.updated_at WHERE excluded.score>personal_scores.score').bind(me.id,d,b.records[d],Date.now()).run();
+   return respond({accepted:true,operation_id:b.operation_id,verification:'unverified'});
+ }
+ if(p==='/v2/me'&&req.method==='GET'){
+   const me=await player(req,db);if(!me)return error('unauthorized',401);
+   const r=await db.prepare('SELECT difficulty,score FROM personal_scores WHERE player_id=?').bind(me.id).all();
+   return respond({player_id:me.id,nickname:me.nickname,personal_records:r.results,verification:'unverified'});
  }
  if(p==='/v1/leaderboard'&&req.method==='GET'){
    const d=u.searchParams.get('difficulty'),limit=u.searchParams.get('limit')||'10';

@@ -1,4 +1,4 @@
-# Chrome Dino Leaderboard 0.1.0 — staging
+# Chrome Dino Leaderboard 0.2.1 — staging
 
 Серверная версия независима от игры 1.5.5. Пока не интегрирована в BMW. Только тестовый контур; результаты не публикуются до проверки повторов.
 
@@ -32,3 +32,7 @@ Node 22: в worker выполнить npm test. Используется SQLite 
 
 ### 24.11.2026 — persistent player and MGU client integration
 CI 45357189282 confirmed live HTTPS, D1 registration, HMAC, token hash, profile, session, pending score and duplicate rejection. Added live integration using the actual MGU client module with synthetic VINs (no real vehicle identifier): persistent Test_Dino, independent temporary Test_New_BMW, consent, restart with token, duplicate rejection and pending Extreme submission. Test_New_BMW is cleaned up; Test_Dino remains. Its initial token is not logged or retained after CI; recovery is still not implemented. Explicit URL import for legacy Node compatibility. Actual ID7/ID8 UI integration, real VIN reading, TLS on BMW and protected token persistence still require hardware testing. Server/game versions unchanged; test workflow records actual results.
+
+
+### 0.2.1 — 24.11.2026
+API v2: POST /v2/register with consent, local VIN hash and randomly generated persisted client token (idempotent only with same token); POST /v2/sync authenticated with operation_id and four personal bests, monotonic upserts and conflicting payload rejection; GET /v2/me returns private unverified personal records. Migration 0002 adds personal_scores and sync_operations. Existing v1 unchanged. No unverified score enters public leaderboard; offline replay verification, account recovery, deletion and retention limits remain outstanding. Tests added, deployment pending. BMW DNS connectivity confirmed by user photo on 1.5.17; upload not tested yet.

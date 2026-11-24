@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           BASE="$(cat .deploy-url)"
           curl -fsS --retry 4 --retry-all-errors --retry-delay 2 "$BASE/health" | tee /tmp/dino-health.json
-          node -e "const x=require('/tmp/dino-health.json');if(!x.ok||x.version!=='0.1.0'||x.verification!=='pending_only')process.exit(1)"
+          node -e "const x=require('/tmp/dino-health.json');if(!x.ok||x.version!=='0.2.1'||x.verification!=='pending_only')process.exit(1)"
           for mode in easy normal hard extreme; do
             curl -fsS "$BASE/v1/leaderboard?difficulty=$mode" >/dev/null
           done

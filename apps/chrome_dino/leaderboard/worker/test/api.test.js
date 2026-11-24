@@ -7,6 +7,7 @@ import worker,{identityHmac,defaultNickname} from '../src/index.js';
 const secret='a'.repeat(64),hash='b'.repeat(64);
 function env(){
  const sql=new DatabaseSync(':memory:');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0002_personal_sync.sql',import.meta.url),'utf8'));
  return {sql,SERVER_SECRET:secret,DB:{prepare(q){const s=sql.prepare(q);return {bind(...a){return {first:async()=>s.get(...a)||null,all:async()=>({results:s.all(...a)}),run:async()=>({meta:{changes:s.run(...a).changes}})};},first:async()=>s.get()||null};}}};
 }
 async function call(e,p,method='GET',b,t){const headers={'content-type':'application/json'};if(t)headers.authorization='Bearer '+t;const r=await worker.fetch(new Request('https://test.invalid'+p,{method,headers,body:b===undefined?undefined:JSON.stringify(b)}),e);return [r.status,await r.json()];}
@@ -44,3 +45,5 @@ test('configuration fails closed and malformed data rejected',async()=>{
  assert.equal((await call(e,'/v1/register','POST',{vin:'WBA12345678901234',consent:true}))[0],400);
  assert.equal((await call(e,'/v1/leaderboard?difficulty=invalid'))[0],400);e.sql.close();
 });
+
+test('v2 registration retry and monotonic offline sync',async()=>{const e=env(),token='c'.repeat(64),reg={identity_hash:hash,consent:true,token};const [a,p]=await call(e,'/v2/register','POST',reg);assert.equal(a,200);assert.deepEqual((await call(e,'/v2/register','POST',reg))[1],p);assert.equal((await call(e,'/v2/register','POST',{...reg,token:'d'.repeat(64)}))[0],409);const b={operation_id:'11111111-1111-4111-8111-111111111111',records:{easy:143,normal:35,hard:36,extreme:27}};assert.equal((await call(e,'/v2/sync','POST',b,token))[0],200);assert.equal((await call(e,'/v2/sync','POST',b,token))[0],200);assert.equal((await call(e,'/v2/sync','POST',{...b,records:{...b.records,easy:1}},token))[0],409);assert.equal((await call(e,'/v2/sync','POST',{operation_id:'22222222-2222-4222-8222-222222222222',records:{easy:1,normal:1,hard:1,extreme:1}},token))[0],200);assert.equal((await call(e,'/v2/me','GET',undefined,token))[1].personal_records.find(x=>x.difficulty==='easy').score,143);assert.deepEqual((await call(e,'/v1/leaderboard?difficulty=easy'))[1].entries,[]);e.sql.close();});

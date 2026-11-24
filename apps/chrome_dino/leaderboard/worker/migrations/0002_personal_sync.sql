@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS personal_scores(player_id TEXT NOT NULL REFERENCES players(id),difficulty TEXT NOT NULL CHECK(difficulty IN ('easy','normal','hard','extreme')),score INTEGER NOT NULL,updated_at INTEGER NOT NULL,PRIMARY KEY(player_id,difficulty));
+CREATE TABLE IF NOT EXISTS sync_operations(player_id TEXT NOT NULL REFERENCES players(id),operation_id TEXT NOT NULL,payload TEXT NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(player_id,operation_id));
