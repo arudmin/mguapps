@@ -232,3 +232,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.20 — 24.11.2026
 - Owner requested provisional ranking without replay verification. Use v2 public leaderboard, display unverified label and explicitly consent to public nickname and scores. All four modes. Fix startup test timer mock (100 ms safety vs 1000 ms outbox); 1.5.19 CI 45383074306 failed stale-speed assertion because mock overwrote safety timer, while outbox test passed. 1.5.20 CI and BMW test pending. Server 0.2.2 required. Replay verification deferred; account recovery/deletion outstanding.
+
+
+### 1.5.21 — 24.11.2026
+- Removed user-facing anti-cheat / unverified caption from the leaderboard in all 12 languages at owner's request. Public ranking still accepts unverified personal bests; replay verification and anti-cheat remain development backlog, not implemented. Consent to public nickname and scores remains unchanged. Server version unchanged. CI and BMW verification pending.

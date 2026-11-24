@@ -112,3 +112,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.20 (top-chart):** provisional public ranking without replay verification; corrected timer mock in CI; server 0.2.2.
+
+
+**1.5.21 (top-chart):** simplified ranking header; replay verification remains documented development backlog. Server unchanged.

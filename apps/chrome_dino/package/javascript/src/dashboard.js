@@ -107,7 +107,7 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    for(const item of [{id:'consentNo',x:242,label:words.cancelExit},{id:'consentYes',x:600,label:opts.vinAvailable?words.syncEnable:words.syncVinWait}]){round(item.x,275,328,62,8,focus===item.id?'#244768':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,21,'#f0f7ff','center');}
  }else if(opts.rankingOpen){
    round(205,64,766,386,11,'#19212c');border(205,64,766,386,11,'#5b87ae');
-   text(words.topPlayers,460,87,23,'#f4f6f8','center');text(words.rankUnverified,460,103,13,'#e9ad6f','center');
+   text(words.topPlayers,480,97,24,'#f4f6f8','center');
    const profile=opts.syncProfile||{};
    if(!profile.enabled){round(720,70,245,33,6,focus==='syncProfile'?'#244768':'#1a2939');text(words.syncEnable,842,93,18,'#f0f7ff','center');}
    else{text(profile.nickname||words.syncTitle,950,88,15,'#9dc9ed','right');text(profile.error||('SYNC: '+(profile.pending||0)),950,105,14,'#9dc9ed','right');}
