@@ -1,4 +1,4 @@
-# Chrome Dino Game 1.5.9 — BMW MGU Store
+# Chrome Dino Game 1.5.10 — BMW MGU Store
 
 Пиксельная аркада для BMW iDrive 7/8 (MGU), устанавливаемая через [MGU Store](https://github.com/robertnisipeanu/mgu-store). Рабочая ветка — top-chart; стабильная main — 1.4.13.
 
@@ -187,3 +187,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.9 — 24.11.2026
 - Removed legacy MAIN, selector and unused settings RHMI states from ID7/ID8 XML and JSON; GAME is sole entry in both manifests. ID8 detection marker moved into GAME. Removed legacy runtime handlers and automatic reopen timer. Hidden preferences retained. Back via Dashboard footer or left controller deflection opens pause/exit dialog. Native physical BACK remains HMI-owned and may bypass confirmation; actual hardware test required. Server 0.1.0 unchanged. CI pending.
+
+
+### 1.5.10 — 24.11.2026
+- BMW photo confirms 1.5.9 Dashboard pause overlay. Replaced Start over with Back to menu in all 12 locales. Ends the current run, saves best, returns to ready Dashboard without starting a run. No legacy RHMI menu or physics change. Added startup regression assertion. Server unchanged; CI pending.

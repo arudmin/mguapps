@@ -84,7 +84,7 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    round(222,154,733,208,11,'#19212c');border(222,154,733,208,11,'#5b87ae');
    text(words.pauseTitle,585,220,36,'#f4f6f8','center');
    text((words.score||'SCORE')+' '+game.score,585,252,23,'#9dc9ed','center');
-   for(const item of [{id:'resume',x:242,label:words.continue_},{id:'restart',x:600,label:words.restartRun}]){
+   for(const item of [{id:'resume',x:242,label:words.continue_},{id:'menu',x:600,label:words.exitToMenu}]){
      round(item.x,275,328,62,8,focus===item.id?'#244768':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,24,'#f0f7ff','center');
    }
  }else if(game.state!=='playing'){

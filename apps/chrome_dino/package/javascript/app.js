@@ -89,7 +89,7 @@ mgu.run({
         }
         function pauseAction(choice){
             if(!paused||!going||!safe())return;
-            if(choice==='restart'){game.reset();game.action();}
+            if(choice==='menu'){saveBest();game.reset();}
             else if(choice!=='resume')return;
             paused=false;selectedControl='play';last=null;accumulator=0;
         }
@@ -210,7 +210,7 @@ mgu.run({
             if(prev===null||!going||(game.state==='playing'&&!paused&&!exitDialog))return;
             const diff=((n-prev+32768)%65536)-32768;
             if(!diff||Math.abs(diff)>16)return;
-            const items=exitDialog?['cancel','exit']:paused?['resume','restart']:['play','mode','language'];
+            const items=exitDialog?['cancel','exit']:paused?['resume','menu']:['play','mode','language'];
             selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
         // Touch areas use the 1600x520 dashboard coordinates.
@@ -219,7 +219,7 @@ mgu.run({
             if(x>=890&&x<=1150&&y>=489&&shown()){backAction();return;}
             if(!going)return;
             if(exitDialog){if(y>=275&&y<=337){if(x>=242&&x<=570)exitAction('cancel');else if(x>=600&&x<=928)exitAction('exit');}return;}
-            if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('restart');}return;}
+            if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('menu');}return;}
             if(x>=1180&&x<=1580&&game.state!=='playing'){
                 if(y>=227&&y<=305){selectedControl='mode';chooseDifficulty((game.difficulty+1)%4);}
                 else if(y>=336&&y<=410){selectedControl='language';chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);}
