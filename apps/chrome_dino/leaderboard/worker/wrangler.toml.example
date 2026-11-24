@@ -1,8 +1,11 @@
-name = "chrome-dino-leaderboard"
+name = "chrome-dino-leaderboard-staging"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
-
+workers_dev = true
+keep_vars = true
+[observability]
+enabled = false
 [[d1_databases]]
 binding = "DB"
-database_name = "chrome-dino-leaderboard"
+database_name = "chrome-dino-leaderboard-staging"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"

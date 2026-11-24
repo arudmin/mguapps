@@ -1,20 +1,26 @@
-# Chrome Dino Online Leaderboard — 1.4.14 (staging)
-This is a **backend and MGU client module prototype**, not yet wired into the live game UI. Never deploy as a production ranking until deterministic replay verification is implemented. Submissions stay pending; public rankings only read best_scores (which is not populated by unverified submissions).
+# Chrome Dino Leaderboard 0.1.0 — staging
 
-## Privacy
-Vehicle identifier is processed locally: the MGU client computes SHA-256, sends only identity_hash, and generates default nickname user_<first eight hash chars>. SHA-256 of a structured identifier is **pseudonymous, not anonymous**; protect the hash, don't log it, and obtain opt-in consent before registration. No requests before consent. Store the token in protected local settings; do not use the hash as authentication. Avoid publishing hashes.
+Серверная версия независима от игры 1.5.5. Пока не интегрирована в BMW. Только тестовый контур; результаты не публикуются до проверки повторов.
 
-## Cloudflare free plan setup
-1. Create a free Cloudflare account and open Workers & Pages.
-2. Create D1 database named chrome-dino-leaderboard.
-3. Install Node.js and run `npx wrangler login` in the worker directory.
-4. Copy wrangler.toml.example to wrangler.toml, set your D1 database_id from the Cloudflare dashboard.
-5. Run `npx wrangler d1 migrations apply chrome-dino-leaderboard --remote`.
-6. Run `npx wrangler deploy`; copy the resulting https://...workers.dev URL.
-7. Test `/health`. Don't enable client uploads until the MGU HTTPS test and verification logic are complete.
+## Протокол идентификации
+После явного согласия клиент вычисляет SHA-256 от VIN локально и по HTTPS передаёт identity_hash и consent:true. Исходный VIN не отправляется. Worker вычисляет HMAC-SHA256 с серверным секретом и префиксом chrome-dino:vin-sha256:v1:, хранит только HMAC, случайный UUID игрока, никнейм и SHA-256 случайного токена. Имя по умолчанию user_ + первые 8 символов HMAC. Изменение имени не меняет ID и рекорды. Хеш VIN и HMAC — псевдонимные конфиденциальные данные; не логировать, не публиковать. Токен авторизации независим от VIN; повторная регистрация не выдаёт новый токен. Восстановление аккаунта после потери токена пока не реализовано. До интеграции необходимы согласие, защищённое хранение токена и механизм удаления данных.
 
 ## API
-POST /v1/register {identity_hash}; GET /v1/leaderboard?difficulty=extreme; GET /v1/me; PATCH /v1/profile {nickname}; POST /v1/session {difficulty}; POST /v1/submit {session_id,difficulty,score,events}. Authenticated routes use Bearer token.
+- GET /health — проверка конфигурации и БД.
+- POST /v1/register {identity_hash,consent:true} — регистрация; возвращает player_id, nickname, token.
+- GET /v1/leaderboard?difficulty=extreme&limit=10 (или 100) — только проверенные результаты, отдельные easy/normal/hard/extreme.
+- GET /v1/me — профиль, рекорды и место.
+- PATCH /v1/profile {nickname} — смена имени.
+- POST /v1/session {difficulty,game_version:"1.5.5"} — UUID сессии, seed, срок 1 час. Не более 20 сессий в час на игрока.
+- POST /v1/submit {session_id,difficulty,score,events,ticks} — events: строго возрастающие номера игровых шагов нажатий; ticks: число шагов 120 Гц. Сессия одноразовая, результат pending.
+Авторизованные маршруты требуют Bearer token. Размер JSON ограничен, проверяются режим, сессия, срок, владелец и длительность. Без детерминированного воспроизведения препятствий и прыжков сервер не доверяет присланному счёту и не обновляет best_scores. Нельзя считать это завершённым античитом. Публичный staging также требует дальнейшего усиления защиты от массовой регистрации и исчерпания лимитов.
 
-## Next work
-Integrate UI and consent with 12 translations, settings persistence, network test on BMW ID7, and replay verifier. Keep Normal/Hard/Extreme scores separate. Only stationary vehicle use.
+## Cloudflare
+GitHub Actions chrome-dino-leaderboard.yml использует CLOUDFLARE_ACCOUNT_ID и CLOUDFLARE_API_TOKEN из GitHub Secrets. Создаёт отдельные Worker и D1 chrome-dino-leaderboard-staging, применяет миграции, создаёт SERVER_SECRET один раз и сохраняет его при последующих деплоях. Не переключает тариф, не покупает домен, не изменяет биллинг. Аккаунт должен быть на Workers Free; при отсутствии workers.dev нужно активировать бесплатный поддомен в Dashboard. Не выводить токены и идентификаторы игроков в журналы.
+
+## Проверка
+Node 22: в worker выполнить npm test. Используется SQLite с той же SQL-схемой и имитацией D1. CI затем выполняет реальные проверки /health и четырёх таблиц рейтинга. Отдельно потребуется проверить HTTPS и хранение токена на BMW. Первый этап интеграции Extreme; другие режимы поддерживаются сервером.
+
+## История
+- 0.1.0 (24.11.2026): согласованный двухступенчатый идентификатор SHA-256 + HMAC, никнейм из HMAC, четыре режима, токены, сессии, pending, тесты и staging CI. Игра не изменена.
+- Прототип 1.4.14 (23.11.2026): Worker, D1, клиент; серверный HMAC ещё не реализован.
