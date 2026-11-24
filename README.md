@@ -106,3 +106,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.19 / server 0.2.1 (top-chart):** opt-in durable offline synchronization of private personal bests, API v2 idempotent registration and sync. Public verified ranking unchanged; CI pending.
+
+
+**Server 0.2.2 (top-chart):** provisional unverified public ranking of synced personal records in all four modes. Existing verified API unchanged. Deployment pending.

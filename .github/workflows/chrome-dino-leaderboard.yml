@@ -55,9 +55,10 @@ jobs:
           set -euo pipefail
           BASE="$(cat .deploy-url)"
           curl -fsS --retry 4 --retry-all-errors --retry-delay 2 "$BASE/health" | tee /tmp/dino-health.json
-          node -e "const x=require('/tmp/dino-health.json');if(!x.ok||x.version!=='0.2.1'||x.verification!=='pending_only')process.exit(1)"
+          node -e "const x=require('/tmp/dino-health.json');if(!x.ok||x.version!=='0.2.2'||x.verification!=='pending_only')process.exit(1)"
           for mode in easy normal hard extreme; do
             curl -fsS "$BASE/v1/leaderboard?difficulty=$mode" >/dev/null
+            curl -fsS "$BASE/v2/leaderboard?difficulty=$mode" | node -e 'let s="";process.stdin.on("data",x=>s+=x);process.stdin.on("end",()=>{const j=JSON.parse(s);if(j.verification!=="unverified"||j.verified_only!==false||!Array.isArray(j.entries))process.exit(1)})'
           done
           echo "Staging endpoint: $BASE" >> "$GITHUB_STEP_SUMMARY"
       - name: Delete transient secret files

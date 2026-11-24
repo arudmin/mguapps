@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.2.1';
+export const VERSION='0.2.2';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -63,6 +63,13 @@ async function fetchHandler(req,env){
    // Each upsert is monotonic and repeatable: a retry also repairs a partial write.
    for(const d of MODES)await db.prepare('INSERT INTO personal_scores(player_id,difficulty,score,updated_at) VALUES(?,?,?,?) ON CONFLICT(player_id,difficulty) DO UPDATE SET score=excluded.score,updated_at=excluded.updated_at WHERE excluded.score>personal_scores.score').bind(me.id,d,b.records[d],Date.now()).run();
    return respond({accepted:true,operation_id:b.operation_id,verification:'unverified'});
+ }
+ // Explicitly provisional public leaderboard; only consented synced profiles.
+ if(p==='/v2/leaderboard'&&req.method==='GET'){
+   const d=u.searchParams.get('difficulty'),limit=u.searchParams.get('limit')||'10';
+   if(!validMode(d)||!['10','100'].includes(limit))return error('invalid_query',400);
+   const r=await db.prepare('SELECT p.nickname,s.score FROM personal_scores s JOIN players p ON p.id=s.player_id WHERE s.difficulty=? AND s.score>0 ORDER BY s.score DESC,s.updated_at ASC,s.player_id ASC LIMIT ?').bind(d,Number(limit)).all();
+   return respond({difficulty:d,entries:r.results.map((v,i)=>({rank:i+1,nickname:v.nickname,score:v.score})),verified_only:false,verification:'unverified'});
  }
  if(p==='/v2/me'&&req.method==='GET'){
    const me=await player(req,db);if(!me)return error('unauthorized',401);
