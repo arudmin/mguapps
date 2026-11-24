@@ -28,7 +28,7 @@ assert.deepStrictEqual(migrateDifficulty(old).bestModes,[42,0,12,7],'idempotent 
 assert.strictEqual(migrateDifficulty(stub({difficulty:2,bestSchema:1,best_extreme:31,best:31})).index,3);
 assert.strictEqual(migrateDifficulty(stub({difficulty:1,best:0,bestSchema:0,difficultySchema:0})).index,1);
 const app=require('../app.json'),spec=require('../package/javascript/kit/app-spec.json');
-assert.strictEqual(app.version,'1.5.5');assert.strictEqual(spec.version,'1.5.5');
+assert.strictEqual(app.version,require('../package/package.json').version);assert.strictEqual(spec.version,app.version);
 for(const data of [app,spec]){assert.strictEqual(data.settings.find(x=>x.key==='difficulty').default,1);assert(data.settings.some(x=>x.key==='best_easy'));}
 const i18n=require('../package/javascript/src/i18n');
 for(const l of ['ru','en','de','fr','es','it','pt','nl','pl','uk','zh','ja'])assert.strictEqual(i18n.words(l).levels.length,4,l);

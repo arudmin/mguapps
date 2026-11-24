@@ -174,3 +174,5 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.7 — 24.11.2026
 - BACK возвращает на Dashboard с паузой, продолжением и новым стартом. Скрыты элементы старого MAIN; технический RHMI parent сохранён для маршрутизации. Продолжение сохраняет физическое состояние, новый старт сохраняет рекорд. При движении или устаревшем сигнале забег сбрасывается. 12 переводов. Добавлена имитация BACK в тесте startup ID7/ID8. Реальное поведение аппаратной кнопки требует проверки BMW. Сервер 0.1.0 не изменён.
+
+- 1.5.7 CI follow-up: removed stale hardcoded 1.5.5 version assertions; tests now compare package manifests. No runtime or server changes. CI rerun pending.
