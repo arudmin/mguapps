@@ -90,8 +90,11 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  }else if(game.state!=='playing'){
    round(222,176,733,171,11,'#19212c');border(222,176,733,171,11,'#5b87ae');
    text(game.state==='over'?words.over:words.title,585,237,36,'#f4f6f8','center');
-   text(game.state==='over'?(words.score+' '+game.score+'  '+words.best+' '+best):words.start,585,282,24,'#9dc9ed','center');
-   text(opts.parked===false?(words.parkedOnly||'PARKED ONLY'):(words.hudJump||'CONTROLLER: JUMP'),585,322,17,opts.parked===false?'#ffc17c':'#9aabbf','center');
+   const enabled=opts.parked!==false, active=enabled&&focus==='play';
+   round(345,252,480,60,8,active?'#244768':'#1a2939');
+   border(345,252,480,60,8,active?'#88caff':'#45617b');
+   text(game.state==='over'?words.retryButton:words.startButton,585,291,26,enabled?'#f0f7ff':'#78889a','center');
+   text(!enabled?(words.parkedOnly||'PARKED ONLY'):game.state==='over'?(words.score+' '+game.score+'  '+words.best+' '+best):words.start,585,334,17,!enabled?'#ffc17c':'#9aabbf','center');
  }
  rect(22,459,1132,3,'#526a83');
  for(let i=0;i<18;i++){rect(23+i*63,465,45,7,i%4===2?'#e91d3e':i%4===1?'#14518a':'#75bdf5')}
