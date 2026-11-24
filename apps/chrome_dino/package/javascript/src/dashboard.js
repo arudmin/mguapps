@@ -62,13 +62,14 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  const focus=opts.selectedControl||'play';
  round(1191,229,363,69,8,focus==='mode'?'#244768':'#1a2939');
  border(1191,229,363,69,8,focus==='mode'?'#88caff':'#45617b');
- text('‹   '+words.levels[game.difficulty]+'   ›',1210,274,24,'#f0f7ff');
+ text('<   '+words.levels[game.difficulty]+'   >',1210,274,24,'#f0f7ff');
  text(words.language||'LANGUAGE',1194,327,19,'#9eadbf');
  round(1191,338,363,69,8,focus==='language'?'#244768':'#1a2939');
  border(1191,338,363,69,8,focus==='language'?'#88caff':'#45617b');
- text('‹  '+String(opts.languageLabel||'Auto (BMW)')+'  ›',1207,380,21,'#f0f7ff');
- text('FPS '+String(opts.fps===undefined?'—':opts.fps)+' / 60',1194,441,18,'#92ceff');
- text(focus==='play'?'● PLAY':focus==='mode'?'● MODE':'● LANGUAGE',1550,441,16,'#9fb4c7','right');
+ text('<  '+String(opts.languageLabel||'Auto (BMW)')+'  >',1207,380,21,'#f0f7ff');
+ text('FPS '+String(opts.fps===undefined?'-':opts.fps)+' / 60',1194,441,18,'#92ceff');
+ rect(1407,430,7,7,'#92ceff');
+ text(focus==='play'?'PLAY':focus==='mode'?'MODE':'LANGUAGE',1550,441,16,'#9fb4c7','right');
  // Versioned in-game update notices remain independent of network leaderboard.
  if(update&&update.available&&update.latest)text((words.updateNotice||'UPDATE AVAILABLE')+' '+update.latest,1100,72,18,'#e9ad6f','right');
  // Overlay in the playfield while ready/over; preserves the controller-to-start UX.
