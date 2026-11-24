@@ -133,3 +133,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.27 / server 0.2.7:** unique nicknames, reserved defaults, localized availability feedback. API v1. CI pending.
+
+
+**1.5.28 / server 0.2.8:** offline nickname, conflict resolution, checked suggestions, disclosed minimal registration statistics. CI pending.

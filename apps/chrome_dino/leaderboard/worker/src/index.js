@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.2.7';
+export const VERSION='0.2.8';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -25,6 +25,9 @@ async function player(req,db){const h=req.headers.get('authorization')||'';if(!/
 function exact(b,keys){return Object.keys(b).every(k=>keys.includes(k));}
 function validMode(d){return MODES.includes(d);}
 function validNickname(n){return typeof n==='string'&&/^[A-Za-z0-9_-]{3,16}$/.test(n);}
+function regionalSuffix(cf){const region=String(cf?.region||'').toLowerCase(),city=String(cf?.city||'').toLowerCase();if(cf?.country==='RU'){if(/petersburg|peterburg|петербург/.test(city+' '+region))return '78';if(/moscow|москва/.test(city+' '+region))return '77';if(/leningrad|ленинград/.test(region))return '47';return '';}return ({BY:'375',DE:'49',KZ:'7',FR:'33',GB:'44',US:'1',PL:'48',IT:'39',ES:'34'})[cf?.country]||'';}
+async function suggestions(db,n,me,cf){const suffixes=[regionalSuffix(cf),'777','55','007','99','_7','01','88','123','_1','_2','_3'];for(let i=0;i<15;i++)suffixes.push(String(100+crypto.getRandomValues(new Uint16Array(1))[0]%900));const seen=new Set([n.toLowerCase()]),out=[];for(const tail of suffixes){if(!tail)continue;const candidate=n.slice(0,16-tail.length)+tail,key=candidate.toLowerCase();if(seen.has(key))continue;seen.add(key);const hit=await db.prepare('SELECT id FROM players WHERE (nickname=? COLLATE NOCASE OR original_nickname=? COLLATE NOCASE) AND id<>? LIMIT 1').bind(candidate,candidate,me?me.id:'').first();if(!hit)out.push(candidate);if(out.length===5)break;}return out;}
+function metadata(b){const m=b.analytics;if(!m||typeof m!=='object'||m.consent!==true)return null;const version=typeof m.version==='string'&&/^\d+\.\d+\.\d+$/.test(m.version)?m.version:null;const language=typeof m.language==='string'&&/^(ru|en|de|fr|es|it|pt|nl|pl|uk|zh|ja)$/.test(m.language)?m.language:null;return {version,language};}
 async function fetchHandler(req,env){
  const u=new URL(req.url),p=u.pathname,db=env.DB;
  try{
@@ -38,26 +41,28 @@ async function fetchHandler(req,env){
  const n=u.searchParams.get('nickname');if(!validNickname(n))return error('invalid_nickname',400);
  const me=await player(req,db);if(req.headers.has('authorization')&&!me)return error('unauthorized',401);
  const hit=await db.prepare('SELECT id FROM players WHERE (nickname=? COLLATE NOCASE OR original_nickname=? COLLATE NOCASE) AND id<>? LIMIT 1').bind(n,n,me?me.id:'').first();
- return respond({available:!hit});
+ return respond({available:!hit,suggestions:hit?await suggestions(db,n,me,req.cf):[]});
  }
  if(p==='/v1/register'&&req.method==='POST'){
    const b=await body(req);
-   if(!exact(b,['identity_hash','consent','token'])||!HEX.test(b.identity_hash||'')||b.consent!==true||!HEX.test(b.token||''))return error('invalid_registration',400);
+   if(!exact(b,['identity_hash','consent','token','analytics'])||!HEX.test(b.identity_hash||'')||b.consent!==true||!HEX.test(b.token||''))return error('invalid_registration',400);
    const hmac=await identityHmac(b.identity_hash,env.SERVER_SECRET),th=await digest(b.token),id=crypto.randomUUID();
    await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at,original_nickname) VALUES(?,?,?,?,?,?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,defaultNickname(hmac),th,Date.now(),defaultNickname(hmac)).run();
    const row=await db.prepare('SELECT id,nickname,token_hash,original_nickname FROM players WHERE identity_hash=?').bind(hmac).first();
    if(!row||row.token_hash!==th)return error('already_registered',409);
+   const m=metadata(b);if(m){const country=typeof req.cf?.country==='string'&&/^[A-Z]{2}$/.test(req.cf.country)?req.cf.country:null;const region=typeof req.cf?.region==='string'?req.cf.region.slice(0,80):null;await db.prepare('INSERT INTO player_analytics(player_id,registered_at,country,region,game_version,language) VALUES(?,?,?,?,?,?) ON CONFLICT(player_id) DO NOTHING').bind(row.id,Date.now(),country,region,m.version,m.language).run();}
    return respond({player_id:row.id,nickname:row.nickname,original_nickname:row.original_nickname,accepted:true});
  }
  if(p==='/v1/sync'&&req.method==='POST'){
  const me=await player(req,db);if(!me)return error('unauthorized',401);
  const b=await body(req);
- if(!exact(b,['operation_id','records','nickname'])||!uuid.test(b.operation_id||'')||!b.records||Object.keys(b.records).length!==4||!MODES.every(d=>Number.isSafeInteger(b.records[d])&&b.records[d]>=0&&b.records[d]<=1000000)||(b.nickname!==null&&!validNickname(b.nickname)))return error('invalid_sync',400);
+ if(!exact(b,['operation_id','records','nickname','resolve_name'])||!uuid.test(b.operation_id||'')||!b.records||Object.keys(b.records).length!==4||!MODES.every(d=>Number.isSafeInteger(b.records[d])&&b.records[d]>=0&&b.records[d]<=1000000)||(b.nickname!==null&&!validNickname(b.nickname)))return error('invalid_sync',400);
  const payload=JSON.stringify([b.nickname,...MODES.map(d=>b.records[d])]);
- const now=Date.now(),ops=[db.prepare('INSERT INTO sync_operations(player_id,operation_id,payload,created_at) VALUES(?,?,?,?) ON CONFLICT(player_id,operation_id) DO NOTHING').bind(me.id,b.operation_id,payload,now)];
- if(b.nickname!==null)ops.push(db.prepare('UPDATE players SET nickname=? WHERE id=? AND changes()=1').bind(b.nickname,me.id));
+ const now=Date.now();const attempt=async chosen=>{const ops=[db.prepare('INSERT INTO sync_operations(player_id,operation_id,payload,created_at) VALUES(?,?,?,?) ON CONFLICT(player_id,operation_id) DO NOTHING').bind(me.id,b.operation_id,payload,now)];
+ if(b.nickname!==null)ops.push(db.prepare('UPDATE players SET nickname=? WHERE id=? AND changes()=1').bind(chosen,me.id));
  for(const d of MODES)if(b.records[d]>0)ops.push(db.prepare('INSERT INTO personal_scores(player_id,difficulty,score,updated_at) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM sync_operations WHERE player_id=? AND operation_id=? AND payload=?) ON CONFLICT(player_id,difficulty) DO UPDATE SET score=excluded.score,updated_at=excluded.updated_at WHERE excluded.score>personal_scores.score').bind(me.id,d,b.records[d],now,me.id,b.operation_id,payload));
- await db.batch(ops);
+ await db.batch(ops);};
+ try{await attempt(b.nickname);}catch(e){if(b.resolve_name!==true||!b.nickname||!/nickname_taken|UNIQUE constraint failed: players.nickname/i.test(String(e.message||e)))throw e;let resolved=false;for(let round=0;round<3&&!resolved;round++){for(const candidate of await suggestions(db,b.nickname,me,req.cf)){try{await attempt(candidate);resolved=true;break;}catch(err){if(!/nickname_taken|UNIQUE constraint failed: players.nickname/i.test(String(err.message||err)))throw err;}}}if(!resolved)await attempt(me.original_nickname);}
  const prev=await db.prepare('SELECT payload FROM sync_operations WHERE player_id=? AND operation_id=?').bind(me.id,b.operation_id).first();
  if(!prev||prev.payload!==payload)return error('operation_conflict',409);
  const current=await db.prepare('SELECT nickname,original_nickname FROM players WHERE id=?').bind(me.id).first();

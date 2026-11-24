@@ -1,3 +1,6 @@
+## 0.2.8 — 24.11.2026
+Offline rename resolution and five checked suggestions; opt-in minimal registration analytics. No raw VIN or IP stored by application. CI pending.
+
 ## 0.2.7 — 24.11.2026
 Case-insensitive unique nicknames, reserved originals, migration of existing conflicts, availability endpoint and regression test. CI pending. Rare existing original-name hash-prefix collision blocks migration rather than changing identity. API v1 retained.
 

@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS player_analytics(player_id TEXT PRIMARY KEY REFERENCES players(id) ON DELETE CASCADE,registered_at INTEGER NOT NULL,country TEXT,region TEXT,game_version TEXT,language TEXT);

@@ -1,3 +1,6 @@
+## 1.5.28 — 24.11.2026
+- Save a valid nickname offline, persist pending name across restart, resolve conflicts on reconnection. Up to five available suggestions in editor, selectable by touch or rotary, approximate IP geography for suffix only. Private registration statistics (region, date, game version, language) disclosed before opt-in; no raw VIN or IP and no unverified vehicle attributes. Local name retained when skipping onboarding registration. CI/hardware pending. Previous 1.5.27 CI passed 45392639484/45392639450.
+
 ## 1.5.27 — 24.11.2026
 - Debounced online nickname availability in profile and onboarding editor, 12 localized statuses, saving requires available name. Server 0.2.7 enforces case-insensitive uniqueness, reserves originals. Rejected queued renames retain score snapshot and confirmed name. CI and hardware checks pending. Previous 1.5.26 CI green (45391589673/45391589663).
 

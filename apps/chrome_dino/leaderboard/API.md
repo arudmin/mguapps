@@ -27,3 +27,6 @@ Zero scores are accepted in snapshots but never inserted into personal_scores. M
 
 ### 0.2.7
 GET /v1/name-availability?nickname=NAME (optional bearer) returns {available:boolean}; advisory only. POST /v1/sync atomically rejects occupied or reserved names with 409 nickname_taken; client must retain scores and discard rejected rename. Case-insensitive ASCII comparison. Existing conflicting names reset to their reserved originals; accounts and scores retained.
+
+### 0.2.8
+Availability returns up to five free suggestions; approximate request geography informs suffixes without storing IP. Optional resolve_name:true on sync resolves conflicts within atomic batch attempts, preserving operation ID and score payload. Optional registration analytics consent stores country/region, registration date, game version and language in private D1 table; no raw VIN/IP, no vehicle attributes without validated source. No analytics for legacy registration without opt-in.
