@@ -33,3 +33,6 @@ Availability returns up to five free suggestions; approximate request geography 
 
 ### 0.2.9
 Registration analytics discontinued. Legacy analytics payload is ignored for compatibility; migration 0007 drops the table and all rows. Request geography is used only transiently for nickname suggestions. Existing players and scores are unchanged.
+
+### 0.2.10
+Tie ordering: score DESC, updated_at DESC, player_id ASC. Timestamp remains internal and changes only for an improved score; it represents server acceptance time, not offline play time. Own positions use identical ordering.

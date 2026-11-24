@@ -2,7 +2,7 @@ name: Staging Easy ranking fixtures
 on:
   push:
     branches: [top-chart]
-    paths: ['.github/workflows/staging-easy-fixtures.yml']
+    paths: ['.github/workflows/staging-easy-fixtures.yml', 'tools/staging-easy-fixtures.mjs']
   workflow_dispatch:
     inputs:
       cleanup:

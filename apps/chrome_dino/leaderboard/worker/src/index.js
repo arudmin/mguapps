@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.2.9';
+export const VERSION='0.2.10';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -70,9 +70,9 @@ async function fetchHandler(req,env){
  const me=await player(req,db);if(req.headers.has('authorization')&&!me)return error('unauthorized',401);
  const boards={},positions={};
  for(const d of MODES){
- const r=await db.prepare('SELECT p.id,p.nickname,s.score FROM personal_scores s JOIN players p ON p.id=s.player_id WHERE s.difficulty=? AND s.score>0 ORDER BY s.score DESC,s.updated_at ASC,s.player_id ASC LIMIT 10').bind(d).all();
+ const r=await db.prepare('SELECT p.id,p.nickname,s.score FROM personal_scores s JOIN players p ON p.id=s.player_id WHERE s.difficulty=? AND s.score>0 ORDER BY s.score DESC,s.updated_at DESC,s.player_id ASC LIMIT 10').bind(d).all();
  boards[d]=r.results.map((v,i)=>({rank:i+1,nickname:v.nickname,score:v.score,self:!!me&&v.id===me.id}));
- if(me){const own=await db.prepare('SELECT s.score,1+(SELECT COUNT(*) FROM personal_scores t WHERE t.difficulty=s.difficulty AND t.score>0 AND (t.score>s.score OR (t.score=s.score AND (t.updated_at<s.updated_at OR (t.updated_at=s.updated_at AND t.player_id<s.player_id))))) AS rank FROM personal_scores s WHERE s.player_id=? AND s.difficulty=? AND s.score>0').bind(me.id,d).first();positions[d]=own||null;}
+ if(me){const own=await db.prepare('SELECT s.score,1+(SELECT COUNT(*) FROM personal_scores t WHERE t.difficulty=s.difficulty AND t.score>0 AND (t.score>s.score OR (t.score=s.score AND (t.updated_at>s.updated_at OR (t.updated_at=s.updated_at AND t.player_id<s.player_id))))) AS rank FROM personal_scores s WHERE s.player_id=? AND s.difficulty=? AND s.score>0').bind(me.id,d).first();positions[d]=own||null;}
  }
  return respond({boards,profile:me?{nickname:me.nickname,original_nickname:me.original_nickname,positions}:null,generated_at:Date.now(),verification:'unverified'});
  }

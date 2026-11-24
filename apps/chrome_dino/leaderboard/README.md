@@ -1,3 +1,6 @@
+## 0.2.10 — 24.11.2026
+Newest accepted record first for tied scores across all modes. Internal timestamp only. Added regression test. CI pending.
+
 ## 0.2.9 — 24.11.2026
 Removed registration analytics, dropped its table via migration, retained legacy registration compatibility. No extra statistics. Previous 0.2.8 CI passed 45397860958/45397860631. New CI pending.
 
