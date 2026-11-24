@@ -38,7 +38,7 @@ mgu.run({
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
-        let selectedControl='play', paused=false, exitDialog=false, exiting=false, tiltHeld=false, rendererTiltAt=-Infinity;
+        let selectedControl='play', paused=false, settingsOpen=false, exitDialog=false, exiting=false, tiltHeld=false, rendererTiltAt=-Infinity;
         let rotaryPosition=null,rendererRotaryAt=-Infinity;
         let fpsAt=0,fpsFrames=0,actualFPS=0;
 
@@ -67,9 +67,9 @@ mgu.run({
             if(!going)return;
             if(exitDialog){exitAction(selectedControl);return;}
             if(paused){pauseAction(selectedControl);return;}
+            if(settingsOpen){if(selectedControl==='mode')chooseDifficulty((game.difficulty+1)%4);else if(selectedControl==='language')chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);else closeSettings();return;}
+            if(selectedControl==='settings'&&game.state!=='playing'){openSettings();return;}
             if(game.state==='playing'||selectedControl==='play')game.action();
-            else if(selectedControl==='mode')chooseDifficulty((game.difficulty+1)%4);
-            else if(selectedControl==='language')chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);
         });
         function safe() {
             return parked && speedValid && Date.now() - speedAt <= SPEED_TTL && parked.speed() === 0;
@@ -93,8 +93,11 @@ mgu.run({
             else if(choice!=='resume')return;
             paused=false;selectedControl='play';last=null;accumulator=0;
         }
+        function openSettings(){if(!going||paused||exitDialog||game.state==='playing')return;settingsOpen=true;selectedControl='mode';}
+        function closeSettings(){settingsOpen=false;selectedControl='play';}
         function backAction(){
             if(!shown()||closed||exiting)return;
+            if(settingsOpen){closeSettings();return;}
             if(exitDialog){exitDialog=false;selectedControl=paused?'resume':'play';return;}
             if(game.state==='playing'&&!paused){pauseRun();return;}
             exitDialog=true;selectedControl='cancel';
@@ -124,7 +127,7 @@ mgu.run({
                 last = null; accumulator = 0; frameAt = -Infinity; fpsAt=0; fpsFrames=0; actualFPS=0;
                 ctl.enable(go);
                 if (ctx.controller && ctx.controller.grab) ctx.controller.grab(go);
-                if (!go) { saveBest(); if(!safe()){game.reset();paused=false;exitDialog=false;selectedControl='play';}else pauseRun();  }
+                if (!go) { saveBest(); if(!safe()){game.reset();paused=false;settingsOpen=false;exitDialog=false;selectedControl='play';}else pauseRun();  }
             }
             // On unsafe/unknown speed the dashboard remains visible with a warning; gameplay is disabled.
         }
@@ -210,7 +213,7 @@ mgu.run({
             if(prev===null||!going||(game.state==='playing'&&!paused&&!exitDialog))return;
             const diff=((n-prev+32768)%65536)-32768;
             if(!diff||Math.abs(diff)>16)return;
-            const items=exitDialog?['cancel','exit']:paused?['resume','menu']:['play','mode','language'];
+            const items=exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:['play','settings'];
             selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
         // Touch areas use the 1600x520 dashboard coordinates.
@@ -220,10 +223,15 @@ mgu.run({
             if(!going)return;
             if(exitDialog){if(y>=275&&y<=337){if(x>=242&&x<=570)exitAction('cancel');else if(x>=600&&x<=928)exitAction('exit');}return;}
             if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('menu');}return;}
-            if(x>=1180&&x<=1580&&game.state!=='playing'){
-                if(y>=227&&y<=305){selectedControl='mode';chooseDifficulty((game.difficulty+1)%4);}
-                else if(y>=336&&y<=410){selectedControl='language';chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);}
-            }else if(x>=0&&x<1155){selectedControl='play';game.action();}
+            if(settingsOpen){
+                if(x>=320&&x<=850){
+                    if(y>=200&&y<=258){selectedControl='mode';chooseDifficulty((game.difficulty+1)%4);}
+                    else if(y>=272&&y<=330){selectedControl='language';chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);}
+                    else if(y>=344&&y<=402)closeSettings();
+                }return;
+            }
+            if(game.state!=='playing'&&x>=1480&&x<=1560&&y>=65&&y<=135){openSettings();return;}
+            if(x>=0&&x<1155){selectedControl='play';game.action();}
         });
         if(ctx.hideButton)ctx.hideButton('BTN_JUMP');
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
@@ -236,7 +244,7 @@ mgu.run({
         if (ui.onFocus) ui.onFocus(sync);
         if (ui.onVisible) ui.onVisible((name,visible) => {
             if(name!=='GAME')return;
-            if(!visible){pauseRun();exitDialog=false;tiltHeld=false;}
+            if(!visible){pauseRun();settingsOpen=false;exitDialog=false;tiltHeld=false;}
             else {if(exiting){game.reset();paused=false;selectedControl='play';}exiting=false;last=null;accumulator=0;}
             sync();
         });
@@ -275,7 +283,7 @@ mgu.run({
             // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
             if (now - frameAt + 2 < 1000 / 60) return; // Allow 16 ms tick rounding on 60 Hz displays.
             frameAt = now;fpsFrames++;
-            const options={paused,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
+            const options={paused,settingsOpen,bestModes,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
             if(full){
                 if(!screenRecorder||screenRecorder.w!==w||screenRecorder.h!==h)screenRecorder=new Recorder(w,h);
                 screenRecorder.reset();drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options);

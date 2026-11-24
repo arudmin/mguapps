@@ -13,10 +13,15 @@ async function run(id8){
  draw();assert(frames>0);assert(!grab);
  tap(1300,260);assert.strictEqual(settings.difficulty,1,'unknown speed must lock input');
  watchers.statusCarSpeed2({speedVehicleCentreOfGravity:0});assert(grab);
- tap(1300,260);assert.strictEqual(settings.difficulty,2);
- tap(1300,370);assert.strictEqual(settings.language,'ru');
+ tap(1520,100);clock+=100;draw();assert(lastOptions.settingsOpen);
+ tap(585,229);assert.strictEqual(settings.difficulty,2);
+ tap(585,301);assert.strictEqual(settings.language,'ru');
+ tap(585,373);clock+=100;draw();assert(!lastOptions.settingsOpen);
+ assert.strictEqual(lastOptions.selectedControl,'play');assert.strictEqual(lastOptions.bestModes.length,4);
  input({frontRotaryEncoderOperation:0});input({frontRotaryEncoderOperation:1});
  clock+=100;input({frontRotaryEncoderPushButton:1});input({frontRotaryEncoderPushButton:0});
+ clock+=100;draw();assert(lastOptions.settingsOpen);
+ tap(1020,505);clock+=100;draw();assert(!lastOptions.settingsOpen);
  tap(500,200);
  clock+=100;draw();
  tap(1020,505);clock+=100;draw();tap(400,300);clock+=100;draw();

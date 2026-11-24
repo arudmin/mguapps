@@ -23,12 +23,9 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  const pixel=(x,y,pts,unit,c)=>{for(const a of pts)wr(x+a[0]*unit,y+a[1]*unit,a[2]*unit,a[3]*unit,c)};
  cv.clear('#0a0c12');
  // Compact automotive header and racing accent.
- rect(0,0,286,35,'#231923');rect(16,0,254,35,'#481723');
- rect(16,33,62,3,'#71bdff');rect(78,33,62,3,'#175a9c');rect(140,33,62,3,'#ed233d');
  text('CHROME DINO',34,26,23,'#f0f5fa');text(words.levels[game.difficulty],1109,27,19,'#b6c5d6','right');
  round(pf.x,pf.y,pf.w,pf.h,12,'#11161e');border(pf.x,pf.y,pf.w,pf.h,12,'#314052');
  round(side.x,side.y,side.w,side.h,9,'#10141b');border(side.x,side.y,side.w,side.h,9,'#344454');
- rect(pf.x+1,pf.y+1,52,4,'#77c2ff');rect(pf.x+53,pf.y+1,39,4,'#144f90');rect(pf.x+92,pf.y+1,27,4,'#e91d3e');
  // The game viewport is clipped independently of the score panel.
  cv.clip(f.x*kx,f.y*ky,f.w*kx,f.h*ky);
  rect(f.x,f.y,f.w,f.h,'#0c1119');
@@ -55,21 +52,26 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  // All user settings are in this GPU dashboard, no legacy MAIN menu needed.
  text(words.score||'SCORE',1195,108,22,'#bdc7d5');
  text(String(game.score),1194,168,59,'#87c3ff','left','num');
- text(words.best||'BEST',1382,108,19,'#8d99aa');
- text(String(best),1382,158,37,'#f2f5fa','left','num');
- rect(1193,186,359,1,'#344455');
- text(words.difficulty||'MODE',1194,217,19,'#9eadbf');
  const focus=opts.selectedControl||'play';
- round(1191,229,363,69,8,focus==='mode'?'#244768':'#1a2939');
- border(1191,229,363,69,8,focus==='mode'?'#88caff':'#45617b');
- text('<   '+words.levels[game.difficulty]+'   >',1210,274,24,'#f0f7ff');
- text(words.language||'LANGUAGE',1194,327,19,'#9eadbf');
- round(1191,338,363,69,8,focus==='language'?'#244768':'#1a2939');
- border(1191,338,363,69,8,focus==='language'?'#88caff':'#45617b');
- text('<  '+String(opts.languageLabel||'Auto (BMW)')+'  >',1207,380,21,'#f0f7ff');
+ const records=opts.bestModes||words.levels.map((_,i)=>i===game.difficulty?best:0);
+ const gearEnabled=game.state!=='playing'&&!opts.paused&&!opts.exitDialog;
+ const gearFocus=gearEnabled&&(focus==='settings'||opts.settingsOpen);
+ round(1480,65,80,70,8,gearFocus?'#244768':'#1a2939');
+ border(1480,65,80,70,8,gearFocus?'#88caff':'#45617b');
+ // Gear drawn with primitives; no unsupported Unicode font glyphs.
+ const gearColor=gearEnabled?'#c7e3ff':'#647589';
+ for(let n=0;n<8;n++){const angle=n*Math.PI/4;rect(1516+Math.cos(angle)*19-4,100+Math.sin(angle)*19-4,8,8,gearColor);}
+ round(1502,82,36,36,12,gearColor);round(1511,91,18,18,8,'#1a2939');
+ rect(1193,180,359,1,'#344455');
+ text(words.records,1194,207,20,'#9eadbf');
+ words.levels.forEach((label,i)=>{
+   const y=222+i*45,active=i===game.difficulty;
+   if(active)round(1191,y,363,41,5,'#223c56');
+   text(label,1204,y+28,22,active?'#eaf5fc':'#bdc7d5');
+   text(String(records[i]||0),1540,y+28,25,'#c7e3ff','right','num');
+ });
+ rect(1193,413,359,1,'#344455');
  text('FPS '+String(opts.fps===undefined?'-':opts.fps)+' / 60',1194,441,18,'#92ceff');
- rect(1407,430,7,7,'#92ceff');
- text(opts.paused?'PAUSE':focus==='play'?'PLAY':focus==='mode'?'MODE':'LANGUAGE',1550,441,16,'#9fb4c7','right');
  // Versioned in-game update notices remain independent of network leaderboard.
  if(update&&update.available&&update.latest)text((words.updateNotice||'UPDATE AVAILABLE')+' '+update.latest,1100,72,18,'#e9ad6f','right');
  // Overlay in the playfield while ready/over; preserves the controller-to-start UX.
@@ -87,6 +89,12 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    for(const item of [{id:'resume',x:242,label:words.continue_},{id:'menu',x:600,label:words.exitToMenu}]){
      round(item.x,275,328,62,8,focus===item.id?'#244768':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,24,'#f0f7ff','center');
    }
+ }else if(opts.settingsOpen){
+   round(222,126,733,296,11,'#19212c');border(222,126,733,296,11,'#5b87ae');
+   text(words.settingsTitle,585,176,32,'#f4f6f8','center');
+   for(const item of [{id:'mode',y:200,label:words.difficulty+': < '+words.levels[game.difficulty]+' >'},{id:'language',y:272,label:words.language+': < '+String(opts.languageLabel||'Auto (BMW)')+' >'},{id:'done',y:344,label:words.doneSettings}]){
+     round(320,item.y,530,58,8,focus===item.id?'#244768':'#1a2939');border(320,item.y,530,58,8,focus===item.id?'#88caff':'#45617b');text(item.label,585,item.y+38,24,'#f0f7ff','center');
+   }
  }else if(game.state!=='playing'){
    round(222,176,733,171,11,'#19212c');border(222,176,733,171,11,'#5b87ae');
    text(game.state==='over'?words.over:words.title,585,237,36,'#f4f6f8','center');
@@ -96,8 +104,6 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    text(game.state==='over'?words.retryButton:words.startButton,585,291,26,enabled?'#f0f7ff':'#78889a','center');
    text(!enabled?(words.parkedOnly||'PARKED ONLY'):game.state==='over'?(words.score+' '+game.score+'  '+words.best+' '+best):words.start,585,334,17,!enabled?'#ffc17c':'#9aabbf','center');
  }
- rect(22,459,1132,3,'#526a83');
- for(let i=0;i<18;i++){rect(23+i*63,465,45,7,i%4===2?'#e91d3e':i%4===1?'#14518a':'#75bdf5')}
  rect(0,489,1600,31,'#0a0c12');
  text(words.hudJump||'CONTROLLER: JUMP',38,509,18,'#8fa0b5');
  round(890,489,260,30,5,'#1a2939');text(words.hudBack||'BACK',1020,509,18,'#c6d9ed','center');
