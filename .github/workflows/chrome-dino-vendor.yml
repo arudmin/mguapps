@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'apps/chrome_dino/**'
+      - 'mgu-repo.json'
       - '.github/workflows/chrome-dino-vendor.yml'
   pull_request:
     paths:
       - 'apps/chrome_dino/**'
+      - 'mgu-repo.json'
       - '.github/workflows/chrome-dino-vendor.yml'
 permissions:
   contents: read
@@ -16,56 +18,49 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Check syntax
+      - name: Check all JavaScript syntax
+        run: find apps/chrome_dino -name '*.js' -not -path '*/dist/*' -print0 | xargs -0 -n1 node --check
+      - name: Check undefined variables
         run: |
-          node --check apps/chrome_dino/build.js
-          node --check apps/chrome_dino/package/javascript/app.js
-          node --check apps/chrome_dino/package/javascript/src/i18n.js
-          node --check apps/chrome_dino/package/javascript/src/game.js
-          node --check apps/chrome_dino/package/javascript/src/difficulty.js
-          node --check apps/chrome_dino/package/javascript/src/render.js
-          node --check apps/chrome_dino/package/javascript/src/dashboard.js
-      - name: Test and verify OAP package
+          mkdir -p ci-logs
+          cat > ci-logs/eslint.config.mjs <<'EOF'
+          export default [{languageOptions:{ecmaVersion:2022,sourceType:'commonjs',globals:{console:'readonly',process:'readonly',Buffer:'readonly',setTimeout:'readonly',clearTimeout:'readonly',setInterval:'readonly',clearInterval:'readonly',global:'readonly',URL:'readonly'}},rules:{'no-undef':'error'}}];
+          EOF
+          npx --yes eslint@9.39.1 --config ci-logs/eslint.config.mjs apps/chrome_dino/package/javascript/app.js apps/chrome_dino/package/javascript/src/
+      - name: Test startup, visuals and Store package
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
           mkdir -p ci-logs
           {
-            node apps/chrome_dino/tests/test_game.js
-            node apps/chrome_dino/tests/test_package.js
-            node apps/chrome_dino/tests/test_version.js
-            node apps/chrome_dino/tests/test_148.js
-            node apps/chrome_dino/tests/test_149.js
-            node apps/chrome_dino/tests/test_1411.js
-            node apps/chrome_dino/tests/test_vin.js
-            node apps/chrome_dino/tests/test_update.js
-            node apps/chrome_dino/tests/test_1410.js
-            node apps/chrome_dino/tests/test_1414_dashboard.js
-            node apps/chrome_dino/tests/test_154_modes.js
+            export CI_VISUAL_DIR="$PWD/ci-logs/visual"
+            for test in apps/chrome_dino/tests/test_*.js; do
+              echo "Running $test"
+              node "$test"
+            done
             node apps/chrome_dino/build.js --preview-only
             node apps/chrome_dino/build.js
             VERSION="$(node -p "require('./apps/chrome_dino/app.json').version")"
             PACKAGE="apps/chrome_dino/dist/chrome_dino@${VERSION}.tgz"
-            echo "Validating ${PACKAGE}"
-            test -s "${PACKAGE}"
-            tar -tzf "${PACKAGE}" > ci-logs/package-contents.txt
-            sed -n '1,30p' ci-logs/package-contents.txt
+            test -s "$PACKAGE"
+            tar -tzf "$PACKAGE" > ci-logs/package-contents.txt
+            sha256sum "$PACKAGE" > ci-logs/package-sha256.txt
+            wc -c "$PACKAGE"
           } 2>&1 | tee ci-logs/chrome-dino-build.log
       - name: Save build diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: chrome-dino-diagnostics
           path: ci-logs/
           if-no-files-found: warn
-
-      - name: Upload installable Chrome Dino package
+      - name: Upload Chrome Dino test package
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: chrome-dino-test-package
           path: apps/chrome_dino/dist/chrome_dino@*.tgz
