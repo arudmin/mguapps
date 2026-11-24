@@ -1,4 +1,4 @@
-# Chrome Dino Game 1.5.7 — BMW MGU Store
+# Chrome Dino Game 1.5.8 — BMW MGU Store
 
 Пиксельная аркада для BMW iDrive 7/8 (MGU), устанавливаемая через [MGU Store](https://github.com/robertnisipeanu/mgu-store). Рабочая ветка — top-chart; стабильная main — 1.4.13.
 
@@ -176,3 +176,8 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 - BACK возвращает на Dashboard с паузой, продолжением и новым стартом. Скрыты элементы старого MAIN; технический RHMI parent сохранён для маршрутизации. Продолжение сохраняет физическое состояние, новый старт сохраняет рекорд. При движении или устаревшем сигнале забег сбрасывается. 12 переводов. Добавлена имитация BACK в тесте startup ID7/ID8. Реальное поведение аппаратной кнопки требует проверки BMW. Сервер 0.1.0 не изменён.
 
 - 1.5.7 CI follow-up: removed stale hardcoded 1.5.5 version assertions; tests now compare package manifests. No runtime or server changes. CI rerun pending.
+
+
+### 1.5.8 — 24.11.2026
+- BACK на начальном экране или паузе открывает подтверждение выхода, по умолчанию Отмена. Повторный BACK закрывает диалог. Выход закрывает GAME и MAIN без повторного открытия. 12 переводов.
+- Исправлена асинхронная блокировка повторного перехода Dashboard, тест startup моделирует события видимости. CI ещё не подтверждён; аппаратный BACK требует проверки ID7/ID8. Сервер 0.1.0 без изменений.

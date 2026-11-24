@@ -73,7 +73,14 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  // Versioned in-game update notices remain independent of network leaderboard.
  if(update&&update.available&&update.latest)text((words.updateNotice||'UPDATE AVAILABLE')+' '+update.latest,1100,72,18,'#e9ad6f','right');
  // Overlay in the playfield while ready/over; preserves the controller-to-start UX.
- if(opts.paused){
+ if(opts.exitDialog){
+   round(222,154,733,208,11,'#19212c');border(222,154,733,208,11,'#5b87ae');
+   text(words.exitTitle,585,220,36,'#f4f6f8','center');
+   text(words.exitNote,585,252,20,'#9dc9ed','center');
+   for(const item of [{id:'cancel',x:242,label:words.cancelExit},{id:'exit',x:600,label:words.confirmExit}]){
+     round(item.x,275,328,62,8,focus===item.id?'#244768':item.id==='exit'?'#38232b':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,24,'#f0f7ff','center');
+   }
+ }else if(opts.paused){
    round(222,154,733,208,11,'#19212c');border(222,154,733,208,11,'#5b87ae');
    text(words.pauseTitle,585,220,36,'#f4f6f8','center');
    text((words.score||'SCORE')+' '+game.score,585,252,23,'#9dc9ed','center');

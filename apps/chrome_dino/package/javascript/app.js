@@ -38,7 +38,7 @@ mgu.run({
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
-        let selectedControl='play', paused=false, returning=false;
+        let selectedControl='play', paused=false, returning=false, exitDialog=false, exiting=false, backWasPlaying=false, hasDashboard=false;
         let rotaryPosition=null,rendererRotaryAt=-Infinity;
         let fpsAt=0,fpsFrames=0,actualFPS=0;
 
@@ -65,6 +65,7 @@ mgu.run({
         const ctl = new Controls(() => {
             sync();
             if(!going)return;
+            if(exitDialog){exitAction(selectedControl);return;}
             if(paused){pauseAction(selectedControl);return;}
             if(game.state==='playing'||selectedControl==='play')game.action();
             else if(selectedControl==='mode')chooseDifficulty((game.difficulty+1)%4);
@@ -123,14 +124,21 @@ mgu.run({
             else if(choice!=='resume')return;
             paused=false;selectedControl='play';last=null;accumulator=0;
         }
+        function exitAction(choice){
+            if(!exitDialog)return;
+            if(choice==='cancel'){exitDialog=false;selectedControl=paused?'resume':'play';return;}
+            if(choice!=='exit'||exiting)return;
+            exiting=true;exitDialog=false;saveBest();sync();
+            Promise.resolve(ui.close('GAME')).then(()=>ui.close('MAIN')).catch(e=>{log.warn('close dashboard '+e);exiting=false;exitDialog=true;selectedControl='cancel';returnDashboard();});
+        }
         function returnDashboard(){
-            if(closed||returning)return;
+            if(closed||returning||exiting)return;
             returning=true;
             pauseRun();
-            Promise.resolve(ui.open('GAME')).catch(e=>log.warn('open dashboard '+e)).then(()=>{returning=false;sync();});
+            Promise.resolve(ui.open('GAME')).then(()=>{returning=false;sync();},e=>{returning=false;log.warn('open dashboard '+e);});
         }
         function sync() {
-            const go = !closed && shown() && !!safe();
+            const go = !closed && !exiting && shown() && !!safe();
             if (go !== going) {
                 going = go;
                 last = null; accumulator = 0; frameAt = -Infinity; fpsAt=0; fpsFrames=0; actualFPS=0;
@@ -219,16 +227,17 @@ mgu.run({
             if(source==='renderer')rendererRotaryAt=now;
             const prev=rotaryPosition;rotaryPosition=n;
             if(source==='signals'&&now-rendererRotaryAt<700)return;
-            if(prev===null||!going||(game.state==='playing'&&!paused))return;
+            if(prev===null||!going||(game.state==='playing'&&!paused&&!exitDialog))return;
             const diff=((n-prev+32768)%65536)-32768;
             if(!diff||Math.abs(diff)>16)return;
-            const items=paused?['resume','restart']:['play','mode','language'];
+            const items=exitDialog?['cancel','exit']:paused?['resume','restart']:['play','mode','language'];
             selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
         // Touch areas use the 1600x520 dashboard coordinates.
         if(ctx.onTap)ctx.onTap((x,y)=>{
             sync();
             if(!going)return;
+            if(exitDialog){if(y>=275&&y<=337){if(x>=242&&x<=570)exitAction('cancel');else if(x>=600&&x<=928)exitAction('exit');}return;}
             if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('restart');}return;}
             if(x>=1180&&x<=1580&&game.state!=='playing'){
                 if(y>=227&&y<=305){selectedControl='mode';chooseDifficulty((game.difficulty+1)%4);}
@@ -245,10 +254,14 @@ mgu.run({
         }, log).then((s) => { if (s.error) log.warn('controller: ' + s.error); });
         if (ui.onFocus) ui.onFocus(sync);
         if (ui.onVisible) ui.onVisible((name,visible) => {
-            if(name==='GAME'&&!visible){pauseRun();}
+            if(exiting)return;
+            if(name==='GAME'&&!visible){backWasPlaying=game.state==='playing'&&!paused&&!exitDialog;pauseRun();}
             sync();
-            if(name==='MAIN'&&visible) returnDashboard();
-            if(name==='GAME'&&visible){last=null;accumulator=0;}
+            if(name==='MAIN'&&visible){
+                if(hasDashboard){if(exitDialog){exitDialog=false;selectedControl=paused?'resume':'play';}else if(!backWasPlaying){exitDialog=true;selectedControl='cancel';}backWasPlaying=false;}
+                returnDashboard();
+            }
+            if(name==='GAME'&&visible){hasDashboard=true;returning=false;last=null;accumulator=0;}
         });
         const safetyTimer = setInterval(sync, 100);
         function stop() {
@@ -266,17 +279,18 @@ mgu.run({
 
         ctx.loop('GAME', 8, () => {
             sync();
-            if (closed || !shown()) return;
+            if (closed || exiting || !shown()) return;
+            hasDashboard=true;
             const now = Date.now();
             const cv = ctx.canvas(W, H).clear('#000000');
             const pl = cv.place;
             const full = pl && pl.full && pl.w > 0 && pl.h > 0;
             const w = full ? pl.w : W, h = full ? pl.h : H;
             game.resize(WORLD_ASPECT); // Fixed collision/spawn world for both styles and screen sizes.
-            if (last !== null && going && !paused) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
+            if (last !== null && going && !paused && !exitDialog) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
             last = now;
             while (accumulator >= STEP) {
-                if (game.state === 'playing' && !paused) game.step(STEP);
+                if (game.state === 'playing' && !paused && !exitDialog) game.step(STEP);
                 accumulator -= STEP;
             }
             saveBest();
@@ -285,7 +299,7 @@ mgu.run({
             // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
             if (now - frameAt + 2 < 1000 / 60) return; // Allow 16 ms tick rounding on 60 Hz displays.
             frameAt = now;fpsFrames++;
-            const options={paused,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
+            const options={paused,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
             if(full){
                 if(!screenRecorder||screenRecorder.w!==w||screenRecorder.h!==h)screenRecorder=new Recorder(w,h);
                 screenRecorder.reset();drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options);
