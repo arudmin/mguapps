@@ -4,6 +4,8 @@
 // This renderer does not change game physics. The fixed world stays 1920x720 on every layout.
 const { DINO_ROWS }=require('./render');
 const WORLD_ASPECT=1920/720;
+// Fixed 21x21, eight-tooth gear mask. Transparent cells are never painted.
+const GEAR_SPRITE=[".........###.........",".........###.........","....#....###....#....","...##..#######..##...","..#################..","....#############....","....#####...#####....","...####.......####...","...####.......####...","######.........######","######.........######","######.........######","...####.......####...","...####.......####...","....#####...#####....","....#############....","..#################..","...##..#######..##...","....#....###....#....",".........###.........",".........###........."];
 const CACTUS=[[5,1,4,1],[4,2,6,1],[4,3,6,20],[5,23,4,3],[2,11,2,1],[1,10,2,1],[1,11,2,6],[2,17,2,2],[3,19,2,1],[10,8,2,1],[11,7,2,1],[11,8,2,8],[10,16,2,2],[9,18,2,1]];
 const A=[[10,34,5,1],[10,35,3,3],[9,38,3,2],[8,40,5,2],[17,34,4,1],[18,35,3,3],[19,38,3,2],[18,40,5,2]];
 const B=[[10,34,5,1],[11,35,3,3],[12,38,3,2],[12,40,5,2],[17,34,4,1],[17,35,3,3],[16,38,3,2],[15,40,5,2]];
@@ -60,8 +62,14 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  border(1480,65,80,70,8,gearFocus?'#88caff':'#45617b');
  // Gear drawn with primitives; no unsupported Unicode font glyphs.
  const gearColor=gearEnabled?'#c7e3ff':'#647589';
- for(let n=0;n<8;n++){const angle=n*Math.PI/4;rect(1516+Math.cos(angle)*19-4,100+Math.sin(angle)*19-4,8,8,gearColor);}
- round(1502,82,36,36,12,gearColor);round(1511,91,18,18,8,'#1a2939');
+ const gearUnit=2;
+ GEAR_SPRITE.forEach((row,y)=>{
+   for(let x=0;x<row.length;){
+     if(row[x]!== '#'){x++;continue;}
+     const start=x;while(x<row.length&&row[x]==='#')x++;
+     rect(1499+start*gearUnit,79+y*gearUnit,(x-start)*gearUnit,gearUnit,gearColor);
+   }
+ });
  rect(1193,180,359,1,'#344455');
  text(words.records,1194,207,20,'#9eadbf');
  words.levels.forEach((label,i)=>{
@@ -127,4 +135,4 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  text('v'+require('../kit/app-spec.json').version,1548,509,16,'#70859a','right');
  return cv;
 }
-module.exports={drawDashboard,WORLD_ASPECT};
+module.exports={drawDashboard,WORLD_ASPECT,GEAR_SPRITE};

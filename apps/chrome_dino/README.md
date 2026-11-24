@@ -203,3 +203,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.13 — 24.11.2026
 - Added Top Players button under the four local records, controller focus and touch. Opens read-only live staging leaderboard, four difficulty filters, refresh and close, loading/offline/empty states. Only verified server entries displayed. No VIN transmission, registration or score submission in this version. Offline gameplay unaffected. Startup test mocks the API and checks navigation; CI and real MGU network validation pending. Server 0.1.0 unchanged.
+
+
+### 1.5.14 — 24.11.2026
+- Fixed malformed settings icon reported on real BMW ID7 (1.5.13 photo). Replaced overlapping rounded rectangles with a fixed symmetric 21×21 eight-tooth pixel mask, transparent center, horizontal rectangle runs, centered in existing button. Focus, controls, gameplay and leaderboard unchanged. Added symmetry regression assertions; CI and hardware verification pending. Server unchanged.
