@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+const account=process.env.CLOUDFLARE_ACCOUNT_ID,token=process.env.CLOUDFLARE_API_TOKEN;
+assert(account&&token);
+const root='https://api.cloudflare.com/client/v4/accounts/'+encodeURIComponent(account);
+async function cf(path,body){const res=await fetch(root+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await res.json();if(!res.ok||!j.success)throw Error('D1 HTTP '+res.status+' '+JSON.stringify(j.errors));return j.result;}
+const db=(await cf('/d1/database?name=chrome-dino-leaderboard-staging')).find(x=>x.name==='chrome-dino-leaderboard-staging');assert(db&&db.uuid);
+async function sql(s,params=[]){const result=await cf('/d1/database/'+db.uuid+'/query',{sql:s,params});assert(result[0].success);return result[0].results;}
+const rows=[['bmw77',174],['user_a73f92c1',128],['peter',96],['user_8c14e2b7',83],['vovan',49],['user_f29a610d',47],['user555',45],['user_3e8b72a4',43],['dima',41],['user_91d4c6f2',38],['perec',36],['user_b602e9a5',34],['alex78',32],['user_5a7c18d3',30]];
+const hash=s=>createHash('sha256').update(s).digest('hex');
+const ids=rows.map((_,i)=>'fixture-easy-nov2026-'+String(i+1).padStart(2,'0'));
+const cleanup=process.argv.includes('--cleanup');
+if(cleanup){for(const id of ids){for(const table of ['sync_operations','personal_scores','submissions','best_scores','sessions','players'])await sql('DELETE FROM '+table+' WHERE '+(table==='players'?'id':'player_id')+'=?',[id]);}console.log('Removed staging fixtures');process.exit(0);}
+for(let i=0;i<rows.length;i++){const [nick,score]=rows[i],id=ids[i],h=hash(id),identity=/^user_[a-f0-9]{8}$/.test(nick)?nick.slice(5)+h.slice(8):h,original='user_'+identity.slice(0,8);const existing=await sql('SELECT id,identity_hash FROM players WHERE id=?',[id]);if(existing.length)assert.equal(existing[0].identity_hash,identity);const hits=await sql('SELECT id FROM players WHERE id<>? AND (nickname=? COLLATE NOCASE OR original_nickname=? COLLATE NOCASE OR nickname=? COLLATE NOCASE OR original_nickname=? COLLATE NOCASE)',[id,nick,nick,original,original]);assert.equal(hits.length,0,'Name collision: '+nick);}
+for(let i=0;i<rows.length;i++){const [nick,score]=rows[i],id=ids[i],h=hash(id),identity=/^user_[a-f0-9]{8}$/.test(nick)?nick.slice(5)+h.slice(8):h,original='user_'+identity.slice(0,8);await sql('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at,original_nickname) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING',[id,identity,nick,hash('fixture-no-login:'+id),Date.now(),original]);await sql("INSERT INTO personal_scores(player_id,difficulty,score,updated_at) VALUES(?,'easy',?,?) ON CONFLICT(player_id,difficulty) DO UPDATE SET score=excluded.score",[id,score,Date.now()]);}
+const actual=await sql("SELECT p.nickname,s.score FROM players p JOIN personal_scores s ON p.id=s.player_id WHERE p.id LIKE 'fixture-easy-nov2026-%' AND s.difficulty='easy' ORDER BY s.score DESC");assert.deepEqual(actual,rows.map(([nickname,score])=>({nickname,score})));console.log('Verified 14 staging fixture rows:',JSON.stringify(actual));
