@@ -120,6 +120,14 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    for(const item of [{id:'mode',y:200,label:words.difficulty+': < '+words.levels[game.difficulty]+' >'},{id:'language',y:272,label:words.language+': < '+String(opts.languageLabel||'Auto (BMW)')+' >'},{id:'done',y:344,label:words.doneSettings}]){
      round(320,item.y,530,58,8,focus===item.id?'#244768':'#1a2939');border(320,item.y,530,58,8,focus===item.id?'#88caff':'#45617b');text(item.label,585,item.y+38,24,'#f0f7ff','center');
    }
+ }else if(game.state==='over'){
+   round(222,154,733,208,11,'#19212c');border(222,154,733,208,11,'#5b87ae');
+   text(words.over,585,220,36,'#f4f6f8','center');
+   text(words.score+' '+game.score+'  '+words.best+' '+best,585,252,23,'#9dc9ed','center');
+   for(const item of [{id:'play',x:242,label:words.retryButton},{id:'overMenu',x:600,label:words.exitToMenu}]){
+     const active=opts.parked!==false&&focus===item.id;
+     round(item.x,275,328,62,8,active?'#244768':'#1a2939');border(item.x,275,328,62,8,active?'#88caff':'#45617b');text(item.label,item.x+164,314,24,opts.parked===false?'#78889a':'#f0f7ff','center');
+   }
  }else if(game.state!=='playing'){
    round(222,176,733,171,11,'#19212c');border(222,176,733,171,11,'#5b87ae');
    text(game.state==='over'?words.over:words.title,585,237,36,'#f4f6f8','center');

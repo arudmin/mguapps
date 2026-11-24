@@ -74,6 +74,7 @@ mgu.run({
             if(selectedControl==='ranking'&&game.state!=='playing'){openRanking();return;}
             if(settingsOpen){if(selectedControl==='mode')chooseDifficulty((game.difficulty+1)%4);else if(selectedControl==='language')chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);else closeSettings();return;}
             if(selectedControl==='settings'&&game.state!=='playing'){openSettings();return;}
+            if(game.state==='over'&&selectedControl==='overMenu'){returnToStart();return;}
             if(game.state==='playing'||selectedControl==='play')game.action();
         });
         function safe() {
@@ -92,9 +93,10 @@ mgu.run({
             if(game.state==='playing'&&!paused){paused=true;selectedControl='resume';saveBest();}
             last=null;accumulator=0;
         }
+        function returnToStart(){saveBest();game.reset();paused=false;selectedControl='play';last=null;accumulator=0;}
         function pauseAction(choice){
             if(!paused||!going||!safe())return;
-            if(choice==='menu'){saveBest();game.reset();}
+            if(choice==='menu'){returnToStart();return;}
             else if(choice!=='resume')return;
             paused=false;selectedControl='play';last=null;accumulator=0;
         }
@@ -230,7 +232,7 @@ mgu.run({
             if(prev===null||!going||(game.state==='playing'&&!paused&&!exitDialog))return;
             const diff=((n-prev+32768)%65536)-32768;
             if(!diff||Math.abs(diff)>16)return;
-            const items=exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:rankingOpen?['rankMode','refresh','rankDone']:['play','settings','ranking'];
+            const items=exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:rankingOpen?['rankMode','refresh','rankDone']:(game.state==='over'?['play','overMenu','settings','ranking']:['play','settings','ranking']);
             selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
         // Touch areas use the 1600x520 dashboard coordinates.
@@ -255,6 +257,9 @@ mgu.run({
             }
             if(game.state!=='playing'&&x>=1191&&x<=1554&&y>=376&&y<=422){openRanking();return;}
             if(game.state!=='playing'&&x>=1480&&x<=1560&&y>=65&&y<=135){openSettings();return;}
+            if(game.state==='over'){
+                if(y>=275&&y<=337){if(x>=242&&x<=570){selectedControl='play';game.action();}else if(x>=600&&x<=928)returnToStart();}return;
+            }
             if(x>=0&&x<1155){selectedControl='play';game.action();}
         });
         if(ctx.hideButton)ctx.hideButton('BTN_JUMP');
@@ -298,7 +303,7 @@ mgu.run({
             if (last !== null && going && !paused && !exitDialog) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
             last = now;
             while (accumulator >= STEP) {
-                if (game.state === 'playing' && !paused && !exitDialog) game.step(STEP);
+                if (game.state === 'playing' && !paused && !exitDialog) {game.step(STEP);if(game.state==='over')selectedControl='play';}
                 accumulator -= STEP;
             }
             saveBest();

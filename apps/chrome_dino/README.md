@@ -211,3 +211,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.15 — 24.11.2026
 - BMW reported leaderboard connection failure. Legacy Node HTTPS client now uses explicit request options rather than URL + options overload, explicit SNI, 10s socket timeout, diagnostic error code on screen and log. TLS validation remains enabled. Server connectivity from BMW not yet verified; CI pending. Server unchanged.
+
+
+### 1.5.16 — 24.11.2026
+- Game-over overlay has Retry and Back to menu, with default Retry focus, rotary and touch navigation. Menu saves best and resets current run to ready without restarting or leaving the app. Uses existing translations in 12 languages. Added startup regression covering both actions and best persistence. Physics, server, and physical BACK unchanged. CI pending.

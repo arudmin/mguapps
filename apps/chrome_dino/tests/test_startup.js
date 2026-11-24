@@ -29,6 +29,12 @@ async function run(id8){
  clock+=100;draw();
  tap(1020,505);clock+=100;draw();tap(400,300);clock+=100;draw();
  tap(1020,505);clock+=100;draw();tap(750,300);clock+=100;draw();assert.strictEqual(lastGame.state,'ready');assert.strictEqual(lastGame.score,0);assert.strictEqual(lastOptions.paused,false);
+ // Simulate a completed run; exercise both game-over actions, including persistence.
+ lastGame.state='over';lastGame.score=99;clock+=100;draw();
+ assert.strictEqual(settings.best_hard,99);
+ tap(750,300);clock+=100;draw();assert.strictEqual(lastGame.state,'ready');assert.strictEqual(lastGame.score,0);assert.strictEqual(settings.best_hard,99);
+ lastGame.state='over';clock+=100;draw();tap(400,300);clock+=100;draw();assert.strictEqual(lastGame.state,'playing');
+ tap(1020,505);tap(750,300);clock+=100;draw();assert.strictEqual(lastGame.state,'ready');
  watchers.statusCarSpeed2({speedVehicleCentreOfGravity:64});assert(!grab);
  tap(1300,260);assert.strictEqual(settings.difficulty,2);
  watchers.statusCarSpeed2({speedVehicleCentreOfGravity:0});assert(grab);
