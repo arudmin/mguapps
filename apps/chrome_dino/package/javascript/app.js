@@ -111,7 +111,7 @@ mgu.run({
             rankingMode=mode;rankingRows=[];rankingStatus='loading';rankingError='';const request=++rankingRequest;
             rankingClient.top(MODES[mode],(err,result)=>{
                 if(request!==rankingRequest||!rankingOpen||closed)return;
-                if(err||!result||!Array.isArray(result.entries)||result.verified_only!==true){rankingStatus='error';rankingError=err?String(err.code||err.message||'NETWORK').replace(/[^A-Za-z0-9_ .:-]/g,'').slice(0,72):'INVALID_RESPONSE';log.warn('Leaderboard: '+rankingError);return;}
+                if(err||!result||!Array.isArray(result.entries)||result.verified_only!==false||result.verification!=='unverified'){rankingStatus='error';rankingError=err?String(err.code||err.message||'NETWORK').replace(/[^A-Za-z0-9_ .:-]/g,'').slice(0,72):'INVALID_RESPONSE';log.warn('Leaderboard: '+rankingError);return;}
                 rankingRows=result.entries.slice(0,10).filter(row=>row&&Number.isInteger(row.rank)&&Number.isInteger(row.score)&&typeof row.nickname==='string').map(row=>({rank:row.rank,score:row.score,nickname:row.nickname.slice(0,24)}));
                 rankingStatus='ready';
             });

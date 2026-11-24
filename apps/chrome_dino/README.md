@@ -228,3 +228,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.19 — 24.11.2026
 - Added opt-in personal score sync from Top Players, local SHA-256 VIN and random persisted credential; raw VIN never sent. Durable atomic outbox with one in-flight operation, snapshot coalescing, retry 5/10/20/40/60 s, stable operation ID, ACK-only removal, all four existing bests and subsequent bests. Local records remain playable offline. Permanent errors displayed, no silent deletion. Server 0.2.1 API v2 required. Sync currently private unverified best snapshots, not individual game replays or ranked submissions; nickname editing/recovery/deletion outstanding. Consent translations Russian/English, fallback English. CI and actual BMW upload pending. DNS successful on real BMW per user photo 1.5.17.
+
+
+### 1.5.20 — 24.11.2026
+- Owner requested provisional ranking without replay verification. Use v2 public leaderboard, display unverified label and explicitly consent to public nickname and scores. All four modes. Fix startup test timer mock (100 ms safety vs 1000 ms outbox); 1.5.19 CI 45383074306 failed stale-speed assertion because mock overwrote safety timer, while outbox test passed. 1.5.20 CI and BMW test pending. Server 0.2.2 required. Replay verification deferred; account recovery/deletion outstanding.

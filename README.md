@@ -109,3 +109,6 @@ node apps/chrome_dino/build.js
 
 
 **Server 0.2.2 (top-chart):** provisional unverified public ranking of synced personal records in all four modes. Existing verified API unchanged. Deployment pending.
+
+
+**1.5.20 (top-chart):** provisional public ranking without replay verification; corrected timer mock in CI; server 0.2.2.
