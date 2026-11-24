@@ -25,7 +25,7 @@ async function run(id8){
  clock+=100;input({frontRotaryEncoderPushButton:1});input({frontRotaryEncoderPushButton:0});
  clock+=100;draw();assert(lastOptions.settingsOpen);
  tap(1020,505);clock+=100;draw();assert(!lastOptions.settingsOpen);
- tap(500,200);
+ tap(585,280);
  clock+=100;draw();
  tap(1020,505);clock+=100;draw();tap(400,300);clock+=100;draw();
  tap(1020,505);clock+=100;draw();tap(750,300);clock+=100;draw();assert.strictEqual(lastGame.state,'ready');assert.strictEqual(lastGame.score,0);assert.strictEqual(lastOptions.paused,false);

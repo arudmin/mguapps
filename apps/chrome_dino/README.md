@@ -220,3 +220,7 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 ### 1.5.17 — 24.11.2026
 - BMW reported ENOTFOUND. Implemented Store-style active lease DNS resolution using dns.Resolver and resolve4; package.json mguInternet=true grants official app uplink access. Leaderboard and update check use active lease DNS, HTTPS validation remains enabled. No fixed IP or global DNS changes. Source reference: https://github.com/robertnisipeanu/mgu-store/blob/main/native/mgu-updater/js/fetch.js and native/mgu-uplink/README.md. Actual MGU network still requires test.
 - Dashboard settings use expandable difficulty/language lists, rotary selection, touch scrolling, confirm and left/back cancellation. Updated startup and transport tests. Server unchanged; CI pending.
+
+
+### 1.5.18 — 24.11.2026
+- Enabled native renderer touch claims for the chrome-free GAME canvas, separate from kit-owned navigation so rotary input remains app-controlled. Raw down events converted from renderer logical coordinates to the dashboard's 1600×520 hitboxes; one action per down, immediate jump in playfield and direct menu controls. No physical BACK changes. Zero-speed gate retained. Requires renderer native touch capability; actual car touch and coordinates not yet verified. CI pending. Server unchanged.

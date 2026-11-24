@@ -100,3 +100,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.17 (top-chart):** официальный доступ mguInternet, DNS активного uplink по архитектуре Store, выпадающие настройки. Сервер без изменений.
+
+
+**1.5.18 (top-chart):** native touchscreen routing for Dashboard and immediate touch-down jump; server unchanged.

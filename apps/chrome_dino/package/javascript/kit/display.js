@@ -175,7 +175,7 @@ class Display {
 
     _startGpu(file) {
         // mgu-render/1 for every app that draws no pixel images (Doom: "chrome": false)
-        const native = this.screen.chrome !== false && process.env.MGU_RENDERD_PROTO !== 'upstream';
+        const native = (this.screen.chrome !== false || this.screen.rawTouch === true) && process.env.MGU_RENDERD_PROTO !== 'upstream';
         const gpu = this.gpu = new RenderClient(this.spec.id, this.log, Object.assign({ native }, file ? { file } : {}));
         gpu.on('ready', () => { if (this.gpu !== gpu) return; this._place(); this._syncVisible(); this._grab(); });
         gpu.on('tick', () => { if (this.gpu === gpu) { this.tickT = Date.now(); this.tickHandlers.forEach((fn) => fn()); } });
@@ -239,9 +239,10 @@ class Display {
     }
 
     /** The kit runs the screen: mgu-render/1 with touch, full-screen layout. */
-    own() { return !!(this.gpu && this.gpu.ready && !this.blocked && this.gpu.native && this.gpu.touch && this.place && this.place.full); }
+    own() { if(this.screen && this.screen.rawTouch === true)return false; return !!(this.gpu && this.gpu.ready && !this.blocked && this.gpu.native && this.gpu.touch && this.place && this.place.full); }
     /** own() but for the placement, which depends on it (the bar's height): the renderer and layout allow it. */
     ownable() {
+        if(this.screen && this.screen.rawTouch === true)return false;
         const g = this.gpu;
         const h = geometryFor(g && g.screen);
         return !!(g && g.ready && g.native && g.touch && this.layout() === 'full' && g.screen.w === h.screen.w && g.screen.h === h.screen.h);
@@ -446,6 +447,15 @@ class Display {
      * running the screen also on a bar button (pressed), a sheet's targets, or the page (ctx.onTap).
      */
     _touch(phase, x, y) {
+        if(this.screen && this.screen.rawTouch === true){
+            const pl=this.place;
+            if(!pl||!this.active()||!this.gpu.native||!this.gpu.touch||!this._shown())return;
+            // The game draws directly in surface pixels at full placement, logical pixels otherwise.
+            const sx=pl.full?x*pl.scale+pl.ox:x,sy=pl.full?y*pl.scale+pl.oy:y;
+            const w=pl.full?pl.w:(this.rawTouchW||1600),h=pl.full?pl.h:(this.rawTouchH||520);
+            if(phase===1&&sx>=0&&sy>=0&&sx<w&&sy<h&&this.onTouch)this.onTouch(1,sx*1600/w,sy*520/h);
+            return;
+        }
         const inside = (r) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
         // the app takes a whole gesture (ctx.onTouch: a dial or a slider under the finger): every move goes to it, and no
         // tap, scroll or target follows from it
@@ -521,6 +531,12 @@ class Display {
         const pl = this.place;
         const logical = (q) => (r ? q : { i: q.i, x: (q.x - pl.ox) / pl.scale, y: (q.y - pl.oy) / pl.scale, w: q.w / pl.scale, h: q.h / pl.scale });
         this.tabs = (rects || []).map(logical);
+        if(this.screen && this.screen.rawTouch === true){
+            if(!this.gpu.native||!this.gpu.touch){return;}
+            if(r){this.rawTouchW=r.w;this.rawTouchH=r.h;}
+            const area=pl.full?{x:(0-pl.ox)/pl.scale,y:(0-pl.oy)/pl.scale,w:pl.w/pl.scale,h:pl.h/pl.scale}:{x:0,y:0,w:this.rawTouchW||1600,h:this.rawTouchH||520};
+            this.gpu.claim([area]);return;
+        }
         const W = pl.w, hx = HMI.left - pl.x, by = pl.h - this.barH();
         // the header as far as the HMI's status corner shows through it (iDrive 7); iDrive 8 has none in the
         // app's area: the whole row is the app's, as a tap there must not count as the HMI's (mgu-render closes)

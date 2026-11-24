@@ -240,10 +240,10 @@ mgu.run({
             selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
         // Touch areas use the 1600x520 dashboard coordinates.
-        if(ctx.onTap)ctx.onTap((x,y)=>{
+        function dashboardTouch(x,y){
             sync();
-            if(x>=890&&x<=1150&&y>=489&&shown()){backAction();return;}
             if(!going)return;
+            if(x>=890&&x<=1150&&y>=489&&y<=520&&shown()){backAction();return;}
             if(exitDialog){if(y>=275&&y<=337){if(x>=242&&x<=570)exitAction('cancel');else if(x>=600&&x<=928)exitAction('exit');}return;}
             if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('menu');}return;}
             if(rankingOpen){
@@ -265,8 +265,11 @@ mgu.run({
             if(game.state==='over'){
                 if(y>=275&&y<=337){if(x>=242&&x<=570){selectedControl='play';game.action();}else if(x>=600&&x<=928)returnToStart();}return;
             }
-            if(x>=0&&x<1155){selectedControl='play';game.action();}
-        });
+            if(game.state==='playing'){if(x>=22&&x<1154&&y>=52&&y<473)game.action();return;}
+            if(x>=345&&x<=825&&y>=252&&y<=312){selectedControl='play';game.action();}
+        }
+        if(ctx.onTouch)ctx.onTouch((phase,x,y)=>{if(phase===1)dashboardTouch(x,y);return true;});
+        if(ctx.onTap)ctx.onTap(dashboardTouch);
         if(ctx.hideButton)ctx.hideButton('BTN_JUMP');
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
         if (ctx.controller && ctx.controller.onInput) {
