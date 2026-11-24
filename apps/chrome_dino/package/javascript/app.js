@@ -41,7 +41,7 @@ mgu.run({
         let screenRecorder = null;
         const rankingClient=new Leaderboard('https://chrome-dino-leaderboard-staging.mguapps.workers.dev');
         let rankingOpen=false, rankingMode=game.difficulty, rankingRows=[], rankingStatus='loading', rankingRequest=0, rankingError='';
-        let selectedControl='play', paused=false, settingsOpen=false, exitDialog=false, exiting=false, tiltHeld=false, rendererTiltAt=-Infinity;
+        let selectedControl='play', paused=false, settingsOpen=false, dropdown=null, dropdownIndex=0, exitDialog=false, exiting=false, tiltHeld=false, rendererTiltAt=-Infinity;
         let rotaryPosition=null,rendererRotaryAt=-Infinity;
         let fpsAt=0,fpsFrames=0,actualFPS=0;
 
@@ -72,7 +72,7 @@ mgu.run({
             if(paused){pauseAction(selectedControl);return;}
             if(rankingOpen){if(selectedControl==='rankMode')loadRanking((rankingMode+1)%4);else if(selectedControl==='refresh')loadRanking(rankingMode);else closeRanking();return;}
             if(selectedControl==='ranking'&&game.state!=='playing'){openRanking();return;}
-            if(settingsOpen){if(selectedControl==='mode')chooseDifficulty((game.difficulty+1)%4);else if(selectedControl==='language')chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);else closeSettings();return;}
+            if(settingsOpen){if(dropdown)commitDropdown(dropdownIndex);else if(selectedControl==='mode'||selectedControl==='language')openDropdown(selectedControl);else closeSettings();return;}
             if(selectedControl==='settings'&&game.state!=='playing'){openSettings();return;}
             if(game.state==='over'&&selectedControl==='overMenu'){returnToStart();return;}
             if(game.state==='playing'||selectedControl==='play')game.action();
@@ -112,11 +112,14 @@ mgu.run({
         function openRanking(){if(!going||paused||exitDialog||settingsOpen||game.state==='playing')return;rankingOpen=true;selectedControl='rankMode';loadRanking(game.difficulty);}
         function closeRanking(){rankingOpen=false;++rankingRequest;selectedControl='play';}
         function openSettings(){if(!going||paused||exitDialog||game.state==='playing')return;settingsOpen=true;selectedControl='mode';}
-        function closeSettings(){settingsOpen=false;selectedControl='play';}
+        function closeSettings(){dropdown=null;settingsOpen=false;selectedControl='play';}
+        function openDropdown(kind){dropdown=kind;dropdownIndex=kind==='mode'?game.difficulty:Math.max(0,languageChoices.indexOf(languageChoice));}
+        function commitDropdown(index){if(!dropdown||!going||!safe())return;const kind=dropdown;dropdown=null;selectedControl=kind;if(kind==='mode')chooseDifficulty(index);else chooseLanguage(index);}
+        function dropdownStart(){return Math.max(0,Math.min(dropdownIndex-2,(dropdown==='mode'?4:languageChoices.length)-6));}
         function backAction(){
             if(!shown()||closed||exiting)return;
             if(rankingOpen){closeRanking();return;}
-            if(settingsOpen){closeSettings();return;}
+            if(settingsOpen){if(dropdown)dropdown=null;else closeSettings();return;}
             if(exitDialog){exitDialog=false;selectedControl=paused?'resume':'play';return;}
             if(game.state==='playing'&&!paused){pauseRun();return;}
             exitDialog=true;selectedControl='cancel';
@@ -146,7 +149,7 @@ mgu.run({
                 last = null; accumulator = 0; frameAt = -Infinity; fpsAt=0; fpsFrames=0; actualFPS=0;
                 ctl.enable(go);
                 if (ctx.controller && ctx.controller.grab) ctx.controller.grab(go);
-                if (!go) { saveBest(); if(!safe()){game.reset();paused=false;settingsOpen=false;rankingOpen=false;++rankingRequest;exitDialog=false;selectedControl='play';}else pauseRun();  }
+                if (!go) { saveBest(); if(!safe()){game.reset();paused=false;settingsOpen=false;dropdown=null;rankingOpen=false;++rankingRequest;exitDialog=false;selectedControl='play';}else pauseRun();  }
             }
             // On unsafe/unknown speed the dashboard remains visible with a warning; gameplay is disabled.
         }
@@ -232,6 +235,7 @@ mgu.run({
             if(prev===null||!going||(game.state==='playing'&&!paused&&!exitDialog))return;
             const diff=((n-prev+32768)%65536)-32768;
             if(!diff||Math.abs(diff)>16)return;
+            if(settingsOpen&&dropdown){const count=dropdown==='mode'?4:languageChoices.length;dropdownIndex=(dropdownIndex+(diff>0?1:count-1))%count;return;}
             const items=exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:rankingOpen?['rankMode','refresh','rankDone']:(game.state==='over'?['play','overMenu','settings','ranking']:['play','settings','ranking']);
             selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
@@ -249,9 +253,10 @@ mgu.run({
                 return;
             }
             if(settingsOpen){
+                if(dropdown){if(x>=320&&x<=850&&y>=154&&y<406){const index=dropdownStart()+Math.floor((y-154)/42);if(index<(dropdown==='mode'?4:languageChoices.length))commitDropdown(index);}else if(x>=865&&x<=935&&y>=154&&y<=406){const count=dropdown==='mode'?4:languageChoices.length;dropdownIndex=Math.max(0,Math.min(count-1,dropdownIndex+(y<280?-1:1)));}return;}
                 if(x>=320&&x<=850){
-                    if(y>=200&&y<=258){selectedControl='mode';chooseDifficulty((game.difficulty+1)%4);}
-                    else if(y>=272&&y<=330){selectedControl='language';chooseLanguage((languageChoices.indexOf(languageChoice)+1)%languageChoices.length);}
+                    if(y>=200&&y<=258){selectedControl='mode';openDropdown('mode');}
+                    else if(y>=272&&y<=330){selectedControl='language';openDropdown('language');}
                     else if(y>=344&&y<=402)closeSettings();
                 }return;
             }
@@ -312,7 +317,7 @@ mgu.run({
             // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
             if (now - frameAt + 2 < 1000 / 60) return; // Allow 16 ms tick rounding on 60 Hz displays.
             frameAt = now;fpsFrames++;
-            const options={paused,settingsOpen,bestModes,rankingOpen,rankingMode,rankingRows,rankingStatus,rankingError,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
+            const options={paused,settingsOpen,dropdown,dropdownIndex,dropdownStart:dropdownStart(),languageItems:languageChoices.map(k=>k==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[k]||k),bestModes,rankingOpen,rankingMode,rankingRows,rankingStatus,rankingError,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
             if(full){
                 if(!screenRecorder||screenRecorder.w!==w||screenRecorder.h!==h)screenRecorder=new Recorder(w,h);
                 screenRecorder.reset();drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options);

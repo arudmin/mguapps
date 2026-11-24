@@ -114,10 +114,17 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    for(const item of [{id:'refresh',x:300,label:words.rankRefresh},{id:'rankDone',x:600,label:words.doneSettings}]){
      round(item.x,398,265,42,7,focus===item.id?'#244768':'#1a2939');border(item.x,398,265,42,7,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+132,426,21,'#f0f7ff','center');
    }
+ }else if(opts.settingsOpen&&opts.dropdown){
+   round(222,85,733,350,11,'#19212c');border(222,85,733,350,11,'#5b87ae');
+   text(opts.dropdown==='mode'?words.difficulty:words.language,585,130,30,'#f4f6f8','center');
+   const items=opts.dropdown==='mode'?words.levels:opts.languageItems||[];
+   const first=opts.dropdownStart||0;
+   items.slice(first,first+6).forEach((label,i)=>{const y=154+i*42,active=first+i===opts.dropdownIndex;round(320,y,530,40,6,active?'#244768':'#1a2939');border(320,y,530,40,6,active?'#88caff':'#45617b');text(label,585,y+27,23,'#f0f7ff','center');});
+   if(items.length>6){round(865,154,70,120,6,'#1a2939');round(865,286,70,120,6,'#1a2939');text('^',900,220,28,'#c7e3ff','center');text('v',900,352,28,'#c7e3ff','center');}
  }else if(opts.settingsOpen){
    round(222,126,733,296,11,'#19212c');border(222,126,733,296,11,'#5b87ae');
    text(words.settingsTitle,585,176,32,'#f4f6f8','center');
-   for(const item of [{id:'mode',y:200,label:words.difficulty+': < '+words.levels[game.difficulty]+' >'},{id:'language',y:272,label:words.language+': < '+String(opts.languageLabel||'Auto (BMW)')+' >'},{id:'done',y:344,label:words.doneSettings}]){
+   for(const item of [{id:'mode',y:200,label:words.difficulty+': '+words.levels[game.difficulty]+'  v'},{id:'language',y:272,label:words.language+': '+String(opts.languageLabel||'Auto (BMW)')+'  v'},{id:'done',y:344,label:words.doneSettings}]){
      round(320,item.y,530,58,8,focus===item.id?'#244768':'#1a2939');border(320,item.y,530,58,8,focus===item.id?'#88caff':'#45617b');text(item.label,585,item.y+38,24,'#f0f7ff','center');
    }
  }else if(game.state==='over'){

@@ -14,8 +14,8 @@ async function run(id8){
  tap(1300,260);assert.strictEqual(settings.difficulty,1,'unknown speed must lock input');
  watchers.statusCarSpeed2({speedVehicleCentreOfGravity:0});assert(grab);
  tap(1520,100);clock+=100;draw();assert(lastOptions.settingsOpen);
- tap(585,229);assert.strictEqual(settings.difficulty,2);
- tap(585,301);assert.strictEqual(settings.language,'ru');
+ tap(585,229);clock+=100;draw();assert.strictEqual(lastOptions.dropdown,'mode');assert.strictEqual(settings.difficulty,1);tap(585,259);assert.strictEqual(settings.difficulty,2);
+ tap(585,301);clock+=100;draw();assert.strictEqual(lastOptions.dropdown,'language');tap(585,217);assert.strictEqual(settings.language,'ru');
  tap(585,373);clock+=100;draw();assert(!lastOptions.settingsOpen);
  assert.strictEqual(lastOptions.selectedControl,'play');assert.strictEqual(lastOptions.bestModes.length,4);
  tap(1372,399);clock+=100;draw();assert(lastOptions.rankingOpen);assert.strictEqual(lastOptions.rankingRows[0].nickname,'Test_Dino');

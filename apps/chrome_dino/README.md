@@ -215,3 +215,8 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.16 — 24.11.2026
 - Game-over overlay has Retry and Back to menu, with default Retry focus, rotary and touch navigation. Menu saves best and resets current run to ready without restarting or leaving the app. Uses existing translations in 12 languages. Added startup regression covering both actions and best persistence. Physics, server, and physical BACK unchanged. CI pending.
+
+
+### 1.5.17 — 24.11.2026
+- BMW reported ENOTFOUND. Implemented Store-style active lease DNS resolution using dns.Resolver and resolve4; package.json mguInternet=true grants official app uplink access. Leaderboard and update check use active lease DNS, HTTPS validation remains enabled. No fixed IP or global DNS changes. Source reference: https://github.com/robertnisipeanu/mgu-store/blob/main/native/mgu-updater/js/fetch.js and native/mgu-uplink/README.md. Actual MGU network still requires test.
+- Dashboard settings use expandable difficulty/language lists, rotary selection, touch scrolling, confirm and left/back cancellation. Updated startup and transport tests. Server unchanged; CI pending.
