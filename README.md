@@ -121,3 +121,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.23 / server 0.2.4:** current single API v1, concise localized descriptions, explicit scoped Store build inputs; CI pending. Previous 1.5.22/server 0.2.3 CI green.
+
+
+**1.5.24:** four ranking tabs, compact colorful podium cards with cups and larger scores, no server change. CI pending.

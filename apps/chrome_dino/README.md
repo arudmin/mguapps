@@ -1,3 +1,6 @@
+## 1.5.24 — 24.11.2026
+- Four direct-access difficulty tabs via touch or rotary selection, no additional network reads on tab change; refresh retains batch API and cache. Ranking cards narrowed from 704 to 534 logical pixels, larger text, drawn gold/silver/bronze cups and TOP-1–TOP-3 labels, own row highlight. All ten ranks remain visible. Updated startup touch test. Server 0.2.4 unchanged. CI and BMW visual verification pending. Previous 1.5.23 CI and deployment green; user confirmed ~1.8 MB Store download and real ranking with 48 Normal points, sync queue empty.
+
 ## 1.5.23 — 24.11.2026
 - Shortened Store descriptions (Russian 12 logical lines, other languages compact; actual wrapping depends on MGU width). Replaced API with one current v1, kept local data and migrated old record-only queued jobs. Server 0.2.4. Explicit nonempty build.shared names the app's own build script, allowing MGU Store contentSpec/partPaths to select app files rather than full repo. Store may still fall back to whole archive; installed updater behavior not tested. 64 MiB display originates from upstream maxBytes fallback when archive length absent. No upstream modification. CI pending; 1.5.22 game and server CI passed 45385581662/45385581707. Real BMW photo confirms earlier registration and easy score 143.
 

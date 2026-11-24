@@ -114,14 +114,28 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    const profile=opts.syncProfile||{};
    if(!profile.enabled){round(720,70,245,33,6,focus==='syncProfile'?'#244768':'#1a2939');text(words.syncEnable,842,93,18,'#f0f7ff','center');}
    else{round(720,70,245,33,6,focus==='editName'?'#244768':'#1a2939');text(profile.nickname||words.syncTitle,842,91,18,'#c7e3ff','center');text(profile.error||('SYNC: '+(profile.pending||0)),950,105,12,'#9dc9ed','right');}
-   round(300,108,550,42,7,focus==='rankMode'?'#244768':'#1a2939');border(300,108,550,42,7,focus==='rankMode'?'#88caff':'#45617b');
-   text('< '+words.levels[opts.rankingMode||0]+' >',575,136,22,'#f0f7ff','center');
+   // Four direct-access difficulty tabs, shared cached response.
+   words.levels.forEach((label,i)=>{const x=235+i*176,active=i===(opts.rankingMode||0),focused=focus==='rankTab'+i;round(x,113,170,38,7,active?'#25689d':'#253446');border(x,113,170,38,7,focused?'#ffffff':active?'#7ed3ff':'#40566d');text(label,x+85,139,20,active?'#ffffff':'#b8cbdf','center');if(active)rect(x+12,147,146,3,'#7ed3ff');});
    const rows=opts.rankingRows||[];
    if(opts.rankingStatus==='loading')text(words.rankLoading,585,264,23,'#9dc9ed','center');
    else if(opts.rankingStatus==='error'){text(words.rankError,585,250,23,'#ffc17c','center');text(opts.rankingError||'NETWORK',585,282,18,'#9dc9ed','center');}
    else if(!rows.length)text(words.rankEmpty,585,264,23,'#9dc9ed','center');
-   else rows.slice(0,10).forEach((row,i)=>{const y=157+i*23,c=['#e9bc56','#c2d2e0','#c78f67'][i]||'#9dc9ed';round(235,y,704,21,5,row.self?'#244768':'#202d3a');round(241,y+1,40,19,4,i<3?c:'#344455');text(String(row.rank),261,y+16,15,i<3?'#18212b':'#d4e5f4','center');text(row.nickname,300,y+16,17,row.self?'#a9e1ff':'#f0f7ff');text(String(row.score),916,y+16,17,c,'right','num');});
-   const own=opts.rankingData&&opts.rankingData.profile&&opts.rankingData.profile.positions[['easy','normal','hard','extreme'][opts.rankingMode||0]];if(own&&own.rank>10)text('#'+own.rank+'  '+profile.nickname+'  '+own.score,585,394,15,'#92ceff','center');
+   else {
+     const colors=['#ffd16a','#d3e3f1','#e5a46f'],backs=['#523b20','#34485b','#52362a'];
+     function cup(x,y,c){round(x+6,y,19,13,4,c);border(x,y+2,10,10,3,c);border(x+21,y+2,10,10,3,c);rect(x+14,y+12,4,6,c);round(x+8,y+18,16,4,2,c);}
+     // Ten players fit without hiding any results; podium cards get extra height.
+     rows.slice(0,10).forEach((row,i)=>{
+       const podium=i<3,y=158+(podium?i*34:102+(i-3)*19),h=podium?31:17,c=colors[i]||'#a4c2df';
+       const x=318,w=534;
+       round(x,y,w,h,6,row.self?'#174f79':podium?backs[i]:'#263444');
+       if(podium||row.self)border(x,y,w,h,6,row.self?'#79cfff':c);
+       if(podium){cup(x+10,y+4,c);text('TOP-'+String(row.rank),x+52,y+22,18,c); }
+       else{text('#'+String(row.rank),x+22,y+14,16,c);}
+       text(row.nickname.slice(0,24),x+128,y+(podium?23:14),podium?23:18,row.self?'#e3f6ff':'#f4f6f8');
+       text(String(row.score),x+w-14,y+(podium?24:15),podium?25:19,c,'right','num');
+     });
+   }
+   const own=opts.rankingData&&opts.rankingData.profile&&opts.rankingData.profile.positions[['easy','normal','hard','extreme'][opts.rankingMode||0]];if(own&&own.rank>10)text('#'+own.rank+'  '+profile.nickname+'  '+own.score,585,395,17,'#92ceff','center');
    for(const item of [{id:'refresh',x:300,label:words.rankRefresh},{id:'rankDone',x:600,label:words.doneSettings}]){
      round(item.x,398,265,42,7,focus===item.id?'#244768':'#1a2939');border(item.x,398,265,42,7,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+132,426,21,'#f0f7ff','center');
    }

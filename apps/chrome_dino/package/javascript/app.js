@@ -79,7 +79,7 @@ mgu.run({
             if(paused){pauseAction(selectedControl);return;}
             if(editName){nameKey(nameCursor);return;}
             if(consentOpen){if(selectedControl==='consentYes')enableSync();else closeConsent();return;}
-            if(rankingOpen){if(selectedControl==='editName')openName();else if(selectedControl==='syncProfile')openConsent();else if(selectedControl==='rankMode')loadRanking((rankingMode+1)%4);else if(selectedControl==='refresh')loadRanking(rankingMode,true);else closeRanking();return;}
+            if(rankingOpen){if(selectedControl==='editName')openName();else if(selectedControl==='syncProfile')openConsent();else if(/^rankTab[0-3]$/.test(selectedControl))selectRankTab(Number(selectedControl.slice(-1)));else if(selectedControl==='refresh')loadRanking(rankingMode,true);else closeRanking();return;}
             if(selectedControl==='ranking'&&game.state!=='playing'){openRanking();return;}
             if(settingsOpen){if(dropdown)commitDropdown(dropdownIndex);else if(selectedControl==='mode'||selectedControl==='language')openDropdown(selectedControl);else closeSettings();return;}
             if(selectedControl==='settings'&&game.state!=='playing'){openSettings();return;}
@@ -116,7 +116,8 @@ mgu.run({
         function nameKey(i){if(!editName||!going||!safe())return;const k=nameKeys[i];if(k==='BACK'){editName=false;return;}if(k==='SAVE'){if(outbox.rename(nameDraft,bestModes))editName=false;return;}if(k==='DEL')nameDraft=nameDraft.slice(0,-1);else if(k&&nameDraft.length<16)nameDraft+=k;}
         function showRanking(){if(!rankingData)return;rankingRows=rankingData.boards[MODES[rankingMode]].slice(0,10);rankingStatus='ready';}
         function loadRanking(mode,force){rankingMode=mode;rankingError='';if(rankingData)showRanking();else rankingStatus='loading';rankCache.get(outbox.token(),!!force,(err,result)=>{if(closed)return;if(result){rankingData=result;showRanking();}if(err){rankingError=String(err.code||err.message||'NETWORK').slice(0,40);if(!result)rankingStatus='error';}});}
-        function openRanking(){if(!going||paused||exitDialog||settingsOpen||game.state==='playing')return;rankingOpen=true;selectedControl='rankMode';loadRanking(game.difficulty);}
+        function selectRankTab(mode){rankingMode=mode;selectedControl='rankTab'+mode;if(rankingData)showRanking();}
+        function openRanking(){if(!going||paused||exitDialog||settingsOpen||game.state==='playing')return;rankingOpen=true;selectedControl='rankTab'+game.difficulty;loadRanking(game.difficulty);}
         function closeRanking(){editName=false;consentOpen=false;rankingOpen=false;++rankingRequest;selectedControl='play';}
         function openSettings(){if(!going||paused||exitDialog||game.state==='playing')return;settingsOpen=true;selectedControl='mode';}
         function closeSettings(){dropdown=null;settingsOpen=false;selectedControl='play';}
@@ -247,7 +248,7 @@ mgu.run({
             if(!diff||Math.abs(diff)>16)return;
             if(settingsOpen&&dropdown){const count=dropdown==='mode'?4:languageChoices.length;dropdownIndex=(dropdownIndex+(diff>0?1:count-1))%count;return;}
             if(editName){nameCursor=(nameCursor+(diff>0?1:nameKeys.length-1))%nameKeys.length;return;}
-            const items=consentOpen?['consentNo','consentYes']:exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:rankingOpen?(outbox.status().enabled?['rankMode','editName','refresh','rankDone']:['rankMode','syncProfile','refresh','rankDone']):(game.state==='over'?['play','overMenu','settings','ranking']:['play','settings','ranking']);
+            const items=consentOpen?['consentNo','consentYes']:exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:rankingOpen?(outbox.status().enabled?['rankTab0','rankTab1','rankTab2','rankTab3','editName','refresh','rankDone']:['rankTab0','rankTab1','rankTab2','rankTab3','syncProfile','refresh','rankDone']):(game.state==='over'?['play','overMenu','settings','ranking']:['play','settings','ranking']);
             selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
         // Touch areas use the 1600x520 dashboard coordinates.
@@ -261,7 +262,7 @@ mgu.run({
             if(consentOpen){if(y>=275&&y<=337){if(x>=242&&x<=570)closeConsent();else if(x>=600&&x<=928)enableSync();}return;}
             if(rankingOpen){
                 if(y>=64&&y<=103&&x>=720&&x<=965){if(outbox.status().enabled)openName();else openConsent();return;}
-                if(y>=108&&y<=150&&x>=300&&x<=850){selectedControl='rankMode';loadRanking((rankingMode+1)%4);}
+                if(y>=113&&y<=151&&x>=235&&x<939){selectRankTab(Math.min(3,Math.floor((x-235)/176)));}
                 else if(y>=398&&y<=440&&x>=300&&x<=565){selectedControl='refresh';loadRanking(rankingMode,true);}
                 else if(y>=398&&y<=440&&x>=600&&x<=865)closeRanking();
                 return;

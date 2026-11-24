@@ -19,7 +19,8 @@ async function run(id8){
  tap(585,373);clock+=100;draw();assert(!lastOptions.settingsOpen);
  assert.strictEqual(lastOptions.selectedControl,'play');assert.strictEqual(lastOptions.bestModes.length,4);
  tap(1372,399);clock+=100;draw();assert(lastOptions.rankingOpen);assert.strictEqual(lastOptions.rankingRows[0].nickname,'Test_Dino');
- tap(575,129);clock+=100;draw();assert.strictEqual(lastOptions.rankingMode,3);
+ tap(848,129);clock+=100;draw();assert.strictEqual(lastOptions.rankingMode,3);
+ tap(310,129);clock+=100;draw();assert.strictEqual(lastOptions.rankingMode,0);
  tap(730,419);clock+=100;draw();assert(!lastOptions.rankingOpen);
  input({frontRotaryEncoderOperation:0});input({frontRotaryEncoderOperation:1});
  clock+=100;input({frontRotaryEncoderPushButton:1});input({frontRotaryEncoderPushButton:0});
