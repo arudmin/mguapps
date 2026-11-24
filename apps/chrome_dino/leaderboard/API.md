@@ -24,3 +24,6 @@ Anonymous profile null. Ties: score descending, earliest achievement then player
 Registration, sync acknowledgement and authenticated leaderboard profile now include `original_nickname`. Existing names are reconstructed from the stored HMAC, not the current nickname. Reset uses the ordinary queued sync with nickname set to original_nickname. The original field cannot be changed by clients. No new endpoint. Older already registered clients learn the original on next authenticated leaderboard read or sync ACK.
 
 Zero scores are accepted in snapshots but never inserted into personal_scores. Migration 0004 removes existing zero rows and prevents future nonpositive rows. Registration alone creates no ranking record.
+
+### 0.2.7
+GET /v1/name-availability?nickname=NAME (optional bearer) returns {available:boolean}; advisory only. POST /v1/sync atomically rejects occupied or reserved names with 409 nickname_taken; client must retain scores and discard rejected rename. Case-insensitive ASCII comparison. Existing conflicting names reset to their reserved originals; accounts and scores retained.

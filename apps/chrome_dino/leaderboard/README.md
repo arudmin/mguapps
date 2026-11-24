@@ -1,3 +1,6 @@
+## 0.2.7 — 24.11.2026
+Case-insensitive unique nicknames, reserved originals, migration of existing conflicts, availability endpoint and regression test. CI pending. Rare existing original-name hash-prefix collision blocks migration rather than changing identity. API v1 retained.
+
 # Chrome Dino Leaderboard 0.2.6
 
 ### 0.2.6 — 24.11.2026

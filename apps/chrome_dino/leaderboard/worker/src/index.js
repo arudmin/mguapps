@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.2.6';
+export const VERSION='0.2.7';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -34,6 +34,12 @@ async function fetchHandler(req,env){
    return respond({ok:true,version:VERSION,modes:MODES,phase:'staging',verification:'pending_only'});
  }
  if(!env.SERVER_SECRET||env.SERVER_SECRET.length<64)return error('not_configured',503);
+ if(p==='/v1/name-availability'&&req.method==='GET'){
+ const n=u.searchParams.get('nickname');if(!validNickname(n))return error('invalid_nickname',400);
+ const me=await player(req,db);if(req.headers.has('authorization')&&!me)return error('unauthorized',401);
+ const hit=await db.prepare('SELECT id FROM players WHERE (nickname=? COLLATE NOCASE OR original_nickname=? COLLATE NOCASE) AND id<>? LIMIT 1').bind(n,n,me?me.id:'').first();
+ return respond({available:!hit});
+ }
  if(p==='/v1/register'&&req.method==='POST'){
    const b=await body(req);
    if(!exact(b,['identity_hash','consent','token'])||!HEX.test(b.identity_hash||'')||b.consent!==true||!HEX.test(b.token||''))return error('invalid_registration',400);
@@ -68,6 +74,6 @@ async function fetchHandler(req,env){
  return respond({boards,profile:me?{nickname:me.nickname,original_nickname:me.original_nickname,positions}:null,generated_at:Date.now(),verification:'unverified'});
  }
  return error('not_found',404);
- }catch(e){return e instanceof HttpError?error(e.message,e.status):error('request_failed',500);}
+ }catch(e){if(/nickname_taken|UNIQUE constraint failed: players.nickname/i.test(String(e.message||e)))return error('nickname_taken',409);return e instanceof HttpError?error(e.message,e.status):error('request_failed',500);}
 }
 export default {fetch:fetchHandler};

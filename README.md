@@ -130,3 +130,6 @@ node apps/chrome_dino/build.js
 
 
 **1.5.26 / server 0.2.6:** one-time onboarding including existing players, color-coded difficulty tabs, refresh status, pencil icon, Store spacing, positive-only leaderboard records. CI pending.
+
+
+**1.5.27 / server 0.2.7:** unique nicknames, reserved defaults, localized availability feedback. API v1. CI pending.

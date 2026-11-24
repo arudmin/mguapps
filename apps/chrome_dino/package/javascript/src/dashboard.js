@@ -105,12 +105,14 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    round(205,64,766,386,11,'#131a24');border(205,64,766,386,11,'#5b87ae');text(words.editName||'Edit name',585,95,25,'#f4f6f8','center');
    round(245,104,680,42,5,'#0d141e');border(245,104,680,42,5,'#78bfff');
    const draft=opts.nameDraft||'',pos=opts.namePos||0;
+   const ns=opts.nameCheck||'invalid',nl=words.nameStatus||{};
+   text(nl[ns]||'',585,146,16,ns==='free'?'#75bd9a':ns==='taken'?'#dd8992':'#b9cde0','center');
    // A fixed character grid places the caret exactly between glyph cells.
    draft.split('').forEach((ch,i)=>text(ch,265+i*25,133,25,'#f4f6f8','center'));
    if(opts.nameBlink!==false)rect(252+pos*25,112,3,27,'#78d6ff');
    text(draft.length+'/16',907,133,19,'#9dc9ed','right');
    const labels={SHIFT:'Shift',LEFT:'<',RIGHT:'>',DEL:words.keyDelete||'DEL',RESET:words.keyReset||'Reset',SAVE:words.keySave||'Save',BACK:words.keyBack||'Back'};
-   (opts.nameKeys||[]).forEach((k,i)=>{const active=i===opts.nameCursor,disabled=k.id==='RESET'&&!(opts.syncProfile||{}).originalNickname||k.id==='SAVE'&&(draft.length<3||draft.length>16);
+   (opts.nameKeys||[]).forEach((k,i)=>{const active=i===opts.nameCursor,disabled=k.id==='RESET'&&!(opts.syncProfile||{}).originalNickname||k.id==='SAVE'&&(draft.length<3||draft.length>16||opts.nameCheck!=='free');
      const label=labels[k.id]||(opts.nameShift?k.id:k.id.toLowerCase());
      round(k.x,k.y,k.w,k.h,6,active?'#286da4':k.id==='SAVE'&&!disabled?'#235b46':k.id==='SHIFT'&&opts.nameShift?'#244768':'#293747');
      border(k.x,k.y,k.w,k.h,6,active?'#b5e6ff':'#405269');

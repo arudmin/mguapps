@@ -1,3 +1,6 @@
+## 1.5.27 — 24.11.2026
+- Debounced online nickname availability in profile and onboarding editor, 12 localized statuses, saving requires available name. Server 0.2.7 enforces case-insensitive uniqueness, reserves originals. Rejected queued renames retain score snapshot and confirmed name. CI and hardware checks pending. Previous 1.5.26 CI green (45391589673/45391589663).
+
 ## 1.5.26 — 24.11.2026
 - One-time four-step onboarding for new and existing installations, preserves account and records; optional profile name, explicit consent or offline play, local completion flag, 12 translations. Requires available VIN hash to enroll; offline play remains available. Difficulty colors, refresh-in-progress label, pencil icon, two Store description spacing lines. Server 0.2.6 positive-score-only migration. CI and BMW checks pending. Prior 1.5.25 game/server CI green (45390019209/45390019253); BMW photos show renamed profile and functional ranking.
 
