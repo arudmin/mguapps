@@ -1,0 +1,26 @@
+name: Leaderboard real MGU client and test player
+on:
+  workflow_dispatch:
+  push:
+    branches: [top-chart]
+    paths: ['.github/workflows/leaderboard-test-player.yml']
+permissions:
+  contents: read
+concurrency:
+  group: leaderboard-test-player
+  cancel-in-progress: false
+jobs:
+  check:
+    if: github.ref == 'refs/heads/top-chart'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Register through actual MGU client and verify staging D1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node apps/chrome_dino/leaderboard/worker/scripts/create-test-player.mjs

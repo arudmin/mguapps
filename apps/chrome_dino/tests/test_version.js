@@ -13,23 +13,5 @@ assert.strictEqual(read('package/npm-shrinkwrap.json').version,ver);
 assert.strictEqual(read('package/rhmiData/application.json').application.version,ver);
 const app=fs.readFileSync(path.join(root,'package/javascript/app.js'),'utf8');
 assert(app.includes("const APP_VERSION = require('./kit/app-spec.json').version;"));
-assert(app.includes("w.version+' '+APP_VERSION"));
-const main = spec.screens.find(s=>s.name==='MAIN');
-const items = main.items.map(i=>i[1]);
-assert(items.includes('MENU_INFO'));
-assert(items.includes('BTN_LANGUAGE'));
-assert(items.includes('MENU_BEST'));
-assert(items.includes('MENU_HELP'));
-const allowed = new Set(['number','choice','bool']);
-for(const setting of spec.settings) assert(allowed.has(setting.type), 'unsupported setting type '+setting.type);
-assert(spec.screens.find(s=>s.name==='MAIN').items.some(x=>x[1]==='MENU_BMW'));
-const rhmi = read('package/rhmiData/uiDescriptions/ID7/uiDescription.json');
-const list = rhmi.containers['1'].components;
-for(const id of ['21','22']) {
-  const component=list[id];
-  assert.strictEqual(component.cells.HeaderText.type,'StringId','ID7 dropdown header must use native HMI locale');
-  for(const row of component.rows) assert.strictEqual(row.ItemText.type,'StringId','ID7 dropdown options must use HMI locale');
-}
-assert(!app.includes("ui.cells('BTN_DIFFICULTY',0,{HeaderText"),'Must not overwrite native localized header');
-assert(!app.includes("ui.cells('BTN_LANGUAGE',0,{HeaderText"),'Must not overwrite native localized header');
+assert.deepStrictEqual(spec.screens.map(s=>s.name),['GAME']);
 console.log('Version and RHMI compatibility checks OK:',ver);

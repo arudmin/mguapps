@@ -1,0 +1,37 @@
+name: Staging Easy ranking fixtures
+on:
+  push:
+    branches: [top-chart]
+    paths: ['.github/workflows/staging-easy-fixtures.yml', 'tools/staging-easy-fixtures.mjs']
+  workflow_dispatch:
+    inputs:
+      cleanup:
+        description: Remove the 14 synthetic staging profiles
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: staging-easy-fixtures
+  cancel-in-progress: false
+jobs:
+  fixtures:
+    if: github.ref == 'refs/heads/top-chart'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Seed or remove synthetic staging profiles
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLEANUP: ${{ inputs.cleanup }}
+        run: |
+          if [ "$CLEANUP" = "true" ]; then
+            node tools/staging-easy-fixtures.mjs --cleanup
+          else
+            node tools/staging-easy-fixtures.mjs
+          fi

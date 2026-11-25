@@ -4,7 +4,12 @@ const mgu = require('./kit/mgu');
 const { Recorder } = require('./kit/record');
 const Parked = require('./kit/parked');
 const { Game } = require('./src/game');
-const { draw } = require('./src/render');
+const { migrateDifficulty } = require('./src/difficulty');
+const { drawDashboard, WORLD_ASPECT } = require('./src/dashboard');
+const { RankingCache }=require('./src/ranking-cache');
+const keyboard=require('./src/name-keyboard');
+const { Outbox }=require('./src/outbox');
+const { Leaderboard, MODES, identity } = require('./src/leaderboard');
 const { Controls } = require('./src/input');
 const APP_VERSION = require('./kit/app-spec.json').version;
 const i18n = require('./src/i18n');
@@ -18,22 +23,41 @@ mgu.run({
     start(ctx) {
         const { ui, log, settings } = ctx;
         const game = new Game();
-        const savedDifficulty = Number(settings.get('difficulty'));
-        game.setDifficulty(Number.isFinite(savedDifficulty) ? savedDifficulty : 1);
-        let best = Math.max(0, Number(settings.get('best')) || 0);
+        const migrated=migrateDifficulty(settings);
+        game.setDifficulty(migrated.index);
+        const bestKeys=migrated.bestKeys,bestModes=migrated.bestModes;
+        let best=bestModes[game.difficulty];
+        game.resize(WORLD_ASPECT);
         let languageChoice=settings.get('language')||'auto';
-        if (['auto','ru','en'].indexOf(languageChoice)<0) languageChoice='auto';
+        const languageChoices=['auto','ru','en','de','fr','es','it','pt','nl','pl','uk','zh','ja'];
+        if (languageChoices.indexOf(languageChoice)<0) languageChoice='auto';
         let systemLanguage=i18n.detect(ctx);
         let headLanguageRaw='';
         let headLanguageState='waiting';
         let headLanguageSource='not yet received';
-        let vinState='проверка...';
+        
         let updateState={available:false,latest:null,checked:false};
         function language(){return languageChoice==='auto'?systemLanguage:languageChoice;}
         function t(){return i18n.words(language());}
         let speedAt = -Infinity, speedValid = false;
         let going = false, closed = false, last = null, accumulator = 0, frameAt = -Infinity;
         let screenRecorder = null;
+        const rankingClient=new Leaderboard('https://chrome-dino-leaderboard-staging.mguapps.workers.dev');
+        const outbox=new Outbox(ctx.dataDir,rankingClient);
+        const rankCache=new RankingCache(ctx.dataDir,rankingClient);
+        let rankingData=null,editName=false,nameDraft='',nameCursor=0,namePos=0,nameShift=false,nameTilt=null;
+        let nameKeys=keyboard.layout.slice();
+        function nameSuggestions(values){nameKeys=keyboard.layout.slice();(values||[]).filter(n=>typeof n==='string'&&/^[A-Za-z0-9_-]{3,16}$/.test(n)).slice(0,5).forEach((n,i)=>nameKeys.push({id:'SUGGEST'+i,label:n,x:245+i*136,y:405,w:132,h:35,row:5}));if(nameCursor>=nameKeys.length)nameCursor=0;}
+        let nameCheck='idle',nameCheckSeq=0,nameCheckAt=0,checkedName='';
+        function checkName(){nameSuggestions([]);const n=nameDraft,seq=++nameCheckSeq;checkedName='';nameCheck=/^[A-Za-z0-9_-]{3,16}$/.test(n)?'checking':'invalid';nameCheckAt=Date.now()+350;if(nameCheck==='invalid')return;}
+        function tickName(){if(!editName||nameCheck!=='checking'||Date.now()<nameCheckAt)return;nameCheckAt=Infinity;const seq=nameCheckSeq,n=nameDraft;rankingClient.available(n,outbox.token(),(err,j)=>{if(seq!==nameCheckSeq||!editName||n!==nameDraft)return;nameCheck=err||!j?'offline':j.available?'free':'taken';checkedName=n;if(!err&&j&&!j.available)nameSuggestions(j.suggestions);});}
+        let onboarding=Number(settings.get('onboardingSchema'))===1?0:1,onboardName=String(settings.get('offlineNickname')||''),onboardConsent=false,onboardEditing=false;
+        let vinHash=null,consentOpen=false;
+        let rankingOpen=false, rankingMode=game.difficulty, rankingRows=[], rankingStatus='loading', rankingRequest=0, rankingError='';
+        let selectedControl='play', paused=false, settingsOpen=false, dropdown=null, dropdownIndex=0, exitDialog=false, exiting=false, tiltHeld=false, rendererTiltAt=-Infinity;
+        if(onboarding)selectedControl='onNext';
+        let rotaryPosition=null,rendererRotaryAt=-Infinity;
+        let fpsAt=0,fpsFrames=0,actualFPS=0;
 
         // Parked.watch exposes speed(), but treats unknown as parked and permits <=3 km/h.
         // Observe its real polling callback to reject invalid, unknown and stale data too.
@@ -57,55 +81,106 @@ mgu.run({
         let parked = null;
         const ctl = new Controls(() => {
             sync();
-            if (going) game.action();
+            if(!going)return;
+            if(exitDialog){exitAction(selectedControl);return;}
+            if(paused){pauseAction(selectedControl);return;}
+            if(editName){nameKey(nameCursor);return;}
+            if(onboarding){onboardAction(selectedControl);return;}
+            if(consentOpen){if(selectedControl==='consentYes')enableSync();else closeConsent();return;}
+            if(rankingOpen){if(selectedControl==='editName')openName();else if(selectedControl==='syncProfile')openConsent();else if(/^rankTab[0-3]$/.test(selectedControl))selectRankTab(Number(selectedControl.slice(-1)));else if(selectedControl==='refresh')loadRanking(rankingMode,true);else closeRanking();return;}
+            if(selectedControl==='ranking'&&game.state!=='playing'){openRanking();return;}
+            if(settingsOpen){if(dropdown)commitDropdown(dropdownIndex);else if(selectedControl==='mode'||selectedControl==='language')openDropdown(selectedControl);else closeSettings();return;}
+            if(selectedControl==='settings'&&game.state!=='playing'){openSettings();return;}
+            if(game.state==='over'&&selectedControl==='overMenu'){returnToStart();return;}
+            if(game.state==='playing'||selectedControl==='play')game.action();
         });
         function safe() {
             return parked && speedValid && Date.now() - speedAt <= SPEED_TTL && parked.speed() === 0;
         }
         function shown() { return ui.isVisible('GAME') && (!ui.hasFocus || ui.hasFocus('GAME')); }
         function saveBest() {
-            if (game.score > best) { best = game.score; settings.set('best', best); }
-        }
-        function menu() {
-            const w=t();
-            ui.text('BTN_PLAY', game.state==='playing'?w.continue_:w.play);
-            if (ui.id8) {
-                ui.text('BTN_DIFFICULTY',w.difficulty+': '+w.levels[game.difficulty]+' ('+w.change+')');
-                ui.text('BTN_LANGUAGE',w.language+': '+(languageChoice==='auto'?w.auto:i18n.languageNames[languageChoice])+' ('+w.change+')');
-                // ID8 has no RHMI drop-down widget; its buttons open dedicated option lists.
-                w.levels.forEach((label,idx)=>ui.text('DIF_'+idx,(idx===game.difficulty?'✓ ':'')+label));
-                ['auto','ru','en'].forEach((code,idx)=>{
-                    const value=idx===0?w.auto:i18n.languageNames[code];
-                    ui.text('LANG_'+idx,(code===languageChoice?'✓ ':'')+value);
-                });
-            } else {
-                // ID7: the native HMI localizes drop-down headers and options
-                // from StringId resources according to BMW's *actual* HMI locale.
-                // Do NOT replace them using RHMI Text: this did not update the
-                // Unicode HeaderText/ItemText cells on the user's ID7 firmware.
-                // Only the selected numeric indices change dynamically.
-                const diff=ui.comp('BTN_DIFFICULTY'),lng=ui.comp('BTN_LANGUAGE');
-                if(diff)Promise.resolve(diff.setValue(0,'SelectedItem',game.difficulty,'UInt')).catch(e=>log.warn('difficulty selected: '+e));
-                if(lng)Promise.resolve(lng.setValue(0,'SelectedItem',Math.max(0,['auto','ru','en'].indexOf(languageChoice)),'UInt')).catch(e=>log.warn('language selected: '+e));
+            if (game.score > best) {
+                best=game.score;
+                bestModes[game.difficulty]=best;
+                settings.set(bestKeys[game.difficulty],best);
+                settings.set('best',Math.max.apply(null,bestModes));
             }
-            ui.text('MENU_INFO',w.version+' '+APP_VERSION+' (VIN: '+vinState+')');
-            ui.text('MENU_BEST',w.best+': '+best+(updateState.available?' | '+(language()==='ru'?'Обновите игру до ':'Update to ')+updateState.latest:''));
-            ui.text('MENU_HELP',safe()?w.help:w.parked);
-            const detected=headLanguageRaw||headLanguageState;
-            const current=language();
-            ui.text('MENU_BMW','BMW HMI: '+detected+'  ->  '+systemLanguage+'  |  UI: '+current);
-            // VIN is intentionally embedded in MENU_INFO: ID7 did not render a separate label.
+        }
+        function pauseRun() {
+            if(game.state==='playing'&&!paused){paused=true;selectedControl='resume';saveBest();}
+            last=null;accumulator=0;
+        }
+        function returnToStart(){saveBest();game.reset();paused=false;selectedControl='play';last=null;accumulator=0;}
+        function pauseAction(choice){
+            if(!paused||!going||!safe())return;
+            if(choice==='menu'){returnToStart();return;}
+            else if(choice!=='resume')return;
+            paused=false;selectedControl='play';last=null;accumulator=0;
+        }
+        function onboardStep(n){onboarding=n;selectedControl='onNext';}
+        function onboardAction(action){if(!going||!safe()||!onboarding)return;if(action==='onBack'){onboardStep(Math.max(1,onboarding-1));return;}
+            if(onboarding===1){onboardStep(2);return;}
+            if(onboarding===2){if(action==='onEdit'){onboardEditing=true;editName=true;nameDraft=onboardName||outbox.status().nickname||'';namePos=nameDraft.length;nameCursor=0;nameShift=false;nameTilt=null;checkName();return;}onboardStep(3);return;}
+            if(onboarding===3){if(outbox.status().enabled){onboardStep(4);return;}onboardConsent=action==='onNext';if(onboardConsent){if(!vinHash)return;if(!outbox.enroll(vinHash,bestModes,onboardName))return;}onboardStep(4);return;}
+            if(onboarding===4){if(outbox.status().enabled&&onboardName&&onboardName!==outbox.status().nickname)outbox.rename(onboardName,bestModes);if(onboardName)settings.set('offlineNickname',onboardName);settings.set('onboardingSchema',1);onboarding=0;selectedControl='play';}
+        }
+        function onboardControls(){return onboarding===1?['onNext']:onboarding===2?['onEdit','onBack','onNext']:onboarding===3?(outbox.status().enabled?['onBack','onNext']:['onBack','onSkip','onNext']):['onBack','onNext'];}
+        function openConsent(){if(outbox.status().enabled)return;consentOpen=true;selectedControl='consentNo';}
+        function closeConsent(){consentOpen=false;selectedControl='syncProfile';}
+        function enableSync(){if(!vinHash||!going||!safe())return;if(outbox.enroll(vinHash,bestModes,String(settings.get('offlineNickname')||'')))closeConsent();}
+        function openName(){if(!outbox.status().enabled)return;editName=true;nameDraft=outbox.status().nameRejected||outbox.status().nickname||String(settings.get('offlineNickname')||'');namePos=nameDraft.length;nameCursor=0;nameShift=false;nameTilt=null;checkName();}
+        function nameKey(i){if(!editName||!going||!safe()||!nameKeys[i])return;nameCursor=i;const k=nameKeys[i].id;if(k==='BACK'){editName=false;onboardEditing=false;return;}if(/^SUGGEST/.test(k)){nameDraft=nameKeys[i].label;namePos=nameDraft.length;checkName();return;}if(k==='SAVE'){if(!/^[A-Za-z0-9_-]{3,16}$/.test(nameDraft)||nameCheck==='taken')return;if(onboardEditing){if(/^[A-Za-z0-9_-]{3,16}$/.test(nameDraft)){onboardName=nameDraft;editName=false;onboardEditing=false;}return;}if(outbox.rename(nameDraft,bestModes))editName=false;return;}const next=keyboard.edit(nameDraft,namePos,k,nameShift,outbox.status().originalNickname);const changed=nameDraft!==next.value;nameDraft=next.value;namePos=next.pos;nameShift=next.shift;if(changed)checkName();}
+        function showRanking(){if(!rankingData)return;rankingRows=rankingData.boards[MODES[rankingMode]].slice(0,10);rankingStatus='ready';}
+        function loadRanking(mode,force){if(force&&rankCache.busy)return;rankingMode=mode;rankingError='';if(rankingData)showRanking();else rankingStatus='loading';rankCache.get(outbox.token(),!!force,(err,result)=>{if(closed)return;if(result){rankingData=result;if(result.profile)outbox.rememberOriginal(result.profile.original_nickname);showRanking();}if(err){rankingError=String(err.code||err.message||'NETWORK').slice(0,40);if(!result)rankingStatus='error';}});}
+        function selectRankTab(mode){rankingMode=mode;selectedControl='rankTab'+mode;if(rankingData)showRanking();}
+        function openRanking(){if(!going||paused||exitDialog||settingsOpen||game.state==='playing')return;rankingOpen=true;selectedControl='rankTab'+game.difficulty;loadRanking(game.difficulty);}
+        function closeRanking(){editName=false;onboardEditing=false;consentOpen=false;rankingOpen=false;++rankingRequest;selectedControl='play';}
+        function openSettings(){if(!going||paused||exitDialog||game.state==='playing')return;settingsOpen=true;selectedControl='mode';}
+        function closeSettings(){dropdown=null;settingsOpen=false;selectedControl='play';}
+        function openDropdown(kind){dropdown=kind;dropdownIndex=kind==='mode'?game.difficulty:Math.max(0,languageChoices.indexOf(languageChoice));}
+        function commitDropdown(index){if(!dropdown||!going||!safe())return;const kind=dropdown;dropdown=null;selectedControl=kind;if(kind==='mode')chooseDifficulty(index);else chooseLanguage(index);}
+        function dropdownStart(){return Math.max(0,Math.min(dropdownIndex-2,(dropdown==='mode'?4:languageChoices.length)-6));}
+        function backAction(){
+            if(!shown()||closed||exiting)return;
+            if(editName){editName=false;onboardEditing=false;return;}
+            if(onboarding){if(onboarding>1)onboardStep(onboarding-1);return;}
+            if(consentOpen){closeConsent();return;}
+            if(rankingOpen){closeRanking();return;}
+            if(settingsOpen){if(dropdown)dropdown=null;else closeSettings();return;}
+            if(exitDialog){exitDialog=false;selectedControl=paused?'resume':'play';return;}
+            if(game.state==='playing'&&!paused){pauseRun();return;}
+            exitDialog=true;selectedControl='cancel';
+        }
+        function exitAction(choice){
+            if(!exitDialog)return;
+            if(choice==='cancel'){exitDialog=false;selectedControl=paused?'resume':'play';return;}
+            if(choice!=='exit'||exiting)return;
+            exiting=true;exitDialog=false;saveBest();sync();
+            Promise.resolve(ui.close('GAME')).catch(e=>{log.warn('close dashboard '+e);exiting=false;exitDialog=true;selectedControl='cancel';sync();});
+        }
+        function backTilt(value,source){
+            if(!value)return;
+            const raw=value.frontRotaryEncoderDeflection;
+            if(raw===undefined)return;
+            const now=Date.now();
+            if(source==='renderer')rendererTiltAt=now;
+            else if(now-rendererTiltAt<1000)return;
+            if(editName){const dir=keyboard.direction(raw);if(going&&safe()&&dir&&dir!==nameTilt)nameCursor=keyboard.move(nameCursor,dir,nameKeys);nameTilt=dir;return;}
+            nameTilt=null;
+            const left=raw===10||raw===11||raw==='10'||raw==='11'||raw==='DREHGEBER_KURZ_LINKS'||raw==='DREHGEBER_LANG_LINKS';
+            if(left&&!tiltHeld)backAction();
+            tiltHeld=left;
         }
         function sync() {
-            const go = !closed && shown() && !!safe();
+            const go = !closed && !exiting && shown() && !!safe();
             if (go !== going) {
                 going = go;
-                last = null; accumulator = 0; frameAt = -Infinity;
+                last = null; accumulator = 0; frameAt = -Infinity; fpsAt=0; fpsFrames=0; actualFPS=0;
                 ctl.enable(go);
                 if (ctx.controller && ctx.controller.grab) ctx.controller.grab(go);
-                if (!go) { saveBest(); menu(); }
+                if (!go) { saveBest(); if(!safe()){game.reset();paused=false;settingsOpen=false;dropdown=null;editName=false;consentOpen=false;rankingOpen=false;++rankingRequest;exitDialog=false;selectedControl='play';}else pauseRun();  }
             }
-            if (!closed && shown() && !safe()) ui.open('MAIN');
+            // On unsafe/unknown speed the dashboard remains visible with a warning; gameplay is disabled.
         }
         // Exact BMW CommonTypes.Language via HMI_CID; signal read and subscription.
         // Manifest includes HMIContext so the unit generates its SOME/IP definition.
@@ -120,7 +195,7 @@ mgu.run({
                     headLanguageSource='HMIContext.currentDisplayLanguage';
                     if(next)systemLanguage=next;
                     log.info('BMW display language raw='+JSON.stringify(raw)+' resolved='+(next||'unknown'));
-                    menu();
+                    
                 }
             },log).then(function(sub){
                 if(sub && sub.error) {
@@ -129,11 +204,11 @@ mgu.run({
                 } else if(sub && !sub.available && !headLanguageRaw){
                     headLanguageState='provider unavailable';
                 }
-                menu();
+                
             }).catch(function(err){
                 headLanguageState='error: '+String(err).slice(0,52);
                 log.warn('BMW HMI language: '+err);
-                menu();
+                
             });
         } catch(err){
             headLanguageState='error: '+String(err).slice(0,52);
@@ -144,105 +219,152 @@ mgu.run({
         (async function probeVin() {
             try {
                 const diag = await new Diag(ctx.signals, log).init();
-                if (!diag.p) { vinState='недоступен'; menu(); return; }
+                if (!diag.p) { return; }
                 const replies = await diag.functional(0x22,[0xF1,0x90],{idleMs:1800,maxMs:9000});
                 const found=findVin(replies);
-                vinState=found || 'недоступен';
+                if(found)vinHash=identity(found);
+                
                 log.info('VIN read-only probe: '+(found?'available':'not available'));
             } catch(e) {
-                vinState='ошибка чтения';
+                
                 log.warn('VIN read-only probe failed (no vehicle identifiers logged): '+String(e).slice(0,90));
             }
-            menu();
+            
         })();
         checkUpdate(APP_VERSION, function(result) {
             updateState=result;
             log.info('version check: '+(result.checked?(result.available?'update available':'current'):'offline'));
-            menu();
+            
         });
         log.info('initial UI language='+systemLanguage+' selected='+languageChoice);
         parked = Parked.watch(safetyCtx, log);
-        ui.onClick('BTN_PLAY', () => {
-            if (!safe()) { menu(); return; }
-            if (game.state === 'over') game.reset();
-            return ui.open('GAME');
-        });
         function chooseDifficulty(index) {
-            if (!Number.isInteger(index)||index<0||index>2)return;
-            if (!safe()) { menu(); return; }
+            if (!Number.isInteger(index)||index<0||index>=4)return;
+            if (!safe()) {  return; }
             saveBest();
             game.setDifficulty(index);
+            best=bestModes[index];
             settings.set('difficulty',game.difficulty);
-            menu();
+            
         }
         function chooseLanguage(index) {
-            const choices=['auto','ru','en'];
-            if (!Number.isInteger(index)||index<0||index>=choices.length)return;
-            languageChoice=choices[index];
+            if (!Number.isInteger(index)||index<0||index>=languageChoices.length)return;
+            languageChoice=languageChoices[index];
             settings.set('language',languageChoice);
             log.info('language selected: '+languageChoice);
-            menu();
+            
         }
-        if(ui.id8){
-            ui.onClick('BTN_DIFFICULTY',()=>ui.open('SELECT_DIFFICULTY'));
-            ui.onClick('BTN_LANGUAGE',()=>ui.open('SELECT_LANGUAGE'));
-            for(let i=0;i<3;i++)ui.onClick('DIF_'+i,()=>{chooseDifficulty(i);return ui.open('MAIN');});
-            for(let i=0;i<3;i++)ui.onClick('LANG_'+i,()=>{chooseLanguage(i);return ui.open('MAIN');});
-        } else {
-            ui.onClick('BTN_DIFFICULTY',ev=>chooseDifficulty(Number(ev.row)));
-            ui.onClick('BTN_LANGUAGE',ev=>chooseLanguage(Number(ev.row)));
+        function rotary(value,source){
+            const raw=value&&value.frontRotaryEncoderOperation;
+            const nRaw=typeof raw==='number'?raw:(typeof raw==='string'&&raw.trim()?Number(raw):NaN);
+            if(!Number.isFinite(nRaw))return;
+            const n=(Math.floor(nRaw)%65536+65536)%65536,now=Date.now();
+            if(source==='renderer')rendererRotaryAt=now;
+            const prev=rotaryPosition;rotaryPosition=n;
+            if(source==='signals'&&now-rendererRotaryAt<700)return;
+            if(prev===null||!going||(game.state==='playing'&&!paused&&!exitDialog))return;
+            const diff=((n-prev+32768)%65536)-32768;
+            if(!diff||Math.abs(diff)>16)return;
+            if(settingsOpen&&dropdown){const count=dropdown==='mode'?4:languageChoices.length;dropdownIndex=(dropdownIndex+(diff>0?1:count-1))%count;return;}
+            if(editName){nameCursor=(nameCursor+diff+nameKeys.length)%nameKeys.length;return;}
+            const items=onboarding?onboardControls():consentOpen?['consentNo','consentYes']:exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:rankingOpen?(outbox.status().enabled?['rankTab0','rankTab1','rankTab2','rankTab3','editName','refresh','rankDone']:['rankTab0','rankTab1','rankTab2','rankTab3','syncProfile','refresh','rankDone']):(game.state==='over'?['play','overMenu','settings','ranking']:['play','settings','ranking']);
+            selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
+        // Touch areas use the 1600x520 dashboard coordinates.
+        function dashboardTouch(x,y){
+            sync();
+            if(!going)return;
+            if(x>=890&&x<=1150&&y>=489&&y<=520&&shown()){backAction();return;}
+            if(exitDialog){if(y>=275&&y<=337){if(x>=242&&x<=570)exitAction('cancel');else if(x>=600&&x<=928)exitAction('exit');}return;}
+            if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('menu');}return;}
+            if(editName){const i=nameKeys.findIndex(k=>x>=k.x&&x<k.x+k.w&&y>=k.y&&y<k.y+k.h);if(i>=0)nameKey(i);return;}
+            if(onboarding){if(onboarding===2&&x>=340&&x<=830&&y>=205&&y<=270){selectedControl='onEdit';onboardAction('onEdit');}else if(y>=342&&y<=408){if(x>=245&&x<425&&onboarding>1)onboardAction('onBack');else if(x>=435&&x<675&&onboarding===3&&!outbox.status().enabled)onboardAction('onSkip');else if(x>=685&&x<=930)onboardAction('onNext');}return;}
+            if(consentOpen){if(y>=275&&y<=337){if(x>=242&&x<=570)closeConsent();else if(x>=600&&x<=928)enableSync();}return;}
+            if(rankingOpen){
+                if(y>=64&&y<=103&&x>=720&&x<=965){if(outbox.status().enabled)openName();else openConsent();return;}
+                if(y>=113&&y<=151&&x>=235&&x<939){selectRankTab(Math.min(3,Math.floor((x-235)/176)));}
+                else if(y>=398&&y<=440&&x>=300&&x<=565){selectedControl='refresh';loadRanking(rankingMode,true);}
+                else if(y>=398&&y<=440&&x>=600&&x<=865)closeRanking();
+                return;
+            }
+            if(settingsOpen){
+                if(dropdown){if(x>=320&&x<=850&&y>=154&&y<406){const index=dropdownStart()+Math.floor((y-154)/42);if(index<(dropdown==='mode'?4:languageChoices.length))commitDropdown(index);}else if(x>=865&&x<=935&&y>=154&&y<=406){const count=dropdown==='mode'?4:languageChoices.length;dropdownIndex=Math.max(0,Math.min(count-1,dropdownIndex+(y<280?-1:1)));}return;}
+                if(x>=320&&x<=850){
+                    if(y>=200&&y<=258){selectedControl='mode';openDropdown('mode');}
+                    else if(y>=272&&y<=330){selectedControl='language';openDropdown('language');}
+                    else if(y>=344&&y<=402)closeSettings();
+                }return;
+            }
+            if(game.state!=='playing'&&x>=1191&&x<=1554&&y>=376&&y<=422){openRanking();return;}
+            if(game.state!=='playing'&&x>=1480&&x<=1560&&y>=65&&y<=135){openSettings();return;}
+            if(game.state==='over'){
+                if(y>=275&&y<=337){if(x>=242&&x<=570){selectedControl='play';game.action();}else if(x>=600&&x<=928)returnToStart();}return;
+            }
+            if(game.state==='playing'){if(x>=22&&x<1154&&y>=52&&y<473)game.action();return;}
+            if(x>=345&&x<=825&&y>=252&&y<=312){selectedControl='play';game.action();}
+        }
+        if(ctx.onTouch)ctx.onTouch((phase,x,y)=>{if(phase===1)dashboardTouch(x,y);return true;});
+        if(ctx.onTap)ctx.onTap(dashboardTouch);
+        if(ctx.hideButton)ctx.hideButton('BTN_JUMP');
         ui.onClick('BTN_JUMP', () => { sync(); ctl.barClick(); });
         if (ctx.controller && ctx.controller.onInput) {
-            ctx.controller.onInput((value) => { sync(); ctl.raw(value, 'renderer'); });
+            ctx.controller.onInput((value) => { sync(); backTilt(value,'renderer'); rotary(value,'renderer'); ctl.raw(value,'renderer'); });
         }
         ctx.signals.watch('de.bmw.infotainment.controlelements.FrontCCU', '1', {
-            statusRotaryEncoderState(value) { sync(); ctl.raw(value, 'signals'); },
+            statusRotaryEncoderState(value) { sync(); backTilt(value,'signals'); rotary(value,'signals'); ctl.raw(value,'signals'); },
         }, log).then((s) => { if (s.error) log.warn('controller: ' + s.error); });
         if (ui.onFocus) ui.onFocus(sync);
-        if (ui.onVisible) ui.onVisible(() => { sync(); if (ui.isVisible('MAIN')) menu(); });
+        if (ui.onVisible) ui.onVisible((name,visible) => {
+            if(name!=='GAME')return;
+            if(!visible){pauseRun();settingsOpen=false;editName=false;consentOpen=false;rankingOpen=false;++rankingRequest;exitDialog=false;tiltHeld=false;}
+            else {if(exiting){game.reset();paused=false;selectedControl='play';}exiting=false;last=null;accumulator=0;}
+            sync();
+        });
         const safetyTimer = setInterval(sync, 100);
+        const outboxTimer=setInterval(()=>{if(closed)return;outbox.capture(bestModes);outbox.tick(Date.now());},1000);
         function stop() {
             if (closed) return;
             closed = true; going = false; ctl.enable(false);
             last = null; accumulator = 0;
-            clearInterval(safetyTimer);
+            clearInterval(safetyTimer);clearInterval(outboxTimer);outbox.stop();
             if (ctx.controller && ctx.controller.grab) ctx.controller.grab(false);
-            saveBest();
+            saveBest();outbox.capture(bestModes);
         }
         if (ctx.app && ctx.app.on) ctx.app.on('shutdown', stop);
         process.on('exit', stop);
         process.on('SIGTERM', () => { stop(); process.exit(0); });
         process.on('SIGINT', () => { stop(); process.exit(0); });
 
-        ctx.loop('GAME', 30, () => {
+        ctx.loop('GAME', 8, () => {
             sync();
-            if (!going) return;
+            if (closed || exiting || !shown()) return;
             const now = Date.now();
             const cv = ctx.canvas(W, H).clear('#000000');
             const pl = cv.place;
             const full = pl && pl.full && pl.w > 0 && pl.h > 0;
             const w = full ? pl.w : W, h = full ? pl.h : H;
-            game.resize(w / h);
-            if (last !== null) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.1));
+            game.resize(WORLD_ASPECT); // Fixed collision/spawn world for both styles and screen sizes.
+            if (last !== null && going && !paused && !exitDialog) accumulator += Math.max(0, Math.min((now - last) / 1000, 0.2));
             last = now;
             while (accumulator >= STEP) {
-                if (game.state === 'playing') game.step(STEP);
+                if (game.state === 'playing' && !paused && !exitDialog) {game.step(STEP);if(game.state==='over')selectedControl='play';}
                 accumulator -= STEP;
             }
             saveBest();
-            // ctx.loop's GPU path may tick at 60 Hz; explicitly limit presentation to 30.
-            if (now - frameAt < 1000 / 30) return;
-            frameAt = now;
-            if (full) {
-                if (!screenRecorder || screenRecorder.w !== w || screenRecorder.h !== h) screenRecorder = new Recorder(w, h);
-                screenRecorder.reset();
-                draw(screenRecorder, game, w, h, best, t(), updateState);
-                cv.xf(1, 0, 0).append(screenRecorder).xf();
-            } else draw(cv, game, w, h, best, t(), updateState);
+            if(!fpsAt)fpsAt=now;
+            if(now-fpsAt>=1000){actualFPS=Math.round(fpsFrames*1000/(now-fpsAt));fpsFrames=0;fpsAt=now;}
+            // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
+            if (now - frameAt + 2 < 1000 / 60) return; // Allow 16 ms tick rounding on 60 Hz displays.
+            frameAt = now;fpsFrames++;
+            tickName();const options={nameCheck,paused,onboarding,onboardName,onboardConsent,rankingRefreshing:rankCache.busy,editName,nameDraft,nameCursor,nameKeys,namePos,nameShift,nameBlink:Math.floor(now/500)%2===0,rankingData,consentOpen,vinAvailable:!!vinHash,syncProfile:outbox.status(),settingsOpen,dropdown,dropdownIndex,dropdownStart:dropdownStart(),languageItems:languageChoices.map(k=>k==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[k]||k),bestModes,rankingOpen,rankingMode,rankingRows,rankingStatus,rankingError,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
+            if(full){
+                if(!screenRecorder||screenRecorder.w!==w||screenRecorder.h!==h)screenRecorder=new Recorder(w,h);
+                screenRecorder.reset();drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options);
+                cv.xf(1,0,0).append(screenRecorder).xf();
+            }else drawDashboard(cv,game,w,h,best,t(),updateState,options);
             return ui.image('GAME_GFX', cv);
         });
-        menu();
-        log.info('Chrome Dino Game: strict stationary gate; 120 Hz physics, 30 fps presentation');
+        
+        log.info('Chrome Dino '+APP_VERSION+' Dashboard-only, right-side controls, strict zero speed; GPU 60 Hz target, PNG fallback 8 Hz');
     },
 });
