@@ -286,3 +286,7 @@ Shared dashboard sprite geometry and swept collision checks, brighter top rankin
 ## 25.11.2026 — 1.5.34 / server 0.2.12
 - Restore the known-working 1.5.29 SDK manifest and access table as a compatibility diagnostic after physical ID7 launch failure in 1.5.33. This restores broader permissions; root cause is not yet confirmed. No new application data reads or network collection; consent-only diagnostic probe and account deletion retained.
 - Add BOOT 01–05 local SDK startup milestones; existing fatal/loop logging retained. If the platform never launches JavaScript, these markers cannot appear. CI and real MGU startup verification pending.
+
+
+## 25.11.2026 — 1.5.35 / server 0.2.12
+- Expand Store introduction to four explicit lines in all 12 supported languages; preserve remaining localized sections. Actual display wrapping and line limits depend on MGU Store. No gameplay, SDK permissions or server changes.
