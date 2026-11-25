@@ -14,6 +14,7 @@ function env(){
  sql.exec(readFileSync(new URL('../migrations/0006_player_analytics.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0007_remove_analytics.sql',import.meta.url),'utf8'));
  sql.exec(readFileSync(new URL('../migrations/0008_vehicle_groups.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../migrations/0009_profile_recovery.sql',import.meta.url),'utf8'));
  return {sql,SERVER_SECRET:secret,DB:{batch:async ops=>{sql.exec('BEGIN');try{const r=[];for(const op of ops)r.push(await op.run());sql.exec('COMMIT');return r;}catch(e){sql.exec('ROLLBACK');throw e;}},prepare(q){const s=sql.prepare(q);return {bind(...a){return {first:async()=>s.get(...a)||null,all:async()=>({results:s.all(...a)}),run:async()=>({meta:{changes:s.run(...a).changes}})};},first:async()=>s.get()||null};}}};
 }
 async function call(e,p,method='GET',b,t){const headers={'content-type':'application/json'};if(t)headers.authorization='Bearer '+t;const r=await worker.fetch(new Request('https://test.invalid'+p,{method,headers,body:b===undefined?undefined:JSON.stringify(b)}),e);return [r.status,await r.json()];}
@@ -40,3 +41,75 @@ test('new installation has independent account, one vehicle per mode',async()=>{
 test('delete account is authenticated, idempotent, removes dependent records only',async()=>{const e=env(),a='c'.repeat(64),b='d'.repeat(64);const [,p]=await call(e,'/v1/register','POST',{identity_hash:hash,consent:true,token:a});await call(e,'/v1/register','POST',{identity_hash:'e'.repeat(64),consent:true,token:b});await call(e,'/v1/sync','POST',{operation_id:crypto.randomUUID(),nickname:'DeleteMe',records:{easy:50,normal:1,hard:0,extreme:0}},a);assert.equal((await call(e,'/v1/account','DELETE'))[0],401);assert.equal((await call(e,'/v1/account','DELETE',undefined,a))[1].deleted,true);assert.equal((await call(e,'/v1/account','DELETE',undefined,a))[1].deleted,true);for(const t of ['personal_scores','sync_operations','sessions','submissions','best_scores'])assert.equal(e.sql.prepare('SELECT COUNT(*) n FROM '+t+' WHERE player_id=?').get(p.player_id).n,0);assert.equal(e.sql.prepare('SELECT COUNT(*) n FROM players').get().n,1);assert.equal((await call(e,'/v1/leaderboard','GET',undefined,a))[0],401);e.sql.close();});
 
 test('region metadata is read only for a confirmed nickname conflict',async()=>{const e=env(),a='c'.repeat(64);await call(e,'/v1/register','POST',{identity_hash:hash,consent:true,token:a});await call(e,'/v1/sync','POST',{operation_id:crypto.randomUUID(),nickname:'TakenName',records:{easy:1,normal:0,hard:0,extreme:0}},a);let reads=0;async function check(n){const req=new Request('https://test.invalid/v1/name-availability?nickname='+n);Object.defineProperty(req,'cf',{get(){reads++;return {country:'RU',city:'Moscow'};}});return (await worker.fetch(req,e)).json();}assert.equal((await check('FreeName')).available,true);assert.equal(reads,0);assert.equal((await check('TakenName')).available,false);assert.equal(reads,1);e.sql.close();});
+
+test('recovery requires vehicle and code; claim rotates only the recovery code and preserves all account history',async()=>{
+ const e=env(),token='c'.repeat(64),nextToken='d'.repeat(64),otherToken='e'.repeat(64);
+ const code='a1'.repeat(16),nextCode='b2'.repeat(16),otherCode='c3'.repeat(16);
+ const [,p]=await call(e,'/v1/register','POST',{identity_hash:hash,consent:true,token});
+ const [,q]=await call(e,'/v1/register','POST',{identity_hash:hash,consent:true,token:otherToken,installation_id:crypto.randomUUID()});
+ const records={easy:30,normal:20,hard:50,extreme:10};
+ const op={operation_id:crypto.randomUUID(),nickname:'bmw_dino',records};
+ await call(e,'/v1/sync','POST',op,token);
+ assert.equal((await call(e,'/v1/sync','POST',{...op,nickname:null,records:{...records,easy:40,normal:0}},otherToken))[0],200);
+ const data={code,identity_hash:hash,consent:true},preview=(data)=>call(e,'/v1/recovery/preview','POST',data);
+ assert.equal((await preview(data))[0],404,'legacy accounts require permission');
+ assert.equal((await call(e,'/v1/recovery/code','PUT',{code}))[0],401);
+ assert.equal((await call(e,'/v1/recovery/code','PUT',{code},token))[0],200);
+ assert.equal((await call(e,'/v1/recovery/code','PUT',{code},token))[0],200);
+ assert.equal((await call(e,'/v1/recovery/code','PUT',{code},otherToken))[0],409);
+ assert.equal((await preview({identity_hash:hash,consent:true}))[0],400);
+ for(const input of [{...data,identity_hash:'1'.repeat(64)}, {...data,code:otherCode}])assert.equal((await preview(input))[0],404);
+ assert.equal((await preview({...data,consent:false}))[0],400);
+ assert.equal((await preview({...data,code:[code]}))[0],400);
+ const [found,matching]=await preview(data);
+ assert.equal(found,200);
+ assert.deepEqual(matching.profile,{nickname:'bmw_dino',original_nickname:p.original_nickname,records});
+ const claim=(input)=>call(e,'/v1/recovery/claim','POST',input);
+ const request={...data,token:nextToken,next_code:nextCode};
+ assert.equal((await claim({...request,token:otherToken}))[0],404);
+ assert.equal((await claim({...request,identity_hash:'1'.repeat(64)}))[0],404);
+ const recovered=await claim(request);
+ assert.deepEqual(recovered,[200,{accepted:true,profile:matching.profile}]);
+ assert.deepEqual(await claim(request),recovered);
+ assert.equal((await claim({...request,token:'f'.repeat(64)}))[0],404);
+ assert.equal((await preview(data))[0],404);
+ assert.deepEqual((await preview({...data,code:nextCode}))[1],matching);
+ assert.equal((await call(e,'/v1/recovery/code','PUT',{code},token))[0],409);
+ assert.equal((await call(e,'/v1/recovery/code','PUT',{code:nextCode},nextToken))[0],200);
+ assert.equal((await call(e,'/v1/sync','POST',op,token))[0],200,'old queued operation still works');
+ assert.equal((await call(e,'/v1/register','POST',{identity_hash:hash,token:nextToken,consent:true,installation_id:crypto.randomUUID()}))[0],409);
+ const [,after]=await call(e,'/v1/leaderboard','GET',undefined,nextToken);
+ assert.equal(after.profile.nickname,'bmw_dino');
+ assert.equal(after.boards.easy.length,1);
+ assert.equal(after.boards.easy[0].nickname,q.nickname);
+ assert.equal(after.boards.normal[0].nickname,'bmw_dino');
+ assert.equal(e.sql.prepare('SELECT COUNT(*) n FROM players').get().n,2);
+ assert.equal(e.sql.prepare('SELECT COUNT(*) n FROM sync_operations').get().n,2);
+ await call(e,'/v1/account','DELETE',undefined,nextToken);
+ assert.equal((await call(e,'/v1/leaderboard','GET',undefined,token))[0],401);
+ for(const table of ['profile_recovery','recovery_sessions'])assert.equal(e.sql.prepare('SELECT COUNT(*) n FROM '+table).get().n,0);
+ assert.equal((await call(e,'/v1/leaderboard','GET',undefined,otherToken))[0],200);
+ e.sql.close();
+});
+
+test('migration is additive and account-specific legacy grant expires and converts to a normal code',async()=>{
+ const e=env(),token='a'.repeat(64),newToken='b'.repeat(64),code='c1'.repeat(16),nextCode='d2'.repeat(16);
+ e.sql.exec('DROP TABLE recovery_sessions; DROP TABLE profile_recovery;');
+ const id=crypto.randomUUID(),identity=await identityHmac(hash,secret);
+ const hashValue=async s=>Buffer.from(await crypto.subtle.digest('SHA-256',Buffer.from(s))).toString('hex');
+ e.sql.prepare('INSERT INTO players VALUES(?,?,?,?,?,?,?)').run(id,identity,'bmw_dino',await hashValue(token),1,defaultNickname(identity),identity);
+ e.sql.prepare('INSERT INTO personal_scores VALUES(?,?,?,?)').run(id,'extreme',51,1);
+ e.sql.exec(readFileSync(new URL('../migrations/0009_profile_recovery.sql',import.meta.url),'utf8'));
+ assert.equal(e.sql.prepare('SELECT nickname FROM players WHERE id=?').get(id).nickname,'bmw_dino');
+ const codeHash=await hashValue('chrome-dino:recovery:v1:'+code);
+ e.sql.prepare('INSERT INTO profile_recovery VALUES(?,?,?)').run(id,codeHash,Date.now()-1);
+ const data={identity_hash:hash,consent:true,code};
+ assert.equal((await call(e,'/v1/recovery/preview','POST',data))[0],404);
+ assert.equal((await call(e,'/v1/recovery/claim','POST',{...data,token:newToken,next_code:nextCode}))[0],404);
+ e.sql.prepare('UPDATE profile_recovery SET expires_at=?').run(Date.now()+60000);
+ assert.equal((await call(e,'/v1/recovery/code','PUT',{code},token))[0],409);
+ const [,recovered]=await call(e,'/v1/recovery/claim','POST',{...data,token:newToken,next_code:nextCode});
+ assert.deepEqual(recovered.profile.records,{easy:0,normal:0,hard:0,extreme:51});
+ assert.equal(e.sql.prepare('SELECT expires_at FROM profile_recovery').get().expires_at,null);
+ e.sql.close();
+});

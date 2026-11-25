@@ -1,3 +1,17 @@
+# Chrome Dino Game 1.5.36 — BMW iDrive 7/8
+
+Установите Chrome Dino из ветки `main` репозитория `arudmin/mguapps` через MGU Store. В игре четыре сложности, сенсорное управление и контроллер iDrive. Для игры требуется подтверждённая стоянка.
+
+## 25.11.2026 — 1.5.36 / сервер 0.2.13
+
+- Перед удалением приложения откройте **Топ игроков → Профиль** и сохраните код восстановления в безопасном месте. После переустановки согласитесь на участие в рейтинге, выберите **Ввести код** и подтвердите найденный профиль.
+- Приложение возвращает прежнее имя и четыре рекорда, сохраняя более высокие локальные результаты. После восстановления сохраните новый код.
+- **Начать заново** создаёт отдельный профиль с автоматическим именем `user_xxxxxxxx`. Прежние профили и их очки сохраняются. **Играть офлайн** откладывает восстановление. Позже откройте рейтинг и подключитесь снова.
+- Для старого аккаунта без кода администратор может выдать временный код после проверки владельца. Механизм описан в [документации сервера](leaderboard/README.md).
+- Проверено локальной сборкой и тестами имитации ID7/ID8, включая согласие, сенсорное управление, iDrive, отказ от восстановления, четыре рекорда, сбой сети, перезапуск и 12 языков. Проверка установки и ввода кода на физическом BMW ещё требуется. [Архитектура, сценарии и ограничения](SDD.md).
+
+## История версий
+
 ## 1.5.29 — 24.11.2026
 Removed extra registration statistics, notice translations and queued analytics metadata. Offline names and regional suggestions retained. Server 0.2.9. Previous 1.5.28 CI passed 45397860958/45397860631. New CI pending.
 
@@ -19,9 +33,9 @@ Removed extra registration statistics, notice translations and queued analytics 
 ## 1.5.23 — 24.11.2026
 - Shortened Store descriptions (Russian 12 logical lines, other languages compact; actual wrapping depends on MGU width). Replaced API with one current v1, kept local data and migrated old record-only queued jobs. Server 0.2.4. Explicit nonempty build.shared names the app's own build script, allowing MGU Store contentSpec/partPaths to select app files rather than full repo. Store may still fall back to whole archive; installed updater behavior not tested. 64 MiB display originates from upstream maxBytes fallback when archive length absent. No upstream modification. CI pending; 1.5.22 game and server CI passed 45385581662/45385581707. Real BMW photo confirms earlier registration and easy score 143.
 
-# Chrome Dino Game 1.5.13 — BMW MGU Store
+## Историческая документация для версий 1.5.5–1.5.13
 
-Пиксельная аркада для BMW iDrive 7/8 (MGU), устанавливаемая через [MGU Store](https://github.com/robertnisipeanu/mgu-store). Рабочая ветка — top-chart; стабильная main — 1.4.13.
+Пиксельная аркада для BMW iDrive 7/8 (MGU), устанавливаемая через [MGU Store](https://github.com/robertnisipeanu/mgu-store). На момент этого описания разработка велась в top-chart, стабильной версией была 1.4.13.
 
 **Играть только на стоянке.** Требуется свежий валидный сигнал нулевой скорости автомобиля.
 

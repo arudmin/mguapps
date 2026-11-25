@@ -78,7 +78,7 @@ const byName = Object.create(null);
 entries.forEach(function (e) { if (byName[e.name]) throw new Error('Duplicate file: ' + e.name); byName[e.name] = e; });
 ['package.json', 'manifest.json', 'permissions.json', 'javascript/app.js',
  'javascript/src/game.js', 'javascript/src/input.js', 'javascript/src/render.js',
- 'javascript/kit/mgu.js', 'javascript/kit/record.js', 'javascript/kit/app-spec.json',
+ 'javascript/kit/fonts/dino-recovery.json', 'javascript/kit/mgu.js', 'javascript/kit/record.js', 'javascript/kit/app-spec.json',
  'rhmiData/uiDescriptions/ID7/application.xml', 'rhmiData/uiDescriptions/ID8/application.xml',
  'LICENSE', 'NOTICE', 'third-party/idrive7-apps-LICENSE'].forEach(function (name) {
     if (!byName[name]) throw new Error('Missing required file: ' + name);

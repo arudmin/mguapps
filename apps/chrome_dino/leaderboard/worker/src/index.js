@@ -1,5 +1,6 @@
+import { recoveryApi } from './recovery.js';
 const enc=new TextEncoder();
-export const VERSION='0.2.12';
+export const VERSION='0.2.13';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -21,21 +22,24 @@ async function body(req){
  const decoder=new TextDecoder('utf-8',{fatal:true});let n=0,text='';
  try{for(;;){const {done,value}=await reader.read();if(done)break;n+=value.length;if(n>16384){await reader.cancel();throw new HttpError('body_too_large',413);}text+=decoder.decode(value,{stream:true});}text+=decoder.decode();const b=JSON.parse(text);if(!b||typeof b!=='object'||Array.isArray(b))throw Error();return b;}catch(e){if(e instanceof HttpError)throw e;throw new HttpError('invalid_json',400);}
 }
-async function player(req,db){const h=req.headers.get('authorization')||'';if(!/^Bearer [a-f0-9]{64}$/.test(h))return null;return db.prepare('SELECT id,nickname,original_nickname FROM players WHERE token_hash=?').bind(await digest(h.slice(7))).first();}
+async function player(req,db){const h=req.headers.get('authorization')||'';if(!/^Bearer [a-f0-9]{64}$/.test(h))return null;const hash=await digest(h.slice(7));return db.prepare(`SELECT id,nickname,original_nickname FROM players WHERE token_hash=?
+ UNION ALL SELECT p.id,p.nickname,p.original_nickname FROM recovery_sessions s JOIN players p ON p.id=s.player_id WHERE s.token_hash=? LIMIT 1`).bind(hash,hash).first();}
 function exact(b,keys){return Object.keys(b).every(k=>keys.includes(k));}
 function validMode(d){return MODES.includes(d);}
 function validNickname(n){return typeof n==='string'&&/^[A-Za-z0-9_-]{3,16}$/.test(n);}
 function regionalSuffix(cf){const region=String(cf?.region||'').toLowerCase(),city=String(cf?.city||'').toLowerCase();if(cf?.country==='RU'){if(/petersburg|peterburg|петербург/.test(city+' '+region))return '78';if(/moscow|москва/.test(city+' '+region))return '77';if(/leningrad|ленинград/.test(region))return '47';return '';}return ({BY:'375',DE:'49',KZ:'7',FR:'33',GB:'44',US:'1',PL:'48',IT:'39',ES:'34'})[cf?.country]||'';}
 async function suggestions(db,n,me,cf){const suffixes=[regionalSuffix(cf),'777','55','007','99','_7','01','88','123','_1','_2','_3'];for(let i=0;i<15;i++)suffixes.push(String(100+crypto.getRandomValues(new Uint16Array(1))[0]%900));const seen=new Set([n.toLowerCase()]),out=[];for(const tail of suffixes){if(!tail)continue;const candidate=n.slice(0,16-tail.length)+tail,key=candidate.toLowerCase();if(seen.has(key))continue;seen.add(key);const hit=await db.prepare('SELECT id FROM players WHERE (nickname=? COLLATE NOCASE OR original_nickname=? COLLATE NOCASE) AND id<>? LIMIT 1').bind(candidate,candidate,me?me.id:'').first();if(!hit)out.push(candidate);if(out.length===5)break;}return out;}
+const recover=recoveryApi({modes:MODES,body,digest,identityHmac,exact,player,respond,error});
 async function fetchHandler(req,env){
  const u=new URL(req.url),p=u.pathname,db=env.DB;
  try{
  if(p==='/health'&&req.method==='GET'){
    if(!env.SERVER_SECRET||env.SERVER_SECRET.length<64)return error('not_configured',503);
-   await db.prepare('SELECT id FROM players LIMIT 1').first();
+   await db.prepare('SELECT player_id FROM profile_recovery LIMIT 1').first();
    return respond({ok:true,version:VERSION,modes:MODES,phase:'staging',verification:'pending_only'});
  }
  if(!env.SERVER_SECRET||env.SERVER_SECRET.length<64)return error('not_configured',503);
+ if(p.startsWith('/v1/recovery/'))return await recover(req,env,p);
  if(p==='/v1/name-availability'&&req.method==='GET'){
  const n=u.searchParams.get('nickname');if(!validNickname(n))return error('invalid_nickname',400);
  const me=await player(req,db);if(req.headers.has('authorization')&&!me)return error('unauthorized',401);
@@ -51,7 +55,7 @@ async function fetchHandler(req,env){
    const b=await body(req);
    if(!exact(b,['identity_hash','consent','token','analytics','installation_id'])||!HEX.test(b.identity_hash||'')||(b.installation_id!==undefined&&!uuid.test(b.installation_id))||b.consent!==true||!HEX.test(b.token||''))return error('invalid_registration',400);
    const vehicle=await identityHmac(b.identity_hash,env.SERVER_SECRET),hmac=b.installation_id?await identityHmac(await digest('install:'+b.installation_id+':'+vehicle),env.SERVER_SECRET):vehicle,th=await digest(b.token),id=crypto.randomUUID();
-   await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at,original_nickname,vehicle_hash) VALUES(?,?,?,?,?,?,?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,defaultNickname(hmac),th,Date.now(),defaultNickname(hmac),vehicle).run();
+   await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at,original_nickname,vehicle_hash) SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM recovery_sessions WHERE token_hash=?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,defaultNickname(hmac),th,Date.now(),defaultNickname(hmac),vehicle,th).run();
    const row=await db.prepare('SELECT id,nickname,token_hash,original_nickname FROM players WHERE identity_hash=?').bind(hmac).first();
    if(!row||row.token_hash!==th)return error('already_registered',409);
    return respond({player_id:row.id,nickname:row.nickname,original_nickname:row.original_nickname,accepted:true});

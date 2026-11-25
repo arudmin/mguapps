@@ -1,0 +1,31 @@
+name: Chrome Dino legacy profile recovery
+on:
+  workflow_dispatch:
+    inputs:
+      nickname:
+        description: Exact nickname of the verified player
+        type: string
+        required: true
+      code_hash:
+        description: SHA-256 of chrome-dino:recovery:v1:<32 lowercase hex chars>
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  legacy-recovery:
+    if: github.ref == 'refs/heads/main' && github.actor == github.repository_owner && github.triggering_actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      NICKNAME: ${{ inputs.nickname }}
+      RECOVERY_CODE_HASH: ${{ inputs.code_hash }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Issue a temporary code for the verified legacy profile
+        run: node apps/chrome_dino/leaderboard/worker/scripts/recovery-admin.mjs grant-verified "$NICKNAME"

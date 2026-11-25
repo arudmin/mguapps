@@ -3,6 +3,7 @@
 // All dinosaur and obstacle drawing is original and uses the existing Chrome Dino model.
 // This renderer does not change game physics. The fixed world stays 1920x720 on every layout.
 const {DINO_ROWS,dino,obstacle}=require('./sprites');
+const recoveryUI=require('./recovery');
 const WORLD_ASPECT=1920/720;
 const LEVEL_COLORS=['#75bd9a','#83c9f5','#e2ad72','#dd8992'];
 // Fixed 21x21, eight-tooth gear mask. Transparent cells are never painted.
@@ -87,6 +88,48 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    for(const item of [{id:'resume',x:242,label:words.continue_},{id:'menu',x:600,label:words.exitToMenu}]){
      round(item.x,275,328,62,8,focus===item.id?'#244768':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,24,'#f0f7ff','center');
    }
+ }else if(opts.recovery){
+   const view=opts.recovery,labels=words.recovery,status=opts.syncProfile||{};
+   const screen=view.screen;
+   const localized=(label,x,y,size,color)=>text(label,x,y,size,color,'center','dino-recovery');
+   round(205,64,766,386,11,'#19212c');border(205,64,766,386,11,'#5b87ae');
+   const title=screen==='found'?labels.foundTitle:screen==='code'||screen==='keyboard'?labels.codeTitle:labels.chooseTitle;
+   localized(title,585,118,28,'#f4f6f8');
+   const message=view.message||(status.recoveryPending?'pending':status.recoveryError);
+   if(screen==='keyboard'){
+     round(245,134,680,47,5,'#0d141e');border(245,134,680,47,5,'#78bfff');
+     view.draft.split('').forEach((ch,i)=>text(ch,275+i*18+Math.floor(i/8)*12,163,22,'#f4f6f8','center'));
+     const caret=Math.min(3,Math.floor(view.position/8));
+     if(opts.nameBlink!==false)rect(266+view.position*18+caret*12,142,2,25,'#78d6ff');
+     const keyLabels={LEFT:'<',RIGHT:'>',DEL:words.keyDelete,SAVE:labels.check,BACK:words.keyBack};
+     recoveryUI.keys.forEach((key,index)=>{
+       const active=index===view.cursor,disabled=key.id==='SAVE'&&view.draft.length!==32;
+       round(key.x,key.y,key.w,key.h,6,active?'#286da4':'#293747');
+       border(key.x,key.y,key.w,key.h,6,active?'#b5e6ff':'#405269');
+       localized(keyLabels[key.id]||key.id.toLowerCase(),key.x+key.w/2,key.y+32,keyLabels[key.id]?14:23,disabled?'#8293a2':'#f0f7ff');
+     });
+     if(message)localized(labels[message],585,397,18,'#ffc17c');
+   }else{
+     if(screen==='found'){
+       text(view.profile.nickname,585,164,27,'#9dc9ed','center');
+       words.levels.forEach((mode,i)=>{
+         const x=245+i*172;
+         round(x,209,164,78,7,'#253446');
+         localized(mode,x+82,237,17,LEVEL_COLORS[i]);
+         text(view.profile.records[i],x+82,270,24,'#f4f6f8','center','num');
+       });
+     }else if(screen==='code'&&view.code){
+       text(view.code.match(/.{8}/g).join('  '),585,235,30,'#f4f6f8','center');
+     }else if(!message)localized(labels.chooseHint,585,234,19,'#b9cde0');
+     if(message)localized(labels[message],585,309,19,message==='keepCode'?'#9dc9ed':'#ffc17c');
+     const buttonLabels={later:labels.later,startNew:labels.startNew,enter:labels.enter,restore:labels.restore,done:words.doneSettings};
+     recoveryUI.buttons(screen,status.recoveryPending).forEach(b=>{
+       const active=focus===b.id;
+       round(b.x,b.y,b.w,b.h,8,active?'#244768':'#1a2939');
+       border(b.x,b.y,b.w,b.h,8,active?'#88caff':'#45617b');
+       localized(buttonLabels[b.id],b.x+b.w/2,b.y+37,19,'#f0f7ff');
+     });
+   }
  }else if(opts.editName){
    round(205,64,766,386,11,'#131a24');border(205,64,766,386,11,'#5b87ae');text(words.editName||'Edit name',585,95,25,'#f4f6f8','center');
    round(245,104,680,42,5,'#0d141e');border(245,104,680,42,5,'#78bfff');
@@ -128,10 +171,14 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    for(const item of [{id:'consentNo',x:242,label:words.cancelExit},{id:'consentYes',x:600,label:opts.probeBusy?words.syncVinWait:opts.probeError?words.probeError:words.syncEnable}]){round(item.x,275,328,62,8,focus===item.id?'#244768':'#1a2939');border(item.x,275,328,62,8,focus===item.id?'#88caff':'#45617b');text(item.label,item.x+164,314,21,'#f0f7ff','center');}
  }else if(opts.rankingOpen){
    round(205,64,766,386,11,'#19212c');border(205,64,766,386,11,'#5b87ae');
-   text(words.topPlayers,515,97,23,'#f4f6f8','center');
+   text(words.topPlayers,opts.canShowRecoveryCode?590:515,97,opts.canShowRecoveryCode?20:23,'#f4f6f8','center');
    const profile=opts.syncProfile||{};
    if(profile.enabled){round(215,70,130,33,6,focus==='deleteAccount'?'#933947':'#492630');text(words.deleteShort,280,92,15,'#ffb5b5','center');}
-   if(!profile.enabled){round(720,70,245,33,6,focus==='syncProfile'?'#244768':'#1a2939');text(profile.deleting?words.deletePending:words.syncEnable,842,93,18,'#f0f7ff','center');}
+   if(opts.canShowRecoveryCode){
+     round(353,70,125,33,6,focus==='recoveryCode'?'#244768':'#1a2939');
+     text(words.recovery.rankButton,415,92,14,'#c7e3ff','center','dino-recovery');
+   }
+   if(!profile.enabled){round(720,70,245,33,6,focus==='syncProfile'?'#244768':'#1a2939');text(profile.deleting?words.deletePending:profile.recoveryPending?words.recovery.rankButton:words.syncEnable,842,93,18,'#f0f7ff','center',profile.recoveryPending?'dino-recovery':undefined);}
    else{round(720,70,245,33,6,focus==='editName'?'#244768':'#1a2939');text(profile.nickname||words.syncTitle,824,91,18,'#c7e3ff','center');const pen='#b5dfff';for(let j=0;j<9;j++)rect(934+j,86-j,5,5,pen);rect(934,91,4,2,pen);text(profile.namePending?words.namePending:profile.nameAdjusted?words.nameAdjusted:profile.error||('SYNC: '+(profile.pending||0)),950,105,12,profile.namePending||profile.nameAdjusted?'#e2ad72':'#9dc9ed','right');}
    // Four direct-access difficulty tabs, shared cached response.
    words.levels.forEach((label,i)=>{const x=235+i*176,active=i===(opts.rankingMode||0),focused=focus==='rankTab'+i;round(x,113,170,38,7,active?['#286c53','#286b99','#996332','#963e47'][i]:['#203e36','#20394d','#443526','#472d35'][i]);border(x,113,170,38,7,focused?'#ffffff':active?LEVEL_COLORS[i]:'#40566d');text(label,x+85,139,20,active?'#ffffff':'#b8cbdf','center');if(active)rect(x+12,147,146,3,LEVEL_COLORS[i]);});

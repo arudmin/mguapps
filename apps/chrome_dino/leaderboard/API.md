@@ -1,3 +1,44 @@
+# Chrome Dino API v1 — Worker 0.2.13
+
+Базовый URL: https://chrome-dino-leaderboard-staging.mguapps.workers.dev. JSON UTF-8 по HTTPS, ответы `Cache-Control: no-store`. Токен — 64 строчных шестнадцатеричных символа в заголовке `Authorization: Bearer <token>`. Ошибка возвращается в виде `{"error":"код"}`.
+
+## Регистрация, рекорды и рейтинг
+
+| Маршрут | Контракт |
+| --- | --- |
+| `GET /health` | Версия Worker, четыре сложности, состояние staging |
+| `POST /v1/register` | `{identity_hash,consent:true,token,installation_id?}`. Повтор требует тот же токен. Возвращает `{accepted:true,player_id,nickname,original_nickname}`. Legacy payload без installation_id поддерживается. Поле analytics из старых клиентов игнорируется |
+| `POST /v1/sync` | Требует Bearer. Поля `operation_id` (UUID), `records` (все четыре сложности), `nickname` (строка или null), `resolve_name` (необязательно). Возвращает `{accepted:true,operation_id,nickname,original_nickname}` |
+| `GET /v1/leaderboard` | Bearer необязателен. Возвращает `{boards,profile,generated_at,verification}`. Для каждой сложности до 10 записей `{rank,nickname,score,self}`. Авторизованный `profile` содержит `nickname,original_nickname,positions`. Без авторизации `profile:null` |
+| `GET /v1/name-availability?nickname=NAME` | Bearer необязателен. Возвращает `{available,suggestions}`. Проверка предварительная. Смена имени подтверждается при sync |
+| `DELETE /v1/account` | Bearer обязателен. Возвращает `{deleted:true}`. Повтор с тем же токеном идемпотентен |
+
+`records` содержит ключи `easy`, `normal`, `hard`, `extreme` и целые значения 0–1 000 000. Ноль означает отсутствие результата. Синхронизация сохраняет максимум по каждой сложности. Повтор operation_id с тем же содержимым безопасен. Другой payload под тем же ID даёт 409. Допустимое имя содержит 3–16 латинских букв, цифр, «_» и «-», сравнение без учёта регистра.
+
+Рейтинг выбирает по одному результату на группу автомобиля в каждом режиме. Сортировка по очкам вниз, затем по времени серверной записи результата вниз, затем по ID игрока вверх. `positions[mode]` равна `null`, если результат аккаунта не представляет группу в режиме. Текущая верификация результатов — `unverified`. Клиент кэширует ответ на 60 секунд и сохраняет последний ответ при сетевой ошибке.
+
+## Восстановление
+
+| Маршрут | Тело | Ответ |
+| --- | --- | --- |
+| `PUT /v1/recovery/code` | `{code}` и Bearer текущего аккаунта | `{accepted:true}`. Повтор с тем же действующим постоянным кодом идемпотентен. Другой действующий код даёт 409 |
+| `POST /v1/recovery/preview` | `{code,identity_hash,consent:true}` | `{profile:{nickname,original_nickname,records}}`. Для неизвестного или просроченного кода и несовпадения автомобиля ответ одинаковый, HTTP 404 |
+| `POST /v1/recovery/claim` | `{code,identity_hash,consent:true,token,next_code}` | `{accepted:true,profile:{nickname,original_nickname,records}}`. Устанавливает новый код и подключает токен к тому же аккаунту. Идемпотентный повтор требует те же `code`, `token`, `next_code` и группу автомобиля |
+
+`code` и `next_code` — 32 строчных шестнадцатеричных символа, сгенерированных из 16 случайных байтов. Клиент сохраняет новый токен и следующий код до отправки. Код никогда не передаётся в URL. В `profile.records` возвращаются именно личные максимумы, независимо от публичного места. Нет маршрута поиска профиля по одному идентификатору автомобиля или имени. Временные выдачи идут через аутентифицированный D1-инструмент администратора.
+
+## Ошибки и совместимость
+
+- 400 — `invalid_registration`, `invalid_sync`, `invalid_nickname`, `invalid_recovery` или `invalid_json`.
+- 401 — `unauthorized`.
+- 404 — `not_found` или `recovery_unavailable`.
+- 409 — `already_registered`, `operation_conflict`, `nickname_taken` или `code_already_configured`.
+- 413/415 — `body_too_large` / `json_required`. 500/503 — `request_failed` / `not_configured`.
+
+Для обычной синхронизации действуют прежние повторы с задержкой 5–60 секунд. Подтверждение восстановления повторяется с теми же учётными данными. Переход на 0.2.13 сохраняет v1, прежние токены, операции и результаты. Миграция 0009 добавляет только таблицы восстановления. Детали в [SDD](../SDD.md).
+
+## История API до 0.2.13
+
 # Chrome Dino API v1 — server 0.2.6
 
 Base: https://chrome-dino-leaderboard-staging.mguapps.workers.dev

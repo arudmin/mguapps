@@ -20,3 +20,7 @@ and repository formats. No Store code is redistributed.
 BMW, iDrive and Flappy Bird names belong to their respective owners.
 This is an independent, unofficial project. No BMW SDK, firmware, keys,
 vehicle identifiers or OEM images are included.
+
+Recovery dialog glyphs are derived from Noto Sans CJK Bold and Noto Sans Bold.
+Noto Sans CJK copyright 2014–2021 Adobe. Noto Sans copyright Google Inc. and Google LLC.
+Both are licensed under the SIL Open Font License 1.1 in javascript/kit/fonts/OFL-NotoSansSC.txt.

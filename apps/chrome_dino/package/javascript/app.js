@@ -8,6 +8,7 @@ const { migrateDifficulty } = require('./src/difficulty');
 const { drawDashboard, WORLD_ASPECT } = require('./src/dashboard');
 const { RankingCache }=require('./src/ranking-cache');
 const keyboard=require('./src/name-keyboard');
+const recoveryUI=require('./src/recovery');
 const { Outbox }=require('./src/outbox');
 const { Leaderboard, MODES, identity } = require('./src/leaderboard');
 const { Controls } = require('./src/input');
@@ -52,7 +53,7 @@ mgu.run({
         function checkName(){nameSuggestions([]);const n=nameDraft,seq=++nameCheckSeq;checkedName='';nameCheck=/^[A-Za-z0-9_-]{3,16}$/.test(n)?'checking':'invalid';nameCheckAt=Date.now()+350;if(nameCheck==='invalid')return;}
         function tickName(){if(onboardEditing&&!outbox.status().enabled){if(editName&&nameCheck==='checking')nameCheck='offline';return;}if(!editName||nameCheck!=='checking'||Date.now()<nameCheckAt)return;nameCheckAt=Infinity;const seq=nameCheckSeq,n=nameDraft;rankingClient.available(n,outbox.token(),(err,j)=>{if(seq!==nameCheckSeq||!editName||n!==nameDraft)return;nameCheck=err||!j?'offline':j.available?'free':'taken';checkedName=n;if(!err&&j&&!j.available)nameSuggestions(j.suggestions);});}
         let onboarding=Number(settings.get('onboardingSchema'))===1?0:1,onboardName=String(settings.get('offlineNickname')||''),onboardConsent=false,onboardEditing=false;
-        let consentOpen=false,deleteOpen=false,probeBusy=false,probeError=false,consentEpoch=0;
+        let consentOpen=false,deleteOpen=false,consentEpoch=0,recovery=null,recoveryTilt=null;
         let rankingOpen=false, rankingMode=game.difficulty, rankingRows=[], rankingStatus='loading', rankingRequest=0, rankingError='';
         let selectedControl='play', paused=false, settingsOpen=false, dropdown=null, dropdownIndex=0, exitDialog=false, exiting=false, tiltHeld=false, rendererTiltAt=-Infinity;
         if(onboarding)selectedControl='onNext';
@@ -84,11 +85,12 @@ mgu.run({
             if(!going)return;
             if(exitDialog){exitAction(selectedControl);return;}
             if(paused){pauseAction(selectedControl);return;}
+            if(recovery){recoveryAction(selectedControl);return;}
             if(editName){nameKey(nameCursor);return;}
             if(onboarding){onboardAction(selectedControl);return;}
             if(deleteOpen){if(selectedControl==='deleteYes')confirmDelete();else deleteOpen=false;return;}
             if(consentOpen){if(selectedControl==='consentYes')enableSync();else closeConsent();return;}
-            if(rankingOpen){if(selectedControl==='deleteAccount')openDelete();else if(selectedControl==='editName')openName();else if(selectedControl==='syncProfile')openConsent();else if(/^rankTab[0-3]$/.test(selectedControl))selectRankTab(Number(selectedControl.slice(-1)));else if(selectedControl==='refresh')loadRanking(rankingMode,true);else closeRanking();return;}
+            if(rankingOpen){if(selectedControl==='deleteAccount')openDelete();else if(selectedControl==='recoveryCode')showRecoveryCode();else if(selectedControl==='editName')openName();else if(selectedControl==='syncProfile')openConsent();else if(/^rankTab[0-3]$/.test(selectedControl))selectRankTab(Number(selectedControl.slice(-1)));else if(selectedControl==='refresh')loadRanking(rankingMode,true);else closeRanking();return;}
             if(selectedControl==='ranking'&&game.state!=='playing'){openRanking();return;}
             if(settingsOpen){if(dropdown)commitDropdown(dropdownIndex);else if(selectedControl==='mode'||selectedControl==='language')openDropdown(selectedControl);else closeSettings();return;}
             if(selectedControl==='settings'&&game.state!=='playing'){openSettings();return;}
@@ -122,16 +124,127 @@ mgu.run({
         function onboardAction(action){if(!going||!safe()||!onboarding)return;if(action==='onBack'){++consentEpoch;onboardStep(Math.max(1,onboarding-1));return;}
             if(onboarding===1){onboardStep(2);return;}
             if(onboarding===2){if(action==='onEdit'){onboardEditing=true;editName=true;nameDraft=onboardName||outbox.status().nickname||'';namePos=nameDraft.length;nameCursor=0;nameShift=false;nameTilt=null;checkName();return;}onboardStep(3);return;}
-            if(onboarding===3){if(outbox.status().enabled){onboardStep(4);return;}onboardConsent=action==='onNext';if(onboardConsent){beginEnrollment(true);return;}++consentEpoch;onboardStep(4);return;}
+            if(onboarding===3){if(outbox.status().enabled){onboardStep(4);return;}onboardConsent=action==='onNext';if(onboardConsent){openRecovery(true);return;}++consentEpoch;onboardStep(4);return;}
             if(onboarding===4){if(outbox.status().enabled&&onboardName&&onboardName!==outbox.status().nickname)outbox.rename(onboardName,bestModes);if(onboardName)settings.set('offlineNickname',onboardName);settings.set('onboardingSchema',1);onboarding=0;selectedControl='play';}
         }
         function onboardControls(){return onboarding===1?['onNext']:onboarding===2?['onEdit','onBack','onNext']:onboarding===3?(outbox.status().enabled?['onBack','onNext']:['onBack','onSkip','onNext']):['onBack','onNext'];}
-        function openConsent(){if(outbox.status().enabled||outbox.status().deleting)return;probeError=false;consentOpen=true;selectedControl='consentNo';}
+        function openConsent(){if(outbox.status().enabled||outbox.status().deleting)return;if(outbox.status().recoveryPending){openRecovery(false);return;}consentOpen=true;selectedControl='consentNo';}
         function closeConsent(){++consentEpoch;consentOpen=false;selectedControl='syncProfile';}
-        function enableSync(){beginEnrollment(false);}
+        function enableSync(){openRecovery(false);}
         function openDelete(){if(!outbox.status().enabled||outbox.status().deleting)return;deleteOpen=true;selectedControl='deleteNo';}
         function confirmDelete(){if(!going||!safe())return;if(outbox.erase()){deleteOpen=false;settings.set('offlineNickname','');onboardName='';nameDraft='';nameSuggestions([]);rankingData=null;rankingRows=[];rankCache.clear();deletionWasPending=true;selectedControl='rankDone';rankingStatus='loading';}}
-        function beginEnrollment(fromOnboard){if(probeBusy||!going||!safe()||outbox.status().enabled||outbox.status().deleting)return;const epoch=++consentEpoch;probeBusy=true;probeError=false;const active=()=>!closed&&going&&safe()&&epoch===consentEpoch&&(fromOnboard?onboarding===3:consentOpen);probeVin(active).then(hash=>{if(!active())return;if(!hash||!outbox.enroll(hash,bestModes,fromOnboard?onboardName:String(settings.get('offlineNickname')||''))){probeError=true;return;}if(fromOnboard)onboardStep(4);else closeConsent();},()=>{if(active())probeError=true;}).then(()=>{probeBusy=false;});}
+        function openRecovery(fromOnboard){
+            if(!going||!safe()||outbox.status().enabled||outbox.status().deleting)return;
+            recovery={screen:'choose',fromOnboard,draft:'',position:0,cursor:0,busy:false,message:''};
+            selectedControl=outbox.status().recoveryPending?'later':'enter';
+        }
+        function finishRecoveryChoice(){
+            const fromOnboard=recovery.fromOnboard;
+            recovery=null;recoveryTilt=null;
+            if(fromOnboard)onboardStep(4);else closeConsent();
+        }
+        function recoveryBack(){
+            if(recovery.screen==='keyboard'){
+                recovery.screen='choose';recovery.busy=false;
+                recovery.message='';recoveryTilt=null;selectedControl='enter';return;
+            }
+            if(recovery.screen==='code'){selectedControl=recovery.returnControl;recovery=null;return;}
+            finishRecoveryChoice();
+        }
+        function showRecoveryCode(){
+            if(!outbox.token()||!safe())return;
+            const view=recovery={screen:'code',message:'checking',code:'',returnControl:'recoveryCode'};
+            selectedControl='done';
+            outbox.getRecoveryCode((err,code)=>{
+                if(recovery!==view)return;
+                view.message=err?(err.code==='HTTP_409'?'codeElsewhere':'offline'):'keepCode';
+                if(!err)view.code=code;
+            });
+        }
+        function recoveryRequest(view, run){
+            if(view.busy)return;
+            const epoch=consentEpoch;
+            const active=()=>!closed&&going&&safe()&&recovery===view&&view.busy&&consentEpoch===epoch;
+            view.busy=true;view.message='checking';
+            const complete=message=>{if(active()){view.busy=false;view.message=message;}};
+            Promise.resolve(view.hash||probeVin(active)).then(hash=>{
+                if(!active())return;
+                if(!hash){complete('vehicleError');return;}
+                view.hash=hash;
+                run(hash,active,complete);
+            },()=>complete('vehicleError'));
+        }
+        function recoveryAction(action){
+            if(!going||!safe()||!recovery)return;
+            const view=recovery,status=outbox.status();
+            if(view.screen==='keyboard'){recoveryKey(view.cursor);return;}
+            if(action==='done'||action==='later'){recoveryBack();return;}
+            if(status.recoveryPending||view.busy)return;
+            if(action==='enter'){
+                view.screen='keyboard';view.message='';recoveryTilt=null;return;
+            }
+            if(action==='startNew'){
+                recoveryRequest(view,(hash,active,complete)=>{
+                    if(!outbox.enroll(hash,bestModes)){complete('storageError');return;}
+                    onboardName='';settings.set('offlineNickname','');finishRecoveryChoice();
+                });
+            }
+            if(action==='restore'&&view.profile){
+                if(!outbox.prepareRecovery(view.draft,view.hash)){view.message='storageError';return;}
+                onboardName='';view.screen='choose';view.profile=null;
+                view.draft='';view.hash=null;selectedControl='later';
+                outbox.tick(Date.now());
+            }
+        }
+        function recoveryKey(index){
+            const view=recovery,key=recoveryUI.keys[index];
+            if(!view||!key||!going||!safe())return;
+            view.cursor=index;
+            if(key.id==='BACK'){recoveryBack();return;}
+            if(view.busy)return;
+            if(key.id==='SAVE'){
+                if(!recoveryUI.CODE.test(view.draft))return;
+                recoveryRequest(view,(hash,active,complete)=>{
+                    rankingClient.previewRecovery(view.draft,hash,(err,result)=>{
+                        if(!active())return;
+                        const profile=!err&&recoveryUI.readProfile(result);
+                        if(!profile){complete(err&&err.code==='HTTP_404'?'invalid':'offline');return;}
+                        complete('');view.profile=profile;view.screen='found';selectedControl='restore';
+                    });
+                });
+                return;
+            }
+            view.message='';
+            const pos=view.position;
+            if(key.id==='LEFT')view.position=Math.max(0,pos-1);
+            else if(key.id==='RIGHT')view.position=Math.min(view.draft.length,pos+1);
+            else if(key.id==='DEL'&&pos>0){view.draft=view.draft.slice(0,pos-1)+view.draft.slice(pos);view.position--;}
+            else if(/^[0-9A-F]$/.test(key.id)&&view.draft.length<32){
+                view.draft=view.draft.slice(0,pos)+key.id.toLowerCase()+view.draft.slice(pos);view.position++;
+            }
+        }
+        function applyRecoveredProfile(){
+            const profile=outbox.recoveredProfile();
+            if(!profile)return;
+            profile.records.forEach((record,i)=>{
+                bestModes[i]=Math.max(bestModes[i],record);
+                settings.set(bestKeys[i],bestModes[i]);
+            });
+            best=bestModes[game.difficulty];
+            settings.set('best',Math.max.apply(null,bestModes));
+            settings.set('offlineNickname',profile.nickname);
+            if(!outbox.acknowledgeRecovery())return;
+            onboardName='';
+            if(recovery&&recovery.screen!=='code'){
+                finishRecoveryChoice();
+                if(going&&safe()){
+                    recovery={screen:'code',message:'keepCode',code:profile.code,returnControl:selectedControl};
+                    selectedControl='done';
+                }
+            }
+            rankingData=null;rankingRows=[];rankCache.clear();
+            if(rankingOpen)loadRanking(rankingMode,true);
+        }
         function openName(){if(!outbox.status().enabled)return;editName=true;nameDraft=outbox.status().nameRejected||outbox.status().nickname||String(settings.get('offlineNickname')||'');namePos=nameDraft.length;nameCursor=0;nameShift=false;nameTilt=null;checkName();}
         function nameKey(i){if(!editName||!going||!safe()||!nameKeys[i])return;nameCursor=i;const k=nameKeys[i].id;if(k==='BACK'){editName=false;onboardEditing=false;return;}if(/^SUGGEST/.test(k)){nameDraft=nameKeys[i].label;namePos=nameDraft.length;checkName();return;}if(k==='SAVE'){if(!/^[A-Za-z0-9_-]{3,16}$/.test(nameDraft)||nameCheck==='taken')return;if(onboardEditing){if(/^[A-Za-z0-9_-]{3,16}$/.test(nameDraft)){onboardName=nameDraft;editName=false;onboardEditing=false;}return;}if(outbox.rename(nameDraft,bestModes))editName=false;return;}const next=keyboard.edit(nameDraft,namePos,k,nameShift,outbox.status().originalNickname);const changed=nameDraft!==next.value;nameDraft=next.value;namePos=next.pos;nameShift=next.shift;if(changed)checkName();}
         function showRanking(){if(!rankingData)return;rankingRows=rankingData.boards[MODES[rankingMode]].slice(0,10);rankingStatus='ready';}
@@ -146,6 +259,7 @@ mgu.run({
         function dropdownStart(){return Math.max(0,Math.min(dropdownIndex-2,(dropdown==='mode'?4:languageChoices.length)-6));}
         function backAction(){
             if(!shown()||closed||exiting)return;
+            if(recovery){recoveryBack();return;}
             if(deleteOpen){deleteOpen=false;selectedControl='rankDone';return;}
             if(editName){editName=false;onboardEditing=false;return;}
             if(onboarding){++consentEpoch;if(onboarding>1)onboardStep(onboarding-1);return;}
@@ -170,6 +284,11 @@ mgu.run({
             const now=Date.now();
             if(source==='renderer')rendererTiltAt=now;
             else if(now-rendererTiltAt<1000)return;
+            if(recovery&&recovery.screen==='keyboard'){
+                const dir=keyboard.direction(raw);
+                if(going&&safe()&&dir&&dir!==recoveryTilt)recovery.cursor=keyboard.move(recovery.cursor,dir,recoveryUI.keys);
+                recoveryTilt=dir;return;
+            }
             if(editName){const dir=keyboard.direction(raw);if(going&&safe()&&dir&&dir!==nameTilt)nameCursor=keyboard.move(nameCursor,dir,nameKeys);nameTilt=dir;return;}
             nameTilt=null;
             const left=raw===10||raw===11||raw==='10'||raw==='11'||raw==='DREHGEBER_KURZ_LINKS'||raw==='DREHGEBER_LANG_LINKS';
@@ -183,7 +302,7 @@ mgu.run({
                 last = null; accumulator = 0; frameAt = -Infinity; fpsAt=0; fpsFrames=0; actualFPS=0;
                 ctl.enable(go);
                 if (ctx.controller && ctx.controller.grab) ctx.controller.grab(go);
-                if (!go) { ++consentEpoch;deleteOpen=false;saveBest(); if(!safe()){game.reset();paused=false;settingsOpen=false;dropdown=null;editName=false;consentOpen=false;rankingOpen=false;++rankingRequest;exitDialog=false;selectedControl='play';}else pauseRun();  }
+                if (!go) { ++consentEpoch;if(recovery){recovery=null;recoveryTilt=null;selectedControl=onboarding?'onNext':rankingOpen?'syncProfile':'play';}deleteOpen=false;saveBest(); if(!safe()){game.reset();paused=false;settingsOpen=false;dropdown=null;editName=false;consentOpen=false;rankingOpen=false;++rankingRequest;exitDialog=false;selectedControl='play';}else pauseRun();  }
             }
             // On unsafe/unknown speed the dashboard remains visible with a warning; gameplay is disabled.
         }
@@ -271,8 +390,11 @@ mgu.run({
             const diff=((n-prev+32768)%65536)-32768;
             if(!diff||Math.abs(diff)>16)return;
             if(settingsOpen&&dropdown){const count=dropdown==='mode'?4:languageChoices.length;dropdownIndex=(dropdownIndex+(diff>0?1:count-1))%count;return;}
+            if(recovery&&recovery.screen==='keyboard'){
+                const count=recoveryUI.keys.length;recovery.cursor=(recovery.cursor+diff+count)%count;return;
+            }
             if(editName){nameCursor=(nameCursor+diff+nameKeys.length)%nameKeys.length;return;}
-            const items=deleteOpen?['deleteNo','deleteYes']:onboarding?onboardControls():consentOpen?['consentNo','consentYes']:exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:rankingOpen?(outbox.status().enabled?['rankTab0','rankTab1','rankTab2','rankTab3','editName','deleteAccount','refresh','rankDone']:['rankTab0','rankTab1','rankTab2','rankTab3','syncProfile','refresh','rankDone']):(game.state==='over'?['play','overMenu','settings','ranking']:['play','settings','ranking']);
+            const items=recovery?recoveryUI.buttons(recovery.screen,outbox.status().recoveryPending).map(b=>b.id):deleteOpen?['deleteNo','deleteYes']:onboarding?onboardControls():consentOpen?['consentNo','consentYes']:exitDialog?['cancel','exit']:paused?['resume','menu']:settingsOpen?['mode','language','done']:rankingOpen?(outbox.status().enabled?['rankTab0','rankTab1','rankTab2','rankTab3','editName','deleteAccount'].concat(outbox.token()?['recoveryCode']:[],['refresh','rankDone']):['rankTab0','rankTab1','rankTab2','rankTab3','syncProfile','refresh','rankDone']):(game.state==='over'?['play','overMenu','settings','ranking']:['play','settings','ranking']);
             selectedControl=items[(Math.max(0,items.indexOf(selectedControl))+(diff>0?1:items.length-1))%items.length];
         }
         // Touch areas use the 1600x520 dashboard coordinates.
@@ -282,11 +404,22 @@ mgu.run({
             if(x>=890&&x<=1150&&y>=489&&y<=520&&shown()){backAction();return;}
             if(exitDialog){if(y>=275&&y<=337){if(x>=242&&x<=570)exitAction('cancel');else if(x>=600&&x<=928)exitAction('exit');}return;}
             if(paused){if(y>=275&&y<=337){if(x>=242&&x<=570)pauseAction('resume');else if(x>=600&&x<=928)pauseAction('menu');}return;}
+            if(recovery){
+                const hit=k=>x>=k.x&&x<k.x+k.w&&y>=k.y&&y<k.y+k.h;
+                if(recovery.screen==='keyboard'){
+                    const index=recoveryUI.keys.findIndex(hit);if(index>=0)recoveryKey(index);
+                }else{
+                    const button=recoveryUI.buttons(recovery.screen,outbox.status().recoveryPending).find(hit);
+                    if(button)recoveryAction(button.id);
+                }
+                return;
+            }
             if(editName){const i=nameKeys.findIndex(k=>x>=k.x&&x<k.x+k.w&&y>=k.y&&y<k.y+k.h);if(i>=0)nameKey(i);return;}
             if(onboarding){if(onboarding===2&&x>=340&&x<=830&&y>=205&&y<=270){selectedControl='onEdit';onboardAction('onEdit');}else if(y>=342&&y<=408){if(x>=245&&x<425&&onboarding>1)onboardAction('onBack');else if(x>=435&&x<675&&onboarding===3&&!outbox.status().enabled)onboardAction('onSkip');else if(x>=685&&x<=930)onboardAction('onNext');}return;}
             if(deleteOpen){if(y>=275&&y<=337){if(x>=242&&x<=570)deleteOpen=false;else if(x>=600&&x<=928)confirmDelete();}return;}
             if(consentOpen){if(y>=275&&y<=337){if(x>=242&&x<=570)closeConsent();else if(x>=600&&x<=928)enableSync();}return;}
             if(rankingOpen){
+                if(y>=70&&y<=103&&x>=353&&x<=478&&outbox.token()){showRecoveryCode();return;}
                 if(y>=70&&y<=103&&x>=215&&x<=345&&outbox.status().enabled){openDelete();return;}
                 if(y>=64&&y<=103&&x>=720&&x<=965){if(outbox.status().enabled)openName();else openConsent();return;}
                 if(y>=113&&y<=151&&x>=235&&x<939){selectRankTab(Math.min(3,Math.floor((x-235)/176)));}
@@ -323,13 +456,13 @@ mgu.run({
         if (ui.onFocus) ui.onFocus(sync);
         if (ui.onVisible) ui.onVisible((name,visible) => {
             if(name!=='GAME')return;
-            if(!visible){++consentEpoch;deleteOpen=false;pauseRun();settingsOpen=false;editName=false;consentOpen=false;rankingOpen=false;++rankingRequest;exitDialog=false;tiltHeld=false;}
+            if(!visible){++consentEpoch;recovery=null;recoveryTilt=null;deleteOpen=false;pauseRun();settingsOpen=false;editName=false;consentOpen=false;rankingOpen=false;++rankingRequest;exitDialog=false;tiltHeld=false;}
             else {if(exiting){game.reset();paused=false;selectedControl='play';}exiting=false;last=null;accumulator=0;}
             sync();
         });
         const safetyTimer = setInterval(sync, 100);
         let deletionWasPending=outbox.status().deleting;
-        const outboxTimer=setInterval(()=>{if(closed)return;if(deletionWasPending&&!outbox.status().deleting){deletionWasPending=false;rankCache.clear();rankingData=null;rankingRows=[];if(rankingOpen)loadRanking(rankingMode,true);}if(outbox.status().deleting)deletionWasPending=true;outbox.capture(bestModes);outbox.tick(Date.now());},1000);
+        const outboxTimer=setInterval(()=>{if(closed)return;applyRecoveredProfile();if(deletionWasPending&&!outbox.status().deleting){deletionWasPending=false;rankCache.clear();rankingData=null;rankingRows=[];if(rankingOpen)loadRanking(rankingMode,true);}if(outbox.status().deleting)deletionWasPending=true;outbox.capture(bestModes);outbox.tick(Date.now());},1000);
         function stop() {
             if (closed) return;
             closed = true; going = false; ctl.enable(false);
@@ -364,7 +497,7 @@ mgu.run({
             // GPU path is paced by renderd at up to 60 Hz; PNG fallback is capped by ctx.loop at 8 Hz.
             if (now - frameAt + 2 < 1000 / 60) return; // Allow 16 ms tick rounding on 60 Hz displays.
             frameAt = now;fpsFrames++;
-            tickName();const options={nameCheck,paused,onboarding,onboardName,onboardConsent,rankingRefreshing:rankCache.busy,editName,nameDraft,nameCursor,nameKeys,namePos,nameShift,nameBlink:Math.floor(now/500)%2===0,rankingData,consentOpen,deleteOpen,probeBusy,probeError,syncProfile:outbox.status(),settingsOpen,dropdown,dropdownIndex,dropdownStart:dropdownStart(),languageItems:languageChoices.map(k=>k==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[k]||k),bestModes,rankingOpen,rankingMode,rankingRows,rankingStatus,rankingError,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
+            tickName();const options={nameCheck,paused,onboarding,onboardName,onboardConsent,rankingRefreshing:rankCache.busy,editName,nameDraft,nameCursor,nameKeys,namePos,nameShift,nameBlink:Math.floor(now/500)%2===0,rankingData,consentOpen,deleteOpen,recovery,canShowRecoveryCode:!!outbox.token(),syncProfile:outbox.status(),settingsOpen,dropdown,dropdownIndex,dropdownStart:dropdownStart(),languageItems:languageChoices.map(k=>k==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[k]||k),bestModes,rankingOpen,rankingMode,rankingRows,rankingStatus,rankingError,exitDialog,selectedControl,languageLabel:languageChoice==='auto'?'Auto ('+systemLanguage.toUpperCase()+')':i18n.languageNames[languageChoice]||languageChoice,parked:!!safe(),fps:actualFPS};
             if(full){
                 if(!screenRecorder||screenRecorder.w!==w||screenRecorder.h!==h)screenRecorder=new Recorder(w,h);
                 screenRecorder.reset();drawDashboard(screenRecorder,game,w,h,best,t(),updateState,options);

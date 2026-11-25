@@ -33,6 +33,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      REQUIRE_EXISTING_RESOURCES: 'true'
       WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@v5
@@ -55,9 +56,41 @@ jobs:
           set -euo pipefail
           BASE="$(cat .deploy-url)"
           curl -fsS --retry 4 --retry-all-errors --retry-delay 2 "$BASE/health" | tee /tmp/dino-health.json
-          node -e "const x=require('/tmp/dino-health.json');if(!x.ok||x.version!=='0.2.12'||x.verification!=='pending_only')process.exit(1)"
+          node -e "const x=require('/tmp/dino-health.json');if(!x.ok||x.version!=='0.2.13'||x.verification!=='pending_only')process.exit(1)"
           curl -fsS "$BASE/v1/leaderboard" | node -e 'let s="";process.stdin.on("data",x=>s+=x);process.stdin.on("end",()=>{const j=JSON.parse(s);if(Object.keys(j.boards).length!==4)process.exit(1)})'
+          node scripts/check-recovery.mjs "$BASE"
           echo "Staging endpoint: $BASE" >> "$GITHUB_STEP_SUMMARY"
       - name: Delete transient secret files
         if: always()
         run: rm -f .deploy-secrets.json .deploy-url wrangler.toml
+
+  release:
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify client and publish the versioned package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./apps/chrome_dino/app.json').version")"
+          PREVIOUS="$(git show "$BEFORE:apps/chrome_dino/app.json" | node -p "JSON.parse(require('fs').readFileSync(0)).version")"
+          if [ "$VERSION" = "$PREVIOUS" ]; then exit 0; fi
+          for test in apps/chrome_dino/tests/test_*.js; do node "$test"; done
+          node apps/chrome_dino/build.js --preview-only
+          node apps/chrome_dino/build.js
+          PACKAGE="apps/chrome_dino/dist/chrome_dino@${VERSION}.tgz"
+          tar -tzf "$PACKAGE" > /dev/null
+          sha256sum "$PACKAGE"
+          gh release create "chrome-dino-v$VERSION" --target "$GITHUB_SHA" \
+            --title "Chrome Dino $VERSION" --notes-file apps/chrome_dino/RELEASE-NOTES.md "$PACKAGE"
