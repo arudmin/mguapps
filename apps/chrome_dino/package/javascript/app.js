@@ -130,12 +130,12 @@ mgu.run({
         function closeConsent(){++consentEpoch;consentOpen=false;selectedControl='syncProfile';}
         function enableSync(){beginEnrollment(false);}
         function openDelete(){if(!outbox.status().enabled||outbox.status().deleting)return;deleteOpen=true;selectedControl='deleteNo';}
-        function confirmDelete(){if(!going||!safe())return;if(outbox.erase()){deleteOpen=false;settings.set('offlineNickname','');onboardName='';nameDraft='';nameSuggestions([]);rankingData=null;rankingRows=[];rankCache.clear();selectedControl='rankDone';loadRanking(rankingMode,true);}}
+        function confirmDelete(){if(!going||!safe())return;if(outbox.erase()){deleteOpen=false;settings.set('offlineNickname','');onboardName='';nameDraft='';nameSuggestions([]);rankingData=null;rankingRows=[];rankCache.clear();deletionWasPending=true;selectedControl='rankDone';rankingStatus='loading';}}
         function beginEnrollment(fromOnboard){if(probeBusy||!going||!safe()||outbox.status().enabled||outbox.status().deleting)return;const epoch=++consentEpoch;probeBusy=true;probeError=false;const active=()=>!closed&&going&&safe()&&epoch===consentEpoch&&(fromOnboard?onboarding===3:consentOpen);probeVin(active).then(hash=>{if(!active())return;if(!hash||!outbox.enroll(hash,bestModes,fromOnboard?onboardName:String(settings.get('offlineNickname')||''))){probeError=true;return;}if(fromOnboard)onboardStep(4);else closeConsent();},()=>{if(active())probeError=true;}).then(()=>{probeBusy=false;});}
         function openName(){if(!outbox.status().enabled)return;editName=true;nameDraft=outbox.status().nameRejected||outbox.status().nickname||String(settings.get('offlineNickname')||'');namePos=nameDraft.length;nameCursor=0;nameShift=false;nameTilt=null;checkName();}
         function nameKey(i){if(!editName||!going||!safe()||!nameKeys[i])return;nameCursor=i;const k=nameKeys[i].id;if(k==='BACK'){editName=false;onboardEditing=false;return;}if(/^SUGGEST/.test(k)){nameDraft=nameKeys[i].label;namePos=nameDraft.length;checkName();return;}if(k==='SAVE'){if(!/^[A-Za-z0-9_-]{3,16}$/.test(nameDraft)||nameCheck==='taken')return;if(onboardEditing){if(/^[A-Za-z0-9_-]{3,16}$/.test(nameDraft)){onboardName=nameDraft;editName=false;onboardEditing=false;}return;}if(outbox.rename(nameDraft,bestModes))editName=false;return;}const next=keyboard.edit(nameDraft,namePos,k,nameShift,outbox.status().originalNickname);const changed=nameDraft!==next.value;nameDraft=next.value;namePos=next.pos;nameShift=next.shift;if(changed)checkName();}
         function showRanking(){if(!rankingData)return;rankingRows=rankingData.boards[MODES[rankingMode]].slice(0,10);rankingStatus='ready';}
-        function loadRanking(mode,force){if(force&&rankCache.busy)return;rankingMode=mode;rankingError='';if(rankingData)showRanking();else rankingStatus='loading';rankCache.get(outbox.token(),!!force,(err,result)=>{if(closed)return;if(result){rankingData=result;if(result.profile)outbox.rememberOriginal(result.profile.original_nickname);showRanking();}if(err){rankingError=String(err.code||err.message||'NETWORK').slice(0,40);if(!result)rankingStatus='error';}});}
+        function loadRanking(mode,force){if(outbox.status().deleting)return;if(force&&rankCache.busy)return;rankingMode=mode;rankingError='';if(rankingData)showRanking();else rankingStatus='loading';rankCache.get(outbox.token(),!!force,(err,result)=>{if(closed)return;if(result){rankingData=result;if(result.profile)outbox.rememberOriginal(result.profile.original_nickname);showRanking();}if(err){rankingError=String(err.code||err.message||'NETWORK').slice(0,40);if(!result)rankingStatus='error';}});}
         function selectRankTab(mode){rankingMode=mode;selectedControl='rankTab'+mode;if(rankingData)showRanking();}
         function openRanking(){if(!going||paused||exitDialog||settingsOpen||game.state==='playing')return;rankingOpen=true;selectedControl='rankTab'+game.difficulty;loadRanking(game.difficulty);}
         function closeRanking(){++consentEpoch;deleteOpen=false;editName=false;onboardEditing=false;consentOpen=false;rankingOpen=false;++rankingRequest;selectedControl='play';}
@@ -223,9 +223,9 @@ mgu.run({
         // Never transmit or log the VIN. Unsupported ECUs show a status instead.
         async function probeVin(active) {
             if(!active())return null;
-            const quiet={info(){},warn(){},error(){}};
+            const quiet={info(){},warn(){},error(){}};let diag;
             try {
-                const diag = await new Diag(ctx.signals, quiet).init();
+                diag = await new Diag(ctx.signals, quiet).init();
                 if (!diag.p||!active()) return null;
                 const replies = await diag.functional(0x22,[0xF1,0x90],{idleMs:1800,maxMs:9000});
                 if(!active())return null;
@@ -234,7 +234,7 @@ mgu.run({
                 replies.clear();
                 log.info('VIN read-only probe completed');
                 return hash;
-            } catch(e) {log.warn('VIN read-only probe unavailable');return null;}
+            } catch(e) {log.warn('VIN read-only probe unavailable');return null;} finally {if(diag&&diag.p&&typeof diag.p.shutdown==='function')try{await diag.p.shutdown();}catch(e){}}
         }
         checkUpdate(APP_VERSION, function(result) {
             updateState=result;
@@ -328,7 +328,8 @@ mgu.run({
             sync();
         });
         const safetyTimer = setInterval(sync, 100);
-        const outboxTimer=setInterval(()=>{if(closed)return;outbox.capture(bestModes);outbox.tick(Date.now());},1000);
+        let deletionWasPending=outbox.status().deleting;
+        const outboxTimer=setInterval(()=>{if(closed)return;if(deletionWasPending&&!outbox.status().deleting){deletionWasPending=false;rankCache.clear();rankingData=null;rankingRows=[];if(rankingOpen)loadRanking(rankingMode,true);}if(outbox.status().deleting)deletionWasPending=true;outbox.capture(bestModes);outbox.tick(Date.now());},1000);
         function stop() {
             if (closed) return;
             closed = true; going = false; ctl.enable(false);
