@@ -78,13 +78,3 @@ API v2: POST /v2/register with consent, local VIN hash and randomly generated pe
 
 ### 0.2.3 — 24.11.2026
 API v3 (see API.md): one authenticated atomic sync for name and all four records; one read for all boards and own ranks. Existing v1/v2 retained; no migration. Replay verification deferred. Tests added, CI pending.
-
-## 25.11.2026 — 1.5.30 / server 0.2.11
-Shared dashboard sprite geometry and swept collision checks, brighter top ranking button above personal records, extended localized descriptions. New opt-in installations use a durable random installation UUID; existing accounts and queues remain. Server migration 0008 groups by vehicle HMAC, one best record per vehicle per mode. Legacy registration remains compatible. Nonrepresentative accounts have no public rank in that mode. API v1 optional installation_id. Tests and hardware validation pending.
-
-## 25.11.2026 — 1.5.31 / server 0.2.12
-- Diagnostic read only after explicit opt-in, never at startup, no repeated read for enrolled accounts. No raw VIN transmitted or logged. Derived identifier remains necessary for vehicle grouping.
-- Removed unused sensitive UserAccount, PrivacySettings, Provisioning, units and environmental interfaces and DeviceLink/Provisioning ACLs; retain platform lifecycle and RHMI/OAP infrastructure. Actual SDK startup on physical ID7/8 must be checked.
-- DELETE /v1/account with bearer token; atomic deletion of account and dependent records; retries with the same token are idempotent. Client stops score sync immediately, retains only deletion credential until confirmation, clears profile/cache and preserves local bests. Separate accounts on same vehicle unaffected. Offline deletion requires the app to run again with connectivity; uninstall before confirmation can lose the retry credential. D1 recovery/backups and infrastructure logs are subject to provider retention, not directly erased by this endpoint.
-- Regional suffix only after confirmed nickname conflict; no storage of IP/region. Pre-consent onboarding nickname editing stays local. Cloudflare receives IP as part of normal HTTP transport.
-- Tests and physical verification pending.

@@ -11,7 +11,7 @@
 
 | Ветка | Chrome Dino | Назначение |
 | --- | --- | --- |
-| [main](https://github.com/arudmin/mguapps/tree/main) | 1.5.31 | Основной канал |
+| [main](https://github.com/arudmin/mguapps/tree/main) | 1.5.32 | Основной канал |
 | [top-chart](https://github.com/arudmin/mguapps/tree/top-chart) | 1.5.29 | Разработка и тестирование |
 
 Сервер рейтинга: 0.2.12 (после успешного deploy), API v1. Клиент пока подключён к staging, в котором есть 14 синтетических тестовых профилей Easy. Перед публичным релизом рейтинг необходимо очистить от этих записей и отдельно проверить production-конфигурацию. Результаты не верифицируются повторами.
@@ -39,7 +39,7 @@ node apps/chrome_dino/build.js --preview-only
 node apps/chrome_dino/build.js
 ```
 
-Пакет: `apps/chrome_dino/dist/chrome_dino@1.5.31.tgz`. MGU Store использует сборщик из mgu-repo.json.
+Пакет: `apps/chrome_dino/dist/chrome_dino@1.5.32.tgz`. MGU Store использует сборщик из mgu-repo.json.
 
 GPU-отрисовка до 60 Гц, PNG fallback 8 Гц; физика 120 Гц. Проверка на физическом ID8 и новой версии на автомобиле остаётся необходимой. CI ветки top-chart успешен для игры и сервера, обновление тестовых записей подтверждено [Actions](https://github.com/arudmin/mguapps/actions/runs/45580962815).
 
@@ -135,3 +135,9 @@ GPU-отрисовка до 60 Гц, PNG fallback 8 Гц; физика 120 Гц.
 - DELETE /v1/account with bearer token; atomic deletion of account and dependent records; retries with the same token are idempotent. Client stops score sync immediately, retains only deletion credential until confirmation, clears profile/cache and preserves local bests. Separate accounts on same vehicle unaffected. Offline deletion requires the app to run again with connectivity; uninstall before confirmation can lose the retry credential. D1 recovery/backups and infrastructure logs are subject to provider retention, not directly erased by this endpoint.
 - Regional suffix only after confirmed nickname conflict; no storage of IP/region. Pre-consent onboarding nickname editing stays local. Cloudflare receives IP as part of normal HTTP transport.
 - Tests and physical verification pending.
+
+
+## 25.11.2026 — 1.5.32 / server 0.2.12
+- Uniform leaderboard row height and typography; podium colors and cups retained. Score and header use the existing difficulty accent palette.
+- Hard bird flight height reduced by 15%; all other mode parameters unchanged. This is a geometric adjustment, not a measured 15% difficulty reduction. Existing shared sprite collision handling retained.
+- Parking safety gate, local records, consent and score sync unchanged. CI and physical MGU verification pending.

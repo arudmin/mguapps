@@ -271,3 +271,9 @@ Shared dashboard sprite geometry and swept collision checks, brighter top rankin
 - DELETE /v1/account with bearer token; atomic deletion of account and dependent records; retries with the same token are idempotent. Client stops score sync immediately, retains only deletion credential until confirmation, clears profile/cache and preserves local bests. Separate accounts on same vehicle unaffected. Offline deletion requires the app to run again with connectivity; uninstall before confirmation can lose the retry credential. D1 recovery/backups and infrastructure logs are subject to provider retention, not directly erased by this endpoint.
 - Regional suffix only after confirmed nickname conflict; no storage of IP/region. Pre-consent onboarding nickname editing stays local. Cloudflare receives IP as part of normal HTTP transport.
 - Tests and physical verification pending.
+
+
+## 25.11.2026 — 1.5.32 / server 0.2.12
+- Uniform leaderboard row height and typography; podium colors and cups retained. Score and header use the existing difficulty accent palette.
+- Hard bird flight height reduced by 15%; all other mode parameters unchanged. This is a geometric adjustment, not a measured 15% difficulty reduction. Existing shared sprite collision handling retained.
+- Parking safety gate, local records, consent and score sync unchanged. CI and physical MGU verification pending.

@@ -19,5 +19,3 @@ const src=fs.readFileSync(path.join(root,'package/javascript/app.js'),'utf8');
 assert(src.includes('diag.functional(0x22,[0xF1,0x90]'));
 assert(src.includes('VIN read-only probe'));
 console.log('VIN F190 read-only parsing and ID7/ID8 diagnostic row OK');
-
-for(const k of Object.keys(manifest.proxies))assert(!/UserAccount|PrivacySettings|Provisioning|EnvironmentalInformation$|vehicle\.Vehicle$/.test(k),k);

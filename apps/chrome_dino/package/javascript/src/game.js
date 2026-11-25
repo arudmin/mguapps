@@ -19,7 +19,7 @@ class Game {
  action(){const m=this.mode();if(this.state==='over')this.reset();if(this.state==='ready'){this.state='playing';this.vy=m.jumpVelocity;return;}if(this.state==='playing'){if(this.y>=this.floor-.1){this.vy=m.jumpVelocity;this.jumpBuffer=0;}else if(this.difficulty!==0)this.jumpBuffer=.12;}}
  buildObstacle(){
   const m=this.mode(),r=this.random();
-  if(this.elapsed>m.birdAfter&&r<m.birdChance){let low=this.random()<(this.difficulty===0?.77:.65);if(this.difficulty!==0&&!low&&this.previousDelay<.47&&this.previousType!=='high')low=true;return {type:'bird',low,x:this.width+70,y:this.floor-(low?88:(this.difficulty===0?128:178)),w:66,h:36,parts:[],scored:false};}
+  if(this.elapsed>m.birdAfter&&r<m.birdChance){let low=this.random()<(this.difficulty===0?.77:.65);if(this.difficulty!==0&&!low&&this.previousDelay<.47&&this.previousType!=='high')low=true;return {type:'bird',low,x:this.width+70,y:this.floor-(low?88:(this.difficulty===0?128:178))*(this.difficulty===2?.85:1),w:66,h:36,parts:[],scored:false};}
   let count=1;if(this.random()<m.clusterChance){if(this.difficulty===0)count=this.random()<.72?2:3;else{const triple=m.tripleStart+(m.tripleEnd-m.tripleStart)*clamp((this.elapsed-m.tripleFrom)/m.tripleRamp,0,1);count=this.random()<triple?3:2;}}
   const parts=[];let offset=0;for(let k=0;k<count;k++){const large=this.random()<m.largeChance,w=large?36:27,h=large?84:60;parts.push({x:offset,w,h,large});offset+=w+(k+1<count?5+Math.floor(this.random()*8):0);}
   return {type:'cactus',x:this.width+70,y:this.floor,w:offset,h:Math.max.apply(null,parts.map(p=>p.h)),parts,scored:false};

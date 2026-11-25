@@ -64,7 +64,7 @@ class Diag extends EventEmitter {
         if (err !== undefined && err !== 'NO_ERROR' && err !== 0) { this.emit('tasError', String(err)); return; }
         const b = toBytes(v && (v.udsResponse !== undefined ? v.udsResponse : v));
         if (b.length >= 5 && b[2] === 0x7F) { this.emit('tasReject', b[4]); return; }
-        if (b.length < 10) { this.log.warn('short TASU frame'); return; }
+        if (b.length < 10) { this.log.warn('short TASU frame ' + b.map((x) => hex(x)).join('')); return; }
         this.emit('frame', { ecu: b[6], uds: b.slice(9) });
     }
 
@@ -126,7 +126,7 @@ class Diag extends EventEmitter {
             onErr = (e) => this.log.warn('TASU error during scan: ' + e);
             this.on('frame', onFrame); this.on('tasError', onErr);
         });
-        try { this._check(await this.send(ALL, sid, data, {maxRetries:0})); } catch (e) { finish(); throw e; }
+        try { this._check(await this.send(ALL, sid, data)); } catch (e) { finish(); throw e; }
         // timers from when the transport took the request (send() may have waited for it)
         if (!idle) kick(idleMs + 2000);          // first replies can take a moment
         hard = setTimeout(finish, maxMs);

@@ -4,6 +4,7 @@
 // This renderer does not change game physics. The fixed world stays 1920x720 on every layout.
 const {DINO_ROWS,dino,obstacle}=require('./sprites');
 const WORLD_ASPECT=1920/720;
+const LEVEL_COLORS=['#75bd9a','#83c9f5','#e2ad72','#dd8992'];
 // Fixed 21x21, eight-tooth gear mask. Transparent cells are never painted.
 const GEAR_SPRITE=[".........###.........",".........###.........","....#....###....#....","...##..#######..##...","..#################..","....#############....","....#####...#####....","...####.......####...","...####.......####...","######.........######","######.........######","######.........######","...####.......####...","...####.......####...","....#####...#####....","....#############....","..#################..","...##..#######..##...","....#....###....#....",".........###.........",".........###........."];
 function drawDashboard(cv,game,w,h,best,words,update,options){
@@ -20,7 +21,7 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
  const wr=(x,y,rw,rh,c)=>rect(wx(x),wy(y),rw*f.w/game.width,rh*f.h/720,c);
  cv.clear('#0a0c12');
  // Compact automotive header and racing accent.
- text('CHROME DINO',34,26,23,'#f0f5fa');text(words.levels[game.difficulty],1109,27,19,'#b6c5d6','right');
+ text('CHROME DINO',34,26,23,'#f0f5fa');text(words.levels[game.difficulty],1109,27,19,LEVEL_COLORS[game.difficulty],'right');
  round(pf.x,pf.y,pf.w,pf.h,12,'#11161e');border(pf.x,pf.y,pf.w,pf.h,12,'#314052');
  round(side.x,side.y,side.w,side.h,9,'#10141b');border(side.x,side.y,side.w,side.h,9,'#344454');
  // The game viewport is clipped independently of the score panel.
@@ -37,7 +38,7 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
 
  // All user settings are in this GPU dashboard, no legacy MAIN menu needed.
  text(words.score||'SCORE',1195,108,22,'#bdc7d5');
- text(String(game.score),1194,168,59,'#87c3ff','left','num');
+ text(String(game.score),1194,168,59,LEVEL_COLORS[game.difficulty],'left','num');
  const focus=opts.selectedControl||'play';
  const records=opts.bestModes||words.levels.map((_,i)=>i===game.difficulty?best:0);
  const gearEnabled=game.state!=='playing'&&!opts.paused&&!opts.exitDialog;
@@ -133,24 +134,24 @@ function drawDashboard(cv,game,w,h,best,words,update,options){
    if(!profile.enabled){round(720,70,245,33,6,focus==='syncProfile'?'#244768':'#1a2939');text(profile.deleting?words.deletePending:words.syncEnable,842,93,18,'#f0f7ff','center');}
    else{round(720,70,245,33,6,focus==='editName'?'#244768':'#1a2939');text(profile.nickname||words.syncTitle,824,91,18,'#c7e3ff','center');const pen='#b5dfff';for(let j=0;j<9;j++)rect(934+j,86-j,5,5,pen);rect(934,91,4,2,pen);text(profile.namePending?words.namePending:profile.nameAdjusted?words.nameAdjusted:profile.error||('SYNC: '+(profile.pending||0)),950,105,12,profile.namePending||profile.nameAdjusted?'#e2ad72':'#9dc9ed','right');}
    // Four direct-access difficulty tabs, shared cached response.
-   words.levels.forEach((label,i)=>{const x=235+i*176,active=i===(opts.rankingMode||0),focused=focus==='rankTab'+i;round(x,113,170,38,7,active?['#286c53','#286b99','#996332','#963e47'][i]:['#203e36','#20394d','#443526','#472d35'][i]);border(x,113,170,38,7,focused?'#ffffff':active?['#75bd9a','#83c9f5','#e2ad72','#dd8992'][i]:'#40566d');text(label,x+85,139,20,active?'#ffffff':'#b8cbdf','center');if(active)rect(x+12,147,146,3,['#75bd9a','#83c9f5','#e2ad72','#dd8992'][i]);});
+   words.levels.forEach((label,i)=>{const x=235+i*176,active=i===(opts.rankingMode||0),focused=focus==='rankTab'+i;round(x,113,170,38,7,active?['#286c53','#286b99','#996332','#963e47'][i]:['#203e36','#20394d','#443526','#472d35'][i]);border(x,113,170,38,7,focused?'#ffffff':active?LEVEL_COLORS[i]:'#40566d');text(label,x+85,139,20,active?'#ffffff':'#b8cbdf','center');if(active)rect(x+12,147,146,3,LEVEL_COLORS[i]);});
    const rows=opts.rankingRows||[];
    if(opts.rankingStatus==='loading')text(words.rankLoading,585,264,23,'#9dc9ed','center');
    else if(opts.rankingStatus==='error'){text(words.rankError,585,250,23,'#ffc17c','center');text(opts.rankingError||'NETWORK',585,282,18,'#9dc9ed','center');}
    else if(!rows.length)text(words.rankEmpty,585,264,23,'#9dc9ed','center');
    else {
      const colors=['#ffd16a','#d3e3f1','#e5a46f'],backs=['#523b20','#34485b','#52362a'];
-     function cup(x,y,c){round(x+6,y,19,13,4,c);border(x,y+2,10,10,3,c);border(x+21,y+2,10,10,3,c);rect(x+14,y+12,4,6,c);round(x+8,y+18,16,4,2,c);}
-     // Ten players fit without hiding any results; podium cards get extra height.
+     function cup(x,y,c){round(x+6,y+2,17,10,3,c);border(x,y+3,9,8,3,c);border(x+21,y+3,9,8,3,c);rect(x+13,y+12,4,4,c);round(x+7,y+16,16,3,1,c);}
+     // Equal-height rows, including podium, with space for own rank and buttons.
      rows.slice(0,10).forEach((row,i)=>{
-       const podium=i<3,y=158+(podium?i*34:102+(i-3)*19),h=podium?31:17,c=colors[i]||'#a4c2df';
+       const podium=i<3,y=155+i*23,h=22,c=colors[i]||'#a4c2df';
        const x=318,w=534;
        round(x,y,w,h,6,row.self?'#174f79':podium?backs[i]:'#263444');
        if(podium||row.self)border(x,y,w,h,6,row.self?'#79cfff':c);
-       if(podium){cup(x+10,y+4,c);text('TOP-'+String(row.rank),x+52,y+22,18,c); }
-       else{text('#'+String(row.rank),x+22,y+14,16,c);}
-       text(row.nickname.slice(0,24),x+128,y+(podium?23:14),podium?23:18,row.self?'#e3f6ff':'#f4f6f8');
-       text(String(row.score),x+w-14,y+(podium?24:15),podium?25:19,c,'right','num');
+       if(podium){cup(x+10,y,c);text('TOP-'+String(row.rank),x+52,y+16,17,c); }
+       else{text('#'+String(row.rank),x+22,y+16,17,c);}
+       text(row.nickname.slice(0,24),x+128,y+16,19,row.self?'#e3f6ff':'#f4f6f8');
+       text(String(row.score),x+w-14,y+17,20,c,'right','num');
      });
    }
    const own=opts.rankingData&&opts.rankingData.profile&&opts.rankingData.profile.positions[['easy','normal','hard','extreme'][opts.rankingMode||0]];if(own&&own.rank>10)text('#'+own.rank+'  '+profile.nickname+'  '+own.score,585,395,17,'#92ceff','center');
