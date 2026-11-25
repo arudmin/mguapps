@@ -3,13 +3,13 @@ const assert=require('assert'),fs=require('fs'),path=require('path'),vm=require(
 const root=path.resolve(__dirname,'../package/javascript'),source=fs.readFileSync(path.join(root,'app.js'),'utf8');
 const {Recorder}=require('../package/javascript/kit/record');
 async function run(id8){
- let closedScreens=[],lastGame,lastOptions;let clock=10000,visible='GAME',tap,draw,shutdown,focus=true,grab=false,frames=0,settings={onboardingSchema:1},watchers={},timers=[],clicks={},input,vis;
+ let probes=0,closedScreens=[],lastGame,lastOptions;let clock=10000,visible='GAME',tap,draw,shutdown,focus=true,grab=false,frames=0,settings={onboardingSchema:1},watchers={},timers=[],clicks={},input,vis;
  const ctx={ui:{id8,isVisible:n=>n===visible,hasFocus:()=>focus,open:n=>{visible=n;if(vis)vis(n,true);return Promise.resolve();},close:n=>{closedScreens.push(n);visible='OUTSIDE';if(vis)vis(n,false);return Promise.resolve();},onClick:(n,fn)=>clicks[n]=fn,onVisible:fn=>vis=fn,onFocus:()=>{},image:(n,cv)=>{assert.strictEqual(n,'GAME_GFX');assert(cv.words().length>60);frames++;},text(){},comp(){return null;}},log:{info(){},warn(){},error(){}},settings:{get:k=>settings[k],set:(k,v)=>settings[k]=v},signals:{watch:(s,i,cb)=>{Object.assign(watchers,cb);return Promise.resolve({available:true});}},controller:{grab:v=>grab=v,onInput:fn=>input=fn},onTap:fn=>tap=fn,hideButton(){},loop:(n,f,fn)=>{assert.strictEqual(n,'GAME');assert.strictEqual(f,8);draw=fn;},canvas:(w,h)=>new Recorder(w,h),app:{on:(n,fn)=>shutdown=fn}};
- const sandbox={require:p=>p==='./kit/mgu'?{run:o=>o.start(ctx)}:p==='./kit/diag'?{Diag:class{async init(){return {p:null};}}}:p==='./src/dashboard'?{...require(path.resolve(root,p)),drawDashboard:(cv,g,w,h,b,words,u,o)=>{lastGame=g;lastOptions=o;return require(path.resolve(root,p)).drawDashboard(cv,g,w,h,b,words,u,o);}}:p==='./src/leaderboard'?{MODES:['easy','normal','hard','extreme'],Leaderboard:class{all(token,cb){const rows=[{rank:1,nickname:'Test_Dino',score:12}];cb(null,{generated_at:Date.now(),boards:{easy:rows,normal:rows,hard:rows,extreme:rows}});}}}:p==='./src/update'?{checkUpdate:(v,cb)=>cb({checked:false,available:false})}:require(path.resolve(root,p)),Date:{now:()=>clock},process:{on(){},exit(){}},setTimeout:fn=>{timers.push(fn);},setInterval:(fn,ms)=>{if(ms===100)sandbox.safety=fn;else if(ms===1000)sandbox.outboxTick=fn;return ms;},clearInterval(){},console};
+ const sandbox={require:p=>p==='./kit/mgu'?{run:o=>o.start(ctx)}:p==='./kit/diag'?{Diag:class{async init(){probes++;return {p:null};}}}:p==='./src/dashboard'?{...require(path.resolve(root,p)),drawDashboard:(cv,g,w,h,b,words,u,o)=>{lastGame=g;lastOptions=o;return require(path.resolve(root,p)).drawDashboard(cv,g,w,h,b,words,u,o);}}:p==='./src/leaderboard'?{MODES:['easy','normal','hard','extreme'],Leaderboard:class{all(token,cb){const rows=[{rank:1,nickname:'Test_Dino',score:12}];cb(null,{generated_at:Date.now(),boards:{easy:rows,normal:rows,hard:rows,extreme:rows}});}}}:p==='./src/update'?{checkUpdate:(v,cb)=>cb({checked:false,available:false})}:require(path.resolve(root,p)),Date:{now:()=>clock},process:{on(){},exit(){}},setTimeout:fn=>{timers.push(fn);},setInterval:(fn,ms)=>{if(ms===100)sandbox.safety=fn;else if(ms===1000)sandbox.outboxTick=fn;return ms;},clearInterval(){},console};
  vm.runInNewContext(source,sandbox,{filename:'app.js'});
  await Promise.resolve();await Promise.resolve();
  for(const t of timers.splice(0))t();
- assert.strictEqual(visible,'GAME');assert.deepStrictEqual(Object.keys(clicks),['BTN_JUMP']);
+ assert.strictEqual(probes,0,'no diagnostic request before consent');assert.strictEqual(visible,'GAME');assert.deepStrictEqual(Object.keys(clicks),['BTN_JUMP']);
  draw();assert(frames>0);assert(!grab);
  tap(1300,260);assert.strictEqual(settings.difficulty,1,'unknown speed must lock input');
  watchers.statusCarSpeed2({speedVehicleCentreOfGravity:0});assert(grab);
@@ -18,7 +18,8 @@ async function run(id8){
  tap(585,301);clock+=100;draw();assert.strictEqual(lastOptions.dropdown,'language');tap(585,217);assert.strictEqual(settings.language,'ru');
  tap(585,373);clock+=100;draw();assert(!lastOptions.settingsOpen);
  assert.strictEqual(lastOptions.selectedControl,'play');assert.strictEqual(lastOptions.bestModes.length,4);
- tap(1372,399);clock+=100;draw();assert(lastOptions.rankingOpen);assert.strictEqual(lastOptions.rankingRows[0].nickname,'Test_Dino');
+ tap(1372,213);clock+=100;draw();assert(lastOptions.rankingOpen);assert.strictEqual(lastOptions.rankingRows[0].nickname,'Test_Dino');
+ assert.equal(probes,0);tap(840,90);clock+=100;draw();assert(lastOptions.consentOpen);assert.equal(probes,0);tap(400,300);clock+=100;draw();assert(!lastOptions.consentOpen);assert.equal(probes,0);
  tap(848,129);clock+=100;draw();assert.strictEqual(lastOptions.rankingMode,3);
  tap(310,129);clock+=100;draw();assert.strictEqual(lastOptions.rankingMode,0);
  tap(730,419);clock+=100;draw();assert(!lastOptions.rankingOpen);

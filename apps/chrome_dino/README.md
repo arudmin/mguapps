@@ -277,3 +277,7 @@ Shared dashboard sprite geometry and swept collision checks, brighter top rankin
 - Uniform leaderboard row height and typography; podium colors and cups retained. Score and header use the existing difficulty accent palette.
 - Hard bird flight height reduced by 15%; all other mode parameters unchanged. This is a geometric adjustment, not a measured 15% difficulty reduction. Existing shared sprite collision handling retained.
 - Parking safety gate, local records, consent and score sync unchanged. CI and physical MGU verification pending.
+
+
+## 25.11.2026 — 1.5.33 / server 0.2.12
+- Fix release tree regression in 1.5.32: restore complete 1.5.31 base, including shared sprites, security hardening, account deletion and vehicle-group migration; retain the 1.5.32 UI and Hard bird changes. No server redeployment or DB changes required. CI and MGU installation verification pending.

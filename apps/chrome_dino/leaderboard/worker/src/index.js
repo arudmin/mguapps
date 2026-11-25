@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.2.10';
+export const VERSION='0.2.12';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -42,11 +42,16 @@ async function fetchHandler(req,env){
  const hit=await db.prepare('SELECT id FROM players WHERE (nickname=? COLLATE NOCASE OR original_nickname=? COLLATE NOCASE) AND id<>? LIMIT 1').bind(n,n,me?me.id:'').first();
  return respond({available:!hit,suggestions:hit?await suggestions(db,n,me,req.cf):[]});
  }
+ if(p==='/v1/account'&&req.method==='DELETE'){
+ const auth=req.headers.get('authorization')||'';if(!/^Bearer [a-f0-9]{64}$/.test(auth))return error('unauthorized',401);
+ const me=await player(req,db);if(me){const ops=['sync_operations','personal_scores','submissions','best_scores','sessions'].map(t=>db.prepare('DELETE FROM '+t+' WHERE player_id=?').bind(me.id));ops.push(db.prepare('DELETE FROM players WHERE id=?').bind(me.id));await db.batch(ops);}
+ return respond({deleted:true});
+ }
  if(p==='/v1/register'&&req.method==='POST'){
    const b=await body(req);
-   if(!exact(b,['identity_hash','consent','token','analytics'])||!HEX.test(b.identity_hash||'')||b.consent!==true||!HEX.test(b.token||''))return error('invalid_registration',400);
-   const hmac=await identityHmac(b.identity_hash,env.SERVER_SECRET),th=await digest(b.token),id=crypto.randomUUID();
-   await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at,original_nickname) VALUES(?,?,?,?,?,?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,defaultNickname(hmac),th,Date.now(),defaultNickname(hmac)).run();
+   if(!exact(b,['identity_hash','consent','token','analytics','installation_id'])||!HEX.test(b.identity_hash||'')||(b.installation_id!==undefined&&!uuid.test(b.installation_id))||b.consent!==true||!HEX.test(b.token||''))return error('invalid_registration',400);
+   const vehicle=await identityHmac(b.identity_hash,env.SERVER_SECRET),hmac=b.installation_id?await identityHmac(await digest('install:'+b.installation_id+':'+vehicle),env.SERVER_SECRET):vehicle,th=await digest(b.token),id=crypto.randomUUID();
+   await db.prepare('INSERT INTO players(id,identity_hash,nickname,token_hash,created_at,original_nickname,vehicle_hash) VALUES(?,?,?,?,?,?,?) ON CONFLICT(identity_hash) DO NOTHING').bind(id,hmac,defaultNickname(hmac),th,Date.now(),defaultNickname(hmac),vehicle).run();
    const row=await db.prepare('SELECT id,nickname,token_hash,original_nickname FROM players WHERE identity_hash=?').bind(hmac).first();
    if(!row||row.token_hash!==th)return error('already_registered',409);
    return respond({player_id:row.id,nickname:row.nickname,original_nickname:row.original_nickname,accepted:true});
@@ -70,9 +75,9 @@ async function fetchHandler(req,env){
  const me=await player(req,db);if(req.headers.has('authorization')&&!me)return error('unauthorized',401);
  const boards={},positions={};
  for(const d of MODES){
- const r=await db.prepare('SELECT p.id,p.nickname,s.score FROM personal_scores s JOIN players p ON p.id=s.player_id WHERE s.difficulty=? AND s.score>0 ORDER BY s.score DESC,s.updated_at DESC,s.player_id ASC LIMIT 10').bind(d).all();
+ const r=await db.prepare('WITH candidates AS (SELECT p.id,p.nickname,s.score,s.updated_at,ROW_NUMBER() OVER(PARTITION BY COALESCE(p.vehicle_hash,p.identity_hash) ORDER BY s.score DESC,s.updated_at DESC,p.id ASC) AS vehicle_rank FROM personal_scores s JOIN players p ON p.id=s.player_id WHERE s.difficulty=? AND s.score>0), ranked AS (SELECT id,nickname,score,ROW_NUMBER() OVER(ORDER BY score DESC,updated_at DESC,id ASC) AS rank FROM candidates WHERE vehicle_rank=1) SELECT id,nickname,score FROM ranked ORDER BY rank LIMIT 10').bind(d).all();
  boards[d]=r.results.map((v,i)=>({rank:i+1,nickname:v.nickname,score:v.score,self:!!me&&v.id===me.id}));
- if(me){const own=await db.prepare('SELECT s.score,1+(SELECT COUNT(*) FROM personal_scores t WHERE t.difficulty=s.difficulty AND t.score>0 AND (t.score>s.score OR (t.score=s.score AND (t.updated_at>s.updated_at OR (t.updated_at=s.updated_at AND t.player_id<s.player_id))))) AS rank FROM personal_scores s WHERE s.player_id=? AND s.difficulty=? AND s.score>0').bind(me.id,d).first();positions[d]=own||null;}
+ if(me){const own=await db.prepare('WITH candidates AS (SELECT p.id,p.nickname,s.score,s.updated_at,ROW_NUMBER() OVER(PARTITION BY COALESCE(p.vehicle_hash,p.identity_hash) ORDER BY s.score DESC,s.updated_at DESC,p.id ASC) AS vehicle_rank FROM personal_scores s JOIN players p ON p.id=s.player_id WHERE s.difficulty=? AND s.score>0), ranked AS (SELECT id,nickname,score,ROW_NUMBER() OVER(ORDER BY score DESC,updated_at DESC,id ASC) AS rank FROM candidates WHERE vehicle_rank=1) SELECT score,rank FROM ranked WHERE id=?').bind(d,me.id).first();positions[d]=own||null;}
  }
  return respond({boards,profile:me?{nickname:me.nickname,original_nickname:me.original_nickname,positions}:null,generated_at:Date.now(),verification:'unverified'});
  }
