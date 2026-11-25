@@ -1,5 +1,8 @@
 name: Chrome Dino legacy profile recovery
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/chrome-dino-legacy-recovery.yml']
   workflow_dispatch:
     inputs:
       nickname:
@@ -14,13 +17,18 @@ permissions:
   contents: read
 jobs:
   legacy-recovery:
-    if: github.ref == 'refs/heads/main' && github.actor == github.repository_owner && github.triggering_actor == github.repository_owner
+    if: >-
+      github.ref == 'refs/heads/main' && github.actor == github.repository_owner &&
+      github.triggering_actor == github.repository_owner &&
+      (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'Dino-Legacy-Recovery: '))
+
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       NICKNAME: ${{ inputs.nickname }}
+      RECOVERY_PUSH_MESSAGE: ${{ github.event.head_commit.message }}
       RECOVERY_CODE_HASH: ${{ inputs.code_hash }}
     steps:
       - uses: actions/checkout@v5
@@ -28,4 +36,9 @@ jobs:
         with:
           node-version: '22'
       - name: Issue a temporary code for the verified legacy profile
-        run: node apps/chrome_dino/leaderboard/worker/scripts/recovery-admin.mjs grant-verified "$NICKNAME"
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            node apps/chrome_dino/leaderboard/worker/scripts/recovery-admin.mjs grant-encrypted
+          else
+            node apps/chrome_dino/leaderboard/worker/scripts/recovery-admin.mjs grant-verified "$NICKNAME"
+          fi

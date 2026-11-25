@@ -1,12 +1,24 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, createPublicKey, publicEncrypt, randomBytes } from 'node:crypto';
 
-const [action, nickname, playerId] = process.argv.slice(2);
+const [action, inputNickname, playerId] = process.argv.slice(2);
 const { CLOUDFLARE_ACCOUNT_ID: account, CLOUDFLARE_API_TOKEN: token, RECOVERY_CODE_HASH: suppliedHash } = process.env;
 const database = 'chrome-dino-leaderboard-staging';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+let deliveryKey;
+let nickname = inputNickname;
+if (action === 'grant-encrypted') {
+  const message = process.env.RECOVERY_PUSH_MESSAGE || '';
+  const request = message.match(/(?:^|\n)Dino-Legacy-Recovery: ([A-Za-z0-9_-]{3,16})\nDino-Recovery-Delivery-Key: ([A-Za-z0-9+/=]{392})\s*$/);
+  if (!request) throw Error('A verified nickname and an RSA public delivery key are required');
+  nickname = request[1];
+  deliveryKey = createPublicKey({ key: Buffer.from(request[2], 'base64'), format: 'der', type: 'spki' });
+  if (deliveryKey.asymmetricKeyType !== 'rsa' || deliveryKey.asymmetricKeyDetails.modulusLength !== 2048) {
+    throw Error('Expected an RSA-2048 public delivery key');
+  }
+}
 if (!/^[0-9a-f]{32}$/.test(account || '') || !token) throw Error('Cloudflare D1 credentials required');
-if (!['inspect', 'grant', 'grant-verified'].includes(action) || !/^[A-Za-z0-9_-]{3,16}$/.test(nickname || '') ||
+if (!['inspect', 'grant', 'grant-verified', 'grant-encrypted'].includes(action) || !/^[A-Za-z0-9_-]{3,16}$/.test(nickname || '') ||
     (action === 'grant' && !uuid.test(playerId || ''))) {
   throw Error('Usage: recovery-admin.mjs inspect NICKNAME | grant NICKNAME PLAYER_UUID');
 }
@@ -49,5 +61,8 @@ if (action === 'inspect') {
     RETURNING expires_at`, [hash, nickname, playerId || '', playerId || '']);
   if (rows.length !== 1) throw Error('Player mismatch or existing recovery credential');
   console.log('Grant expires ' + new Date(rows[0].expires_at).toISOString());
-  if (code) console.log('Deliver privately to the verified owner: ' + code);
+  if (code && deliveryKey) {
+    const encrypted = publicEncrypt({ key: deliveryKey, oaepHash: 'sha256' }, Buffer.from(code));
+    console.log('Encrypted recovery delivery: ' + encrypted.toString('base64'));
+  } else if (code) console.log('Deliver privately to the verified owner: ' + code);
 }

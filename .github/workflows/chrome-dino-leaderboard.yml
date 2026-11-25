@@ -80,17 +80,30 @@ jobs:
       - name: Verify client and publish the versioned package
         env:
           GH_TOKEN: ${{ github.token }}
-          BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
           VERSION="$(node -p "require('./apps/chrome_dino/app.json').version")"
-          PREVIOUS="$(git show "$BEFORE:apps/chrome_dino/app.json" | node -p "JSON.parse(require('fs').readFileSync(0)).version")"
-          if [ "$VERSION" = "$PREVIOUS" ]; then exit 0; fi
+          TAG="chrome-dino-v$VERSION"
+          if [ "$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null || true)" = false ]; then exit 0; fi
           for test in apps/chrome_dino/tests/test_*.js; do node "$test"; done
           node apps/chrome_dino/build.js --preview-only
           node apps/chrome_dino/build.js
           PACKAGE="apps/chrome_dino/dist/chrome_dino@${VERSION}.tgz"
           tar -tzf "$PACKAGE" > /dev/null
           sha256sum "$PACKAGE"
-          gh release create "chrome-dino-v$VERSION" --target "$GITHUB_SHA" \
-            --title "Chrome Dino $VERSION" --notes-file apps/chrome_dino/RELEASE-NOTES.md "$PACKAGE"
+          if ! git ls-remote --exit-code --refs origin "refs/tags/$TAG" >/dev/null; then
+            git push origin "$GITHUB_SHA:refs/tags/$TAG"
+          fi
+          git fetch --no-tags origin "refs/tags/$TAG"
+          test "$(git rev-parse 'FETCH_HEAD:apps/chrome_dino/package')" = "$(git rev-parse 'HEAD:apps/chrome_dino/package')"
+          for attempt in 1 2 3; do
+            DRAFT="$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null || true)"
+            if [ "$DRAFT" = false ]; then exit 0; fi
+            if [ "$DRAFT" = true ]; then
+              if gh release upload "$TAG" "$PACKAGE" --clobber && gh release edit "$TAG" --draft=false; then exit 0; fi
+            elif gh release create "$TAG" --verify-tag --title "Chrome Dino $VERSION" \
+              --notes-file apps/chrome_dino/RELEASE-NOTES.md "$PACKAGE"; then exit 0
+            fi
+            sleep "$((attempt * 3))"
+          done
+          exit 1
