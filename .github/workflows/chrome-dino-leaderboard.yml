@@ -77,14 +77,11 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Verify client and publish the versioned package
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Verify and publish the tagged Store package
         run: |
           set -euo pipefail
           VERSION="$(node -p "require('./apps/chrome_dino/app.json').version")"
           TAG="chrome-dino-v$VERSION"
-          if [ "$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null || true)" = false ]; then exit 0; fi
           for test in apps/chrome_dino/tests/test_*.js; do node "$test"; done
           node apps/chrome_dino/build.js --preview-only
           node apps/chrome_dino/build.js
@@ -96,14 +93,24 @@ jobs:
           fi
           git fetch --no-tags origin "refs/tags/$TAG"
           test "$(git rev-parse 'FETCH_HEAD:apps/chrome_dino/package')" = "$(git rev-parse 'HEAD:apps/chrome_dino/package')"
-          for attempt in 1 2 3; do
-            DRAFT="$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null || true)"
-            if [ "$DRAFT" = false ]; then exit 0; fi
-            if [ "$DRAFT" = true ]; then
-              if gh release upload "$TAG" "$PACKAGE" --clobber && gh release edit "$TAG" --draft=false; then exit 0; fi
-            elif gh release create "$TAG" --verify-tag --title "Chrome Dino $VERSION" \
-              --notes-file apps/chrome_dino/RELEASE-NOTES.md "$PACKAGE"; then exit 0
+          bash apps/chrome_dino/scripts/publish-package.sh "$PACKAGE"
+          echo "Published $TAG and its Store package on the public chrome-dino-packages branch." >> "$GITHUB_STEP_SUMMARY"
+      - name: Attach the package to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./apps/chrome_dino/app.json').version")"
+          TAG="chrome-dino-v$VERSION"
+          PACKAGE="apps/chrome_dino/dist/chrome_dino-$VERSION.tgz"
+          cp "apps/chrome_dino/dist/chrome_dino@$VERSION.tgz" "$PACKAGE"
+          for delay in 1 3 6; do
+            if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq .id >/dev/null ||
+              gh api "repos/$GITHUB_REPOSITORY/releases" --method POST \
+                -f tag_name="$TAG" -f name="Chrome Dino $VERSION" -F body=@apps/chrome_dino/RELEASE-NOTES.md \
+                -F draft=false -F prerelease=false --jq .id >/dev/null; then
+              if gh release upload "$TAG" "$PACKAGE" --clobber; then exit 0; fi
             fi
-            sleep "$((attempt * 3))"
+            sleep "$delay"
           done
-          exit 1
+          echo "::warning::GitHub Releases API failed. The source tag and public Store package were published."
