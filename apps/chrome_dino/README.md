@@ -281,3 +281,8 @@ Shared dashboard sprite geometry and swept collision checks, brighter top rankin
 
 ## 25.11.2026 — 1.5.33 / server 0.2.12
 - Fix release tree regression in 1.5.32: restore complete 1.5.31 base, including shared sprites, security hardening, account deletion and vehicle-group migration; retain the 1.5.32 UI and Hard bird changes. No server redeployment or DB changes required. CI and MGU installation verification pending.
+
+
+## 25.11.2026 — 1.5.34 / server 0.2.12
+- Restore the known-working 1.5.29 SDK manifest and access table as a compatibility diagnostic after physical ID7 launch failure in 1.5.33. This restores broader permissions; root cause is not yet confirmed. No new application data reads or network collection; consent-only diagnostic probe and account deletion retained.
+- Add BOOT 01–05 local SDK startup milestones; existing fatal/loop logging retained. If the platform never launches JavaScript, these markers cannot appear. CI and real MGU startup verification pending.

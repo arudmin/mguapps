@@ -596,6 +596,7 @@ async function run(impl) {
     }
 }
 async function runInner(impl) {
+    log.info('BOOT 01: constructing SDK app ' + SPEC.version);
     const app = new OnlineApp();
     log.info('starting ' + SPEC.id + ' ' + SPEC.version);
     // interfaces this unit lacks, which the installer left out (app.json "_optional")
@@ -616,7 +617,9 @@ async function runInner(impl) {
         patchStartWidgetEvents(app);
         app.on('startWidgetInitialized', (rhmiApp) => { log.info('widget initialized'); widget.attach(rhmiApp); });
     }
+    log.info('BOOT 02: SDK start requested');
     await app.start();
+    log.info('BOOT 03: SDK start resolved; RHMI=' + !!app.rhmiApplication);
     active();
     const settings = new Settings(SPEC.settings);
     // impl.background(bg): what the app does with or without its screens (app.json "autostart": true, an app the
@@ -834,7 +837,9 @@ async function runInner(impl) {
         .map((s) => ui.comp(s.name)).filter((st) => st && st.updateResources)
         .map((st) => st.updateResources())), 4000);
     await step('settings screen', wireSettings(ctx), 3000);
+    log.info('BOOT 04: starting application callback');
     if (impl && impl.start) await step('app start', Promise.resolve().then(() => impl.start(ctx)), 5000);
+    log.info('BOOT 05: application callback returned or timed out; inspect preceding errors');
     await app.initialized();
     log.info('initialized (start reason ' + app.startReason + ')');
     // launched by a tile tap / bookmark: the execute event came before we

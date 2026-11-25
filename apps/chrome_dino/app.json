@@ -2,7 +2,7 @@
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
   "description": "Classic Chrome Dino for BMW iDrive 7/8. BMW-inspired dashboard, fast-paced gameplay and intuitive controls. Test your reflexes, beat records and compete worldwide.\n\nGAMEPLAY\nFour difficulties, increasing speed, cacti and flying obstacles. Animation up to 60 FPS.\n\nCONTROLS\nTouchscreen or iDrive controller. Tap to jump, pause and resume.\nRECORDS & RANKING\nPersonal bests, global rankings for four modes, editable nickname and automatic offline sync.\n12 languages, automatic BMW language selection. Play offline, only while parked.",
-  "version": "1.5.33",
+  "version": "1.5.34",
   "vendor": "arudmin",
   "loggingId": "CDG1",
   "maxDiskUsage": 10485760,
