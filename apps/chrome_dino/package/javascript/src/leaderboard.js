@@ -18,6 +18,7 @@ class Leaderboard{
  enroll(hash,token,cb,installationId){const payload={identity_hash:hash,consent:true,token};if(installationId)payload.installation_id=installationId;request(this.base,'/v1/register','POST',null,payload,cb);}
  syncProfile(token,id,records,nickname,cb){request(this.base,'/v1/sync','POST',token,{operation_id:id,records,nickname,resolve_name:true},cb);}
  available(nickname,token,cb){request(this.base,'/v1/name-availability?nickname='+encodeURIComponent(nickname),'GET',token,null,cb);}
+ deleteAccount(token,cb){request(this.base,'/v1/account','DELETE',token,null,cb);}
  all(token,cb){request(this.base,'/v1/leaderboard','GET',token,null,cb);}
 }
 module.exports={Leaderboard,identity,MODES};

@@ -11,10 +11,10 @@
 
 | Ветка | Chrome Dino | Назначение |
 | --- | --- | --- |
-| [main](https://github.com/arudmin/mguapps/tree/main) | 1.5.30 | Основной канал |
+| [main](https://github.com/arudmin/mguapps/tree/main) | 1.5.31 | Основной канал |
 | [top-chart](https://github.com/arudmin/mguapps/tree/top-chart) | 1.5.29 | Разработка и тестирование |
 
-Сервер рейтинга: 0.2.11 (после успешного deploy), API v1. Клиент пока подключён к staging, в котором есть 14 синтетических тестовых профилей Easy. Перед публичным релизом рейтинг необходимо очистить от этих записей и отдельно проверить production-конфигурацию. Результаты не верифицируются повторами.
+Сервер рейтинга: 0.2.12 (после успешного deploy), API v1. Клиент пока подключён к staging, в котором есть 14 синтетических тестовых профилей Easy. Перед публичным релизом рейтинг необходимо очистить от этих записей и отдельно проверить production-конфигурацию. Результаты не верифицируются повторами.
 
 ## Как установить через MGU Store
 
@@ -39,7 +39,7 @@ node apps/chrome_dino/build.js --preview-only
 node apps/chrome_dino/build.js
 ```
 
-Пакет: `apps/chrome_dino/dist/chrome_dino@1.5.30.tgz`. MGU Store использует сборщик из mgu-repo.json.
+Пакет: `apps/chrome_dino/dist/chrome_dino@1.5.31.tgz`. MGU Store использует сборщик из mgu-repo.json.
 
 GPU-отрисовка до 60 Гц, PNG fallback 8 Гц; физика 120 Гц. Проверка на физическом ID8 и новой версии на автомобиле остаётся необходимой. CI ветки top-chart успешен для игры и сервера, обновление тестовых записей подтверждено [Actions](https://github.com/arudmin/mguapps/actions/runs/45580962815).
 
@@ -128,3 +128,10 @@ GPU-отрисовка до 60 Гц, PNG fallback 8 Гц; физика 120 Гц.
 **25.11.2026 — перенос в main:** игра 1.5.29, сервер 0.2.10. При равном счёте выше более свежий принятый сервером рекорд; timestamp не показывается в UI. Обновлены staging fixtures. Новая модель аккаунтов, точные коллизии и новая кнопка рейтинга не реализованы.
 
 **1.5.30 / 0.2.11:** точные коллизии, кнопка рейтинга, расширенное описание, новые аккаунты при чистой установке. CI pending. Staging deployment now runs from main.
+
+## 25.11.2026 — 1.5.31 / server 0.2.12
+- Diagnostic read only after explicit opt-in, never at startup, no repeated read for enrolled accounts. No raw VIN transmitted or logged. Derived identifier remains necessary for vehicle grouping.
+- Removed unused sensitive UserAccount, PrivacySettings, Provisioning, units and environmental interfaces and DeviceLink/Provisioning ACLs; retain platform lifecycle and RHMI/OAP infrastructure. Actual SDK startup on physical ID7/8 must be checked.
+- DELETE /v1/account with bearer token; atomic deletion of account and dependent records; retries with the same token are idempotent. Client stops score sync immediately, retains only deletion credential until confirmation, clears profile/cache and preserves local bests. Separate accounts on same vehicle unaffected. Offline deletion requires the app to run again with connectivity; uninstall before confirmation can lose the retry credential. D1 recovery/backups and infrastructure logs are subject to provider retention, not directly erased by this endpoint.
+- Regional suffix only after confirmed nickname conflict; no storage of IP/region. Pre-consent onboarding nickname editing stays local. Cloudflare receives IP as part of normal HTTP transport.
+- Tests and physical verification pending.

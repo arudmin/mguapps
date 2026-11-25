@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const VERSION='0.2.11';
+export const VERSION='0.2.12';
 const MODES=['easy','normal','hard','extreme'];
 const HEX=/^[a-f0-9]{64}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -41,6 +41,11 @@ async function fetchHandler(req,env){
  const me=await player(req,db);if(req.headers.has('authorization')&&!me)return error('unauthorized',401);
  const hit=await db.prepare('SELECT id FROM players WHERE (nickname=? COLLATE NOCASE OR original_nickname=? COLLATE NOCASE) AND id<>? LIMIT 1').bind(n,n,me?me.id:'').first();
  return respond({available:!hit,suggestions:hit?await suggestions(db,n,me,req.cf):[]});
+ }
+ if(p==='/v1/account'&&req.method==='DELETE'){
+ const auth=req.headers.get('authorization')||'';if(!/^Bearer [a-f0-9]{64}$/.test(auth))return error('unauthorized',401);
+ const me=await player(req,db);if(me){const ops=['sync_operations','personal_scores','submissions','best_scores','sessions'].map(t=>db.prepare('DELETE FROM '+t+' WHERE player_id=?').bind(me.id));ops.push(db.prepare('DELETE FROM players WHERE id=?').bind(me.id));await db.batch(ops);}
+ return respond({deleted:true});
  }
  if(p==='/v1/register'&&req.method==='POST'){
    const b=await body(req);

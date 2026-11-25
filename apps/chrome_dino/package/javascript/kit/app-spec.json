@@ -1,7 +1,7 @@
 {
   "id": "chrome_dino",
   "title": "Chrome Dino Game",
-  "version": "1.5.30",
+  "version": "1.5.31",
   "screens": [
     {
       "name": "GAME",
@@ -140,6 +140,13 @@
       "label": "Onboarding schema",
       "type": "number",
       "default": 0,
+      "hidden": true
+    },
+    {
+      "key": "offlineNickname",
+      "label": "Offline nickname",
+      "type": "string",
+      "default": "",
       "hidden": true
     }
   ],
