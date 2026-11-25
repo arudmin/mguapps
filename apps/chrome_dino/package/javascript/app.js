@@ -295,7 +295,7 @@ mgu.run({
                     else if(y>=344&&y<=402)closeSettings();
                 }return;
             }
-            if(game.state!=='playing'&&x>=1191&&x<=1554&&y>=376&&y<=422){openRanking();return;}
+            if(game.state!=='playing'&&x>=1191&&x<=1554&&y>=190&&y<=236){openRanking();return;}
             if(game.state!=='playing'&&x>=1480&&x<=1560&&y>=65&&y<=135){openSettings();return;}
             if(game.state==='over'){
                 if(y>=275&&y<=337){if(x>=242&&x<=570){selectedControl='play';game.action();}else if(x>=600&&x<=928)returnToStart();}return;

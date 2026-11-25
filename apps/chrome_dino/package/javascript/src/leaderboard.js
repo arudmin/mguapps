@@ -15,7 +15,7 @@ function request(base,path,method,token,payload,cb){
 }
 class Leaderboard{
  constructor(base){this.base=base;}
- enroll(hash,token,cb){request(this.base,'/v1/register','POST',null,{identity_hash:hash,consent:true,token},cb);}
+ enroll(hash,token,cb,installationId){const payload={identity_hash:hash,consent:true,token};if(installationId)payload.installation_id=installationId;request(this.base,'/v1/register','POST',null,payload,cb);}
  syncProfile(token,id,records,nickname,cb){request(this.base,'/v1/sync','POST',token,{operation_id:id,records,nickname,resolve_name:true},cb);}
  available(nickname,token,cb){request(this.base,'/v1/name-availability?nickname='+encodeURIComponent(nickname),'GET',token,null,cb);}
  all(token,cb){request(this.base,'/v1/leaderboard','GET',token,null,cb);}

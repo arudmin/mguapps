@@ -78,3 +78,6 @@ API v2: POST /v2/register with consent, local VIN hash and randomly generated pe
 
 ### 0.2.3 — 24.11.2026
 API v3 (see API.md): one authenticated atomic sync for name and all four records; one read for all boards and own ranks. Existing v1/v2 retained; no migration. Replay verification deferred. Tests added, CI pending.
+
+## 25.11.2026 — 1.5.30 / server 0.2.11
+Shared dashboard sprite geometry and swept collision checks, brighter top ranking button above personal records, extended localized descriptions. New opt-in installations use a durable random installation UUID; existing accounts and queues remain. Server migration 0008 groups by vehicle HMAC, one best record per vehicle per mode. Legacy registration remains compatible. Nonrepresentative accounts have no public rank in that mode. API v1 optional installation_id. Tests and hardware validation pending.

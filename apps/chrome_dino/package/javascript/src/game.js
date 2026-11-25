@@ -1,4 +1,5 @@
 'use strict';
+const {collides}=require('./sprites');
 const MODES=[
  {name:'EASY',start:430,acceleration:6,max:740,gapMin:1.12,gapMax:2.25,clusterChance:.38,birdChance:.12,birdAfter:16,gravity:2500,jumpVelocity:-940,tripleStart:.28,tripleEnd:.28,tripleFrom:0,tripleRamp:1,spacingScale:0,largeChance:.38},
  {name:'NORMAL',start:864,acceleration:60.8,max:1824,gapMin:.5625,gapMax:1.5,clusterChance:.6368,birdChance:.2752,birdAfter:4.21875,gravity:8500,jumpVelocity:-1665.08,tripleStart:.096,tripleEnd:.4992,tripleFrom:12.5,tripleRamp:28.125,spacingScale:1.875,largeChance:.75},
@@ -31,16 +32,13 @@ class Game {
  }
  step(seconds){if(this.state!=='playing'||!Number.isFinite(seconds)||seconds<=0)return;this.accumulator+=Math.min(.1,seconds);while(this.accumulator>=1/120&&this.state==='playing'){this.tick(1/120);this.accumulator-=1/120;}}
  tick(dt){
-  if(this.state!=='playing')return;const m=this.mode();this.elapsed+=dt;this.speed=Math.min(m.max,m.start+this.elapsed*m.acceleration);this.distance+=this.speed*dt;this.vy+=m.gravity*dt;this.y+=this.vy*dt;
+  if(this.state!=='playing')return;const oldY=this.y,m=this.mode();this.elapsed+=dt;this.speed=Math.min(m.max,m.start+this.elapsed*m.acceleration);this.distance+=this.speed*dt;this.vy+=m.gravity*dt;this.y+=this.vy*dt;
   if(this.y>=this.floor){this.y=this.floor;this.vy=0;if(this.jumpBuffer>0){this.vy=m.jumpVelocity;this.jumpBuffer=0;}}
   this.jumpBuffer=Math.max(0,this.jumpBuffer-dt);this.cloudIn-=dt;
   if(this.cloudIn<=0){this.clouds.push({x:this.width+100,y:120+this.random()*175});this.cloudIn=1.6+this.random()*1.8;}
   this.clouds.forEach(c=>c.x-=this.speed*dt*.18);this.clouds=this.clouds.filter(c=>c.x>-100);
   this.spawnIn-=dt;if(this.spawnIn<=0){const o=this.buildObstacle();this.obstacles.push(o);this.scheduleNext(o);this.spawnIn+=o.w/this.speed;}
-  const d={x:this.x-59,y:this.y-100,w:90,h:94};
-  for(const o of this.obstacles){o.x-=this.speed*dt;if(!o.scored&&o.x+o.w<this.x-60){o.scored=true;this.score++;}
-   if(o.type==='bird'){if(rectsOverlap(d,{x:o.x+5,y:o.y-28,w:o.w-10,h:24}))this.state='over';}
-   else for(const p of o.parts){if(rectsOverlap(d,{x:o.x+p.x+3,y:o.y-p.h+5,w:p.w-6,h:p.h-7}))this.state='over';}}
+  for(const o of this.obstacles){const oldX=o.x;o.x-=this.speed*dt;if(collides(this,o,oldX,oldY)){this.state='over';break;}if(!o.scored&&o.x+o.w<this.x-60){o.scored=true;this.score++;}}
   this.obstacles=this.obstacles.filter(o=>o.x+o.w>-100);
  }
 }

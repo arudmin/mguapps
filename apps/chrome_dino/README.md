@@ -261,3 +261,6 @@ One read-only UDS 22 F190 request over InternalTasu at startup, parsing 62 F1 90
 
 ### 1.5.22 — 24.11.2026
 - API v3 batch ranking and profile updates, persistent 60-second cache, 5-second minimum refresh interval, stale results retained offline, one request across modes. Editor for 3–16 Latin letters/digits/_/- via touch and rotary, queued together with four records. Medal-colored top three, row cards and self highlight, own rank below top ten. Existing outbox jobs retain v2 protocol for safe retries. Server 0.2.3. CI and BMW testing pending. Anti-cheat remains development backlog.
+
+## 25.11.2026 — 1.5.30 / server 0.2.11
+Shared dashboard sprite geometry and swept collision checks, brighter top ranking button above personal records, extended localized descriptions. New opt-in installations use a durable random installation UUID; existing accounts and queues remain. Server migration 0008 groups by vehicle HMAC, one best record per vehicle per mode. Legacy registration remains compatible. Nonrepresentative accounts have no public rank in that mode. API v1 optional installation_id. Tests and hardware validation pending.

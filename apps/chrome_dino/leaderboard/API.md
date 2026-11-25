@@ -36,3 +36,6 @@ Registration analytics discontinued. Legacy analytics payload is ignored for com
 
 ### 0.2.10
 Tie ordering: score DESC, updated_at DESC, player_id ASC. Timestamp remains internal and changes only for an improved score; it represents server acceptance time, not offline play time. Own positions use identical ordering.
+
+## 25.11.2026 — 1.5.30 / server 0.2.11
+Shared dashboard sprite geometry and swept collision checks, brighter top ranking button above personal records, extended localized descriptions. New opt-in installations use a durable random installation UUID; existing accounts and queues remain. Server migration 0008 groups by vehicle HMAC, one best record per vehicle per mode. Legacy registration remains compatible. Nonrepresentative accounts have no public rank in that mode. API v1 optional installation_id. Tests and hardware validation pending.
