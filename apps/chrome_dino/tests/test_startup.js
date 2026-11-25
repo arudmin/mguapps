@@ -18,7 +18,7 @@ async function run(id8){
  tap(585,301);clock+=100;draw();assert.strictEqual(lastOptions.dropdown,'language');tap(585,217);assert.strictEqual(settings.language,'ru');
  tap(585,373);clock+=100;draw();assert(!lastOptions.settingsOpen);
  assert.strictEqual(lastOptions.selectedControl,'play');assert.strictEqual(lastOptions.bestModes.length,4);
- tap(1372,399);clock+=100;draw();assert(lastOptions.rankingOpen);assert.strictEqual(lastOptions.rankingRows[0].nickname,'Test_Dino');
+ tap(1372,213);clock+=100;draw();assert(lastOptions.rankingOpen);assert.strictEqual(lastOptions.rankingRows[0].nickname,'Test_Dino');
  tap(848,129);clock+=100;draw();assert.strictEqual(lastOptions.rankingMode,3);
  tap(310,129);clock+=100;draw();assert.strictEqual(lastOptions.rankingMode,0);
  tap(730,419);clock+=100;draw();assert(!lastOptions.rankingOpen);
